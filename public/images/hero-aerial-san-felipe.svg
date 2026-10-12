@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Sky Gradient at Dusk -->
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4B2C35"/>
+      <stop offset="35%" stop-color="#803D4B"/>
+      <stop offset="65%" stop-color="#D37E63"/>
+      <stop offset="100%" stop-color="#F2AF7E"/>
+    </linearGradient>
+    <!-- Distant Mountains -->
+    <linearGradient id="farMountains" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4A2833"/>
+      <stop offset="100%" stop-color="#311922"/>
+    </linearGradient>
+    <linearGradient id="nearMountains" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#361B23"/>
+      <stop offset="100%" stop-color="#241117"/>
+    </linearGradient>
+    <!-- Ground / Town Canopy -->
+    <linearGradient id="townBase" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3F2023"/>
+      <stop offset="50%" stop-color="#2F161B"/>
+      <stop offset="100%" stop-color="#1E0C10"/>
+    </linearGradient>
+    <!-- Highway Linear Perspective -->
+    <linearGradient id="road" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#695147"/>
+      <stop offset="100%" stop-color="#382E2E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect x="0" y="0" width="1920" height="480" fill="url(#sky)"/>
+
+  <!-- Distant Ridge Layer 1 -->
+  <path d="M 0,380 Q 280,310 600,340 T 1200,320 T 1600,350 T 1920,330 L 1920,550 L 0,550 Z" fill="url(#farMountains)" opacity="0.85"/>
+
+  <!-- Near Ridge Layer 2 (Zambales Mountain Range) -->
+  <path d="M 0,420 Q 320,350 720,390 T 1320,370 T 1720,400 T 1920,380 L 1920,620 L 0,620 Z" fill="url(#nearMountains)"/>
+
+  <!-- Ground Plane / Coastal Plain -->
+  <rect x="0" y="440" width="1920" height="640" fill="url(#townBase)"/>
+
+  <!-- Ocean Glow on the Horizon (West Philippine Sea) -->
+  <ellipse cx="1600" cy="450" rx="400" ry="25" fill="#EFA472" opacity="0.35"/>
+
+  <!-- Perspective Highway cutting through the center toward horizon -->
+  <polygon points="980,440 940,440 760,1080 1160,1080" fill="url(#road)"/>
+  <!-- Highway Centerline dashes -->
+  <line x1="960" y1="440" x2="960" y2="1080" stroke="#F5C542" stroke-width="4" stroke-dasharray="16,24" opacity="0.7"/>
+
+  <!-- Town Settlement Texture: Roofs, Buildings, Clusters, Greenery -->
+  <!-- Left Village Cluster -->
+  <g fill="#A94842" opacity="0.65">
+    <!-- Roofs in perspective -->
+    <rect x="420" y="600" width="90" height="55" rx="3"/>
+    <rect x="540" y="580" width="110" height="70" rx="3" fill="#8C3A35"/>
+    <rect x="680" y="620" width="80" height="50" rx="3" fill="#B35645"/>
+    <rect x="350" y="700" width="140" height="85" rx="4" fill="#7A2D2A"/>
+    <rect x="520" y="690" width="130" height="80" rx="4" fill="#9C443E"/>
+    <rect x="670" y="710" width="100" height="65" rx="4" fill="#B35645"/>
+    <rect x="220" y="820" width="180" height="110" rx="5" fill="#8C3A35"/>
+    <rect x="430" y="810" width="160" height="95" rx="5" fill="#A94842"/>
+    <rect x="620" y="830" width="150" height="90" rx="5" fill="#692523"/>
+    <rect x="100" y="940" width="240" height="130" rx="6" fill="#9C443E"/>
+    <rect x="380" y="930" width="220" height="120" rx="6" fill="#7A2D2A"/>
+    <rect x="630" y="950" width="170" height="100" rx="6" fill="#A94842"/>
+  </g>
+
+  <!-- Right Village Cluster -->
+  <g fill="#9C443E" opacity="0.65">
+    <rect x="1150" y="590" width="100" height="60" rx="3" fill="#8C3A35"/>
+    <rect x="1280" y="610" width="90" height="55" rx="3" fill="#B35645"/>
+    <rect x="1400" y="580" width="120" height="70" rx="3" fill="#692523"/>
+    <rect x="1140" y="680" width="130" height="80" rx="4" fill="#A94842"/>
+    <rect x="1300" y="700" width="120" height="75" rx="4" fill="#7A2D2A"/>
+    <rect x="1450" y="690" width="150" height="90" rx="4" fill="#8C3A35"/>
+    <rect x="1130" y="800" width="170" height="100" rx="5" fill="#9C443E"/>
+    <rect x="1330" y="820" width="160" height="95" rx="5" fill="#B35645"/>
+    <rect x="1520" y="810" width="190" height="110" rx="5" fill="#692523"/>
+    <rect x="1120" y="930" width="220" height="130" rx="6" fill="#8C3A35"/>
+    <rect x="1370" y="950" width="240" height="130" rx="6" fill="#A94842"/>
+    <rect x="1640" y="940" width="200" height="120" rx="6" fill="#7A2D2A"/>
+  </g>
+
+  <!-- Foliage / Tree Canopy (Tropical Greenery Patches) -->
+  <g fill="#1F3A22" opacity="0.75">
+    <circle cx="500" cy="560" r="35"/>
+    <circle cx="660" cy="590" r="30"/>
+    <circle cx="1250" cy="570" r="40"/>
+    <circle cx="1380" cy="660" r="45"/>
+    <circle cx="320" cy="670" r="50"/>
+    <circle cx="650" cy="790" r="55"/>
+    <circle cx="1110" cy="760" r="50"/>
+    <circle cx="1500" cy="780" r="60"/>
+    <circle cx="360" cy="900" r="70"/>
+    <circle cx="780" cy="910" r="65"/>
+    <circle cx="1100" cy="910" r="75"/>
+    <circle cx="1620" cy="920" r="80"/>
+  </g>
+
+  <!-- Distant Atmospheric Haze & Warm Glow -->
+  <rect x="0" y="440" width="1920" height="140" fill="#EFA472" opacity="0.15"/>
+</svg>

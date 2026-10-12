@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sfz_lgu_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sfz_portal_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sfz_portal_dev_pass_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-sfz_portal_db}
+    ports:
+      # Exposes to host 5435 by default to prevent conflicts with local host PostgreSQL services
+      - "${POSTGRES_PORT:-5435}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sfz_portal_user} -d ${POSTGRES_DB:-sfz_portal_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local

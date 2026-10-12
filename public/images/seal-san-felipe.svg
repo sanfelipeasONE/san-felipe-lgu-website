@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- Outer Ring Gradient -->
+    <linearGradient id="goldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5C158"/>
+      <stop offset="50%" stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#8F6E16"/>
+    </linearGradient>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4A90E2"/>
+      <stop offset="60%" stop-color="#A1C4FD"/>
+      <stop offset="100%" stop-color="#C2E9FB"/>
+    </linearGradient>
+    <linearGradient id="mountainGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2D5A27"/>
+      <stop offset="100%" stop-color="#1E3F1A"/>
+    </linearGradient>
+    <linearGradient id="seaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1A5276"/>
+      <stop offset="100%" stop-color="#154360"/>
+    </linearGradient>
+    <!-- Circular Path for Top Text -->
+    <path id="topTextPath" d="M 28,100 A 72,72 0 1,1 172,100" />
+    <!-- Circular Path for Bottom Text -->
+    <path id="bottomTextPath" d="M 172,100 A 72,72 0 0,1 28,100" />
+  </defs>
+
+  <!-- Outer Ring -->
+  <circle cx="100" cy="100" r="98" fill="url(#goldRim)" stroke="#651521" stroke-width="2"/>
+  <circle cx="100" cy="100" r="92" fill="#8B1E2D" stroke="#E5C158" stroke-width="1.5"/>
+
+  <!-- Seal Text in Outer Ring -->
+  <text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" font-weight="900" fill="#FFFFFF" letter-spacing="2">
+    <textPath href="#topTextPath" startOffset="50%" text-anchor="middle">
+      MUNICIPALITY OF SAN FELIPE
+    </textPath>
+  </text>
+  <text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="800" fill="#E5C158" letter-spacing="1.5">
+    <textPath href="#bottomTextPath" startOffset="50%" text-anchor="middle">
+      PROVINCE OF ZAMBALES &bull; 1853
+    </textPath>
+  </text>
+
+  <!-- Inner Beaded Ring -->
+  <circle cx="100" cy="100" r="74" fill="#FFFFFF" stroke="#C9A227" stroke-width="2"/>
+
+  <!-- Inner Shield / Circle Content -->
+  <g clip-path="url(#innerClip)">
+    <clipPath id="innerClip">
+      <circle cx="100" cy="100" r="71"/>
+    </clipPath>
+
+    <!-- Sky -->
+    <rect x="25" y="25" width="150" height="150" fill="url(#skyGrad)"/>
+
+    <!-- Sun with Rays -->
+    <circle cx="100" cy="72" r="16" fill="#F4D03F" stroke="#D4AC0D" stroke-width="1"/>
+    <g stroke="#F4D03F" stroke-width="2" stroke-linecap="round">
+      <line x1="100" y1="50" x2="100" y2="44"/>
+      <line x1="100" y1="94" x2="100" y2="100"/>
+      <line x1="78" y1="72" x2="72" y2="72"/>
+      <line x1="122" y1="72" x2="128" y2="72"/>
+      <line x1="84" y1="56" x2="80" y2="52"/>
+      <line x1="116" y1="56" x2="120" y2="52"/>
+      <line x1="84" y1="88" x2="80" y2="92"/>
+      <line x1="116" y1="88" x2="120" y2="92"/>
+    </g>
+
+    <!-- Zambales Mountain Silhouette -->
+    <polygon points="20,115 55,85 85,110 120,80 155,108 180,115 180,150 20,150" fill="url(#mountainGrad)"/>
+    <polygon points="65,115 95,95 130,118 160,105 180,120 180,150 65,150" fill="#23491E" opacity="0.8"/>
+
+    <!-- Sea Waves (West Philippine Sea) -->
+    <rect x="20" y="115" width="160" height="40" fill="url(#seaGrad)"/>
+    <path d="M 20,122 Q 35,118 50,122 T 80,122 T 110,122 T 140,122 T 170,122 T 190,122 L 190,160 L 20,160 Z" fill="#2471A3" opacity="0.6"/>
+    <path d="M 20,128 Q 40,125 60,128 T 100,128 T 140,128 T 180,128 L 180,160 L 20,160 Z" fill="#1B4F72"/>
+
+    <!-- Philippine Flag Red/White/Blue heraldic bar at bottom -->
+    <polygon points="70,140 100,125 130,140 100,165" fill="#C9A227" stroke="#FFFFFF" stroke-width="1"/>
+    <text x="100" y="148" font-family="-apple-system, sans-serif" font-size="8" font-weight="900" fill="#651521" text-anchor="middle">
+      1853
+    </text>
+  </g>
+</svg>

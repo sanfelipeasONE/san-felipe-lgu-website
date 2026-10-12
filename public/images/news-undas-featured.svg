@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="nightSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0B0C10"/>
+      <stop offset="40%" stop-color="#1F2833"/>
+      <stop offset="100%" stop-color="#0F141C"/>
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#FFF8E7"/>
+      <stop offset="25%" stop-color="#F1C40F" stop-opacity="0.8"/>
+      <stop offset="70%" stop-color="#D35400" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#0B0C10" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Night Sky -->
+  <rect x="0" y="0" width="800" height="450" fill="url(#nightSky)"/>
+
+  <!-- Full Moon Glow -->
+  <circle cx="400" cy="180" r="140" fill="url(#moonGlow)"/>
+  <circle cx="400" cy="180" r="60" fill="#FFF8E7" opacity="0.95"/>
+
+  <!-- Bats Silhouette -->
+  <g fill="#0B0C10" opacity="0.85">
+    <path d="M 220,90 Q 230,75 240,90 Q 250,70 260,90 Q 240,82 220,90 Z"/>
+    <path d="M 520,70 Q 532,52 544,70 Q 556,48 568,70 Q 544,60 520,70 Z"/>
+    <path d="M 310,120 Q 318,108 326,120 Q 334,105 342,120 Q 326,114 310,120 Z"/>
+    <path d="M 470,110 Q 480,95 490,110 Q 500,92 510,110 Q 490,102 470,110 Z"/>
+  </g>
+
+  <!-- Cemetery Hill Silhouette & Tombstones -->
+  <path d="M 0,380 Q 200,320 400,340 T 800,350 L 800,450 L 0,450 Z" fill="#07090C"/>
+
+  <!-- Crosses and Crypts -->
+  <g fill="#141920">
+    <!-- Cross 1 -->
+    <rect x="140" y="300" width="8" height="60"/>
+    <rect x="130" y="315" width="28" height="8"/>
+    <!-- Tombstone 2 -->
+    <path d="M 230,340 Q 245,310 260,340 L 260,370 L 230,370 Z"/>
+    <!-- Cross 3 -->
+    <rect x="620" y="310" width="8" height="55"/>
+    <rect x="610" y="322" width="28" height="8"/>
+    <!-- Tombstone 4 -->
+    <path d="M 680,335 Q 695,315 710,335 L 710,365 L 680,365 Z"/>
+  </g>
+
+  <!-- Atmospheric Foreground Mist -->
+  <rect x="0" y="360" width="800" height="90" fill="url(#mist)" opacity="0.3"/>
+  <linearGradient id="mist" x1="0%" y1="100%" x2="0%" y2="0%">
+    <stop offset="0%" stop-color="#E67E22"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Large Stylized Headline -->
+  <text x="400" y="225" font-family="-apple-system, BlinkMacSystemFont, 'Impact', sans-serif" font-size="44" font-weight="900" fill="#F39C12" letter-spacing="4" text-anchor="middle" stroke="#000000" stroke-width="2">
+    ALAW NI MINATAY
+  </text>
+  <text x="400" y="260" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" fill="#FDFEFE" letter-spacing="3" text-anchor="middle">
+    THE OFFICIAL SAN FELIPE UNDAS 2024 ADVISORY
+  </text>
+  <text x="400" y="285" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#FAD7A0" letter-spacing="1" text-anchor="middle">
+    PUBLIC GUIDELINES &bull; TRAFFIC REROUTING &bull; VISITING HOURS
+  </text>
+</svg>

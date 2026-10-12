@@ -1,0 +1,122 @@
+// Prisma schema for San Felipe LGU Digital Portal & Multi-Office CMS
+// Phase 1: Core Identity, Office, and RBAC Foundation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum OfficeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Municipal Office entity representing LGU departments/offices.
+model Office {
+  id          String       @id @default(cuid())
+  name        String       // e.g. "Municipal Health Office"
+  shortName   String?      // e.g. "MHO"
+  slug        String       @unique // e.g. "municipal-health-office" for public URLs
+  description String?      @db.Text
+  mandate     String?      @db.Text
+  officeHead  String?      // Name of department head / OIC
+  email       String?
+  phone       String?
+  location    String?      // Physical location inside Municipal Hall / campus
+  officeHours String?      // e.g. "Monday - Friday: 8:00 AM - 5:00 PM"
+  status      OfficeStatus @default(ACTIVE)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  users       User[]
+
+  @@index([status])
+  @@map("offices")
+}
+
+/// User entity for authenticated municipal staff and administrators.
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  status       UserStatus @default(ACTIVE)
+  lastLoginAt  DateTime?
+
+  // Office affiliation (optional for system-wide administrators)
+  officeId     String?
+  office       Office?    @relation(fields: [officeId], references: [id], onDelete: SetNull)
+
+  // Role-based access control
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([officeId])
+  @@index([roleId])
+  @@index([status])
+  @@map("users")
+}
+
+/// Role entity for defining system and office authority levels.
+model Role {
+  id            String           @id @default(cuid())
+  name          String           @unique // e.g. "Super Administrator"
+  slug          String           @unique // e.g. "super-admin"
+  description   String?
+  isSystemScope Boolean          @default(false) // If true, role operates across all municipal offices
+
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  users         User[]
+  permissions   RolePermission[]
+
+  @@map("roles")
+}
+
+/// Granular permission code (e.g. "posts.create", "offices.update").
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique // e.g. "posts.create"
+  name        String           // Human-readable permission name
+  module      String           // Functional area: "users", "offices", "posts", etc.
+  description String?
+
+  createdAt   DateTime         @default(now())
+
+  roles       RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+/// Join table linking Roles to their assigned Permissions.
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
