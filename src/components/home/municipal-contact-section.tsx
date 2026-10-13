@@ -86,9 +86,12 @@ export function MunicipalContactSection() {
                     <strong className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Trunkline:
                     </strong>
-                    <span className="text-gov-charcoal leading-snug font-mono">
+                    <a
+                      href={`tel:${MUNICIPAL_CONTACT_DATA.phone.replace(/[^0-9+]/g, "")}`}
+                      className="text-gov-charcoal leading-snug font-mono hover:text-burgundy-700 hover:underline transition-colors block"
+                    >
                       {MUNICIPAL_CONTACT_DATA.phone}
-                    </span>
+                    </a>
                   </div>
                 </li>
 
@@ -100,9 +103,12 @@ export function MunicipalContactSection() {
                     <strong className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Official Inquiries:
                     </strong>
-                    <span className="text-gov-charcoal leading-snug">
+                    <a
+                      href={`mailto:${MUNICIPAL_CONTACT_DATA.email}`}
+                      className="text-gov-charcoal leading-snug hover:text-burgundy-700 hover:underline transition-colors block"
+                    >
                       {MUNICIPAL_CONTACT_DATA.email}
-                    </span>
+                    </a>
                   </div>
                 </li>
 
@@ -114,21 +120,26 @@ export function MunicipalContactSection() {
                     <strong className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                       Official Facebook:
                     </strong>
-                    <span className="text-gov-charcoal leading-snug">
+                    <a
+                      href={MUNICIPAL_CONTACT_DATA.facebookUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gov-charcoal leading-snug hover:text-burgundy-700 hover:underline transition-colors block"
+                    >
                       {MUNICIPAL_CONTACT_DATA.facebook}
-                    </span>
+                    </a>
                   </div>
                 </li>
               </ul>
             </div>
 
             <div className="mt-8 pt-5 border-t border-gray-200 flex flex-wrap gap-3">
-              <Link href="/contact">
-                <Button variant="primary" size="sm" className="font-bold text-xs uppercase tracking-wider bg-burgundy-800 hover:bg-burgundy-900">
+              <a href={`mailto:${MUNICIPAL_CONTACT_DATA.email}`}>
+                <Button variant="primary" size="sm" className="font-bold text-xs uppercase tracking-wider bg-burgundy-800 hover:bg-burgundy-900 cursor-pointer">
                   <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
                   <span>Send a Message</span>
                 </Button>
-              </Link>
+              </a>
               <Link href="#municipal-map">
                 <Button variant="outline" size="sm" className="font-bold text-xs uppercase tracking-wider border-gray-300 hover:border-burgundy-700 hover:text-burgundy-800">
                   <Navigation className="h-3.5 w-3.5 mr-1.5 text-burgundy-700" />

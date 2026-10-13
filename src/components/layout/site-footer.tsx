@@ -42,9 +42,18 @@ export function SiteFooter() {
               <span className="font-bold uppercase tracking-wider text-white text-[11px]">
                 Follow San Felipe LGU:
               </span>
-              <span className="text-white/85 text-xs hover:text-white cursor-pointer">Facebook</span>
+              <a
+                href="https://www.facebook.com/sanfelipeasone"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/85 text-xs hover:text-white transition-colors"
+              >
+                Facebook
+              </a>
               <span className="text-white/40" aria-hidden="true">&bull;</span>
-              <span className="text-white/85 text-xs hover:text-white cursor-pointer">Portal News</span>
+              <Link href="/news" className="text-white/85 text-xs hover:text-white transition-colors">
+                Portal News
+              </Link>
             </div>
           </div>
 

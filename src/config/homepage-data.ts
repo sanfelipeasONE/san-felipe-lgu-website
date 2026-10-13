@@ -312,12 +312,13 @@ export const EMERGENCY_DATA: EmergencyItem[] = [
 ];
 
 export const MUNICIPAL_CONTACT_DATA = {
-  hallName: "San Felipe Town Hall",
+  hallName: "San Felipe Municipal Hall",
   hallSubtitle: "Municipal Government Center Compound",
-  address: "Municipal Hall Compound, National Highway, San Felipe, Zambales 2204 (Placeholder)",
-  hours: "Monday - Friday: 8:00 AM - 5:00 PM (Except Holidays)",
-  phone: "(047) 000-0000 (Placeholder)",
-  email: "info@sanfelipe.gov.ph (Placeholder)",
-  facebook: "facebook.com/sanfelipegov (Placeholder)",
+  address: "Municipal Hall Compound, National Highway, San Felipe, Zambales 2204",
+  hours: "Monday - Friday: 8:00 AM - 5:00 PM",
+  phone: "0969-540-9138",
+  email: "lgu.sanfelipe@gmail.com",
+  facebook: "facebook.com/sanfelipeasone",
+  facebookUrl: "https://www.facebook.com/sanfelipeasone",
   mapAdvisory: "Public Advisory: The Municipal Hall is conveniently situated along the National Highway, accessible via public bus and provincial transit routes.",
 };

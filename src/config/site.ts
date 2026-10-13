@@ -19,11 +19,16 @@ export const SITE_CONFIG = {
   country: "Republic of the Philippines",
   fullTitle: "Municipality of San Felipe, Zambales",
   portalName: "San Felipe LGU Digital Portal",
-  // Clearly marked placeholders per Project Rule 22
-  contactPlaceholder: {
-    address: "Municipal Hall, San Felipe, Zambales, Philippines (Placeholder)",
-    email: "info@sanfelipe.gov.ph (Placeholder)",
-    phone: "(047) 000-0000 (Placeholder)",
-    emergencyHotline: "911 / 117 (National) / (047) 000-0000 (MDRRMO Placeholder)",
+  contact: {
+    address: "Municipal Hall Compound, National Highway, San Felipe, Zambales 2204",
+    email: "lgu.sanfelipe@gmail.com",
+    phone: "0969-540-9138",
+    facebook: "https://www.facebook.com/sanfelipeasone",
+    emergencyHotlines: {
+      mdrrmo: "0929-183-8441",
+      police: "0998-598-5509",
+      bfp: "0946-451-2121",
+      rhu: "0931-793-8035",
+    },
   },
 } as const;
