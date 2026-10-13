@@ -35,7 +35,7 @@ export function SiteFooter() {
             </div>
 
             <p className="text-white/80 text-xs leading-relaxed max-w-md">
-              Official digital gateway of the Municipal Local Government Unit of San Felipe, Zambales. Committed to transparent governance, inclusive civic development, and efficient public delivery across all barangays.
+              Official digital gateway of the Municipal Local Government Unit of San Felipe, Zambales.
             </p>
 
             <div className="flex items-center space-x-3 text-xs text-gold-400">
@@ -50,10 +50,6 @@ export function SiteFooter() {
               >
                 Facebook
               </a>
-              <span className="text-white/40" aria-hidden="true">&bull;</span>
-              <Link href="/news" className="text-white/85 text-xs hover:text-white transition-colors">
-                Portal News
-              </Link>
             </div>
           </div>
 
@@ -83,11 +79,6 @@ export function SiteFooter() {
                   Citizen&apos;s Charter
                 </Link>
               </li>
-              <li>
-                <Link href="/services/forms" className="hover:text-gold-300 transition-colors">
-                  Ordinances & Resolutions
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -98,33 +89,28 @@ export function SiteFooter() {
             </h3>
             <ul className="space-y-2 text-xs text-white/85">
               <li>
+                <Link href="/services/citizens-charter" className="hover:text-gold-300 transition-colors">
+                  Citizen Charter
+                </Link>
+              </li>
+              <li>
                 <Link href="/services/business-permits" className="hover:text-gold-300 transition-colors">
-                  Business Permits & Licensing
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/civil-registry" className="hover:text-gold-300 transition-colors">
-                  Civil Registry Applications
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/tax" className="hover:text-gold-300 transition-colors">
-                  Real Property Tax Assessment
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/health" className="hover:text-gold-300 transition-colors">
-                  Health & Medical Services
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/careers" className="hover:text-gold-300 transition-colors">
-                  Public Employment Services (PESO)
+                  Business Permits
                 </Link>
               </li>
               <li>
                 <Link href="/services/forms" className="hover:text-gold-300 transition-colors">
-                  Downloadable Government Forms
+                  Downloadable Forms
+                </Link>
+              </li>
+              <li>
+                <Link href="/services/careers" className="hover:text-gold-300 transition-colors">
+                  Job Opportunities
+                </Link>
+              </li>
+              <li>
+                <Link href="#emergency-hotlines" className="hover:text-gold-300 transition-colors">
+                  Emergency Hotlines
                 </Link>
               </li>
             </ul>
@@ -137,18 +123,6 @@ export function SiteFooter() {
             &copy; 2026 Republic of the Philippines &bull; Municipality of San Felipe, Zambales. All rights reserved.
           </p>
           <div className="flex items-center space-x-3 flex-wrap">
-            <Link href="#" className="hover:text-white transition-colors">
-              Privacy Policy
-            </Link>
-            <span aria-hidden="true">&bull;</span>
-            <Link href="#" className="hover:text-white transition-colors">
-              Terms of Use
-            </Link>
-            <span aria-hidden="true">&bull;</span>
-            <Link href="#" className="hover:text-white transition-colors">
-              Accessibility
-            </Link>
-            <span aria-hidden="true">&bull;</span>
             <Link
               href="/staff/login"
               className="inline-flex items-center gap-1 text-gold-400 font-semibold hover:text-gold-300 transition-colors"
