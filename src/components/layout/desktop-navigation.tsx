@@ -10,11 +10,9 @@ import { cn } from "@/lib/utils";
 const DROPDOWN_ITEMS: Record<string, Array<{ title: string; href: string }>> = {
   Government: [
     { title: "Municipal Officials", href: "/government/officials" },
-    { title: "Government Overview", href: "/government" },
   ],
   Offices: [
     { title: "All Municipal Offices", href: "/offices" },
-    { title: "Frontline Services", href: "/services" },
   ],
 };
 
