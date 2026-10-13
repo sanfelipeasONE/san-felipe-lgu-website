@@ -6,12 +6,29 @@
  * client data or CMS database records are integrated in future phases.
  */
 
-export const ADVISORY_DATA = {
-  badge: "LATEST ADVISORY",
-  title: "SCHEDULE: ADVISORY ON THE CONDUCT OF ROAD CLEARING AND TREE TRIMMING OPERATIONS ALONG NATIONAL HIGHWAY",
-  date: "October 31, 2024 (Demo)",
-  href: "/news/road-clearing-advisory-demo",
-};
+export interface AdvisoryItem {
+  badge: string;
+  title: string;
+  date: string;
+  href: string;
+}
+
+export const ADVISORIES_DATA: AdvisoryItem[] = [
+  {
+    badge: "LATEST ADVISORY",
+    title: "SCHEDULE: ADVISORY ON THE CONDUCT OF ROAD CLEARING AND TREE TRIMMING OPERATIONS ALONG NATIONAL HIGHWAY",
+    date: "October 31, 2024",
+    href: "/news/road-clearing-tree-trimming-operations-national-highway",
+  },
+  {
+    badge: "PUBLIC NOTICE",
+    title: "SCHEDULE: BUSINESS PERMIT & LICENSING RENEWAL PERIOD FOR CALENDAR YEAR 2026",
+    date: "January 5, 2026",
+    href: "/news/schedule-business-permit-licensing-renewal-2026",
+  },
+];
+
+export const ADVISORY_DATA = ADVISORIES_DATA[0];
 
 export interface ServiceItem {
   id: string;

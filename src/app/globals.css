@@ -32,6 +32,11 @@
   --gold: #c9a227;
   --surface: #f7f9fa;
   --border: #dbe0e6;
+
+  /* Restrained civic motion system */
+  --ease-civic: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-hover: 150ms;
+  --duration-reveal: 400ms;
 }
 
 body {
@@ -54,4 +59,105 @@ body {
   font-weight: 600;
   border-radius: 0.25rem;
   outline: 3px solid var(--gold);
+}
+
+/* Hero background slow zoom: 20s, one time, scale 1.0 to 1.06 */
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+.animate-hero-zoom {
+  animation: hero-zoom 20s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform;
+}
+
+/* Hero entrance staggered animation: 400ms, 80ms stagger, cubic-bezier(0.22, 1, 0.36, 1) */
+@keyframes hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hero-eyebrow {
+  animation: hero-fade-up 400ms cubic-bezier(0.22, 1, 0.36, 1) 0ms both;
+  will-change: opacity, transform;
+}
+
+.animate-hero-heading {
+  animation: hero-fade-up 400ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+  will-change: opacity, transform;
+}
+
+.animate-hero-subtitle {
+  animation: hero-fade-up 400ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
+  will-change: opacity, transform;
+}
+
+.animate-hero-buttons {
+  animation: hero-fade-up 400ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+  will-change: opacity, transform;
+}
+
+/* Scroll Reveal System */
+[data-reveal-ready="true"] {
+  opacity: 0;
+  transform: translateY(10px);
+  will-change: opacity, transform;
+}
+
+[data-reveal-ready="true"][data-variant="fade-only"] {
+  transform: none;
+  will-change: opacity;
+}
+
+[data-reveal-ready="true"][data-revealed="true"] {
+  opacity: 1;
+  transform: translateY(0);
+  transition-property: opacity, transform;
+  transition-duration: 400ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal-ready="true"][data-variant="fade-only"][data-revealed="true"] {
+  transform: none;
+  transition-property: opacity;
+}
+
+/* Respect prefers-reduced-motion: disable motion entirely */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-hero-zoom,
+  .animate-hero-eyebrow,
+  .animate-hero-heading,
+  .animate-hero-subtitle,
+  .animate-hero-buttons {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  [data-reveal-ready="true"] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
