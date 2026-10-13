@@ -39,6 +39,10 @@
   --duration-reveal: 400ms;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
@@ -134,6 +138,64 @@ body {
   transition-property: opacity;
 }
 
+/* ============================================================
+   CLICKABLE CARD INTERACTION SYSTEM
+   Official San Felipe LGU civic motion pattern.
+   Restrained, polished, and civic hover & keyboard interactions.
+   ============================================================ */
+
+.card-interactive {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out, border-color 200ms ease-out, background-color 200ms ease-out;
+  will-change: transform, box-shadow;
+}
+
+.card-interactive:hover,
+.card-interactive:focus-within,
+.card-interactive:focus-visible {
+  transform: translateY(-3.5px);
+  box-shadow: 0 10px 20px -3px rgba(17, 24, 39, 0.09), 0 4px 8px -2px rgba(17, 24, 39, 0.05);
+  border-color: #8b1e2d;
+}
+
+/* Retain top accent bar color for cards with distinct service categories */
+.card-interactive.has-top-accent:hover,
+.card-interactive.has-top-accent:focus-within,
+.card-interactive.has-top-accent:focus-visible {
+  border-right-color: #8b1e2d;
+  border-bottom-color: #8b1e2d;
+  border-left-color: #8b1e2d;
+}
+
+/* Subtle image scale for cards containing media (approx 1.03 scale over 300ms) */
+.card-image-zoom {
+  transition: transform 300ms ease-out;
+  will-change: transform;
+}
+
+.group:hover .card-image-zoom,
+.card-interactive:hover .card-image-zoom,
+.group:focus-within .card-image-zoom,
+.card-interactive:focus-within .card-image-zoom,
+.group:focus-visible .card-image-zoom,
+.card-interactive:focus-visible .card-image-zoom {
+  transform: scale(1.03);
+}
+
+/* Navigation arrow micro-translation (2-3px) */
+.card-arrow-shift {
+  transition: transform 200ms ease-out;
+  will-change: transform;
+}
+
+.group:hover .card-arrow-shift,
+.card-interactive:hover .card-arrow-shift,
+.group:focus-within .card-arrow-shift,
+.card-interactive:focus-within .card-arrow-shift,
+.group:focus-visible .card-arrow-shift,
+.card-interactive:focus-visible .card-arrow-shift {
+  transform: translateX(3px);
+}
+
 /* Respect prefers-reduced-motion: disable motion entirely */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -159,5 +221,35 @@ body {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+
+  .card-interactive,
+  .card-interactive:hover,
+  .card-interactive:focus-within,
+  .card-interactive:focus-visible,
+  .card-interactive.has-top-accent:hover,
+  .card-interactive.has-top-accent:focus-within,
+  .card-interactive.has-top-accent:focus-visible {
+    transform: none !important;
+  }
+
+  .card-image-zoom,
+  .group:hover .card-image-zoom,
+  .card-interactive:hover .card-image-zoom,
+  .group:focus-within .card-image-zoom,
+  .card-interactive:focus-within .card-image-zoom,
+  .group:focus-visible .card-image-zoom,
+  .card-interactive:focus-visible .card-image-zoom {
+    transform: none !important;
+  }
+
+  .card-arrow-shift,
+  .group:hover .card-arrow-shift,
+  .card-interactive:hover .card-arrow-shift,
+  .group:focus-within .card-arrow-shift,
+  .card-interactive:focus-within .card-arrow-shift,
+  .group:focus-visible .card-arrow-shift,
+  .card-interactive:focus-visible .card-arrow-shift {
+    transform: none !important;
   }
 }

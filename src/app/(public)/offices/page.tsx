@@ -5,7 +5,7 @@ import { OfficeDirectory } from "@/components/offices/office-directory";
 import { getCanonicalOffices } from "@/config/offices-data";
 
 export const metadata: Metadata = {
-  title: "Municipal Offices | Municipality of San Felipe, Zambales",
+  title: "Municipal Offices",
   description:
     "Directory of offices serving the Municipality of San Felipe, Zambales.",
 };

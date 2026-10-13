@@ -202,3 +202,7 @@ export function getCanonicalOffices(): MunicipalOffice[] {
 export function getOfficeBySlug(slug: string): MunicipalOffice | undefined {
   return VERIFIED_MUNICIPAL_OFFICES.find((o) => o.slug === slug);
 }
+
+export function getOfficeById(id: string): MunicipalOffice | undefined {
+  return VERIFIED_MUNICIPAL_OFFICES.find((o) => o.id === id);
+}

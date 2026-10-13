@@ -4,6 +4,27 @@ export interface NavItem {
   description?: string;
 }
 
+export interface SubNavItem {
+  title: string;
+  href: string;
+}
+
+export const NAV_DROPDOWN_ITEMS: Record<string, SubNavItem[]> = {
+  Government: [
+    { title: "Municipal Officials", href: "/government/officials" },
+  ],
+  Offices: [
+    { title: "All Municipal Offices", href: "/offices" },
+  ],
+  Services: [
+    { title: "Citizen's Charter", href: "/services/citizens-charter" },
+    { title: "Business Permits", href: "/services/business-permits" },
+    { title: "Downloadable Forms", href: "/services/downloadable-forms" },
+    { title: "Job Opportunities", href: "/services/job-opportunities" },
+    { title: "Emergency Hotlines", href: "/#emergency-hotlines" },
+  ],
+};
+
 export const MAIN_NAV_ITEMS: NavItem[] = [
   { title: "Home", href: "/" },
   { title: "About", href: "/about" },

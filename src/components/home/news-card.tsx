@@ -4,6 +4,12 @@ import { ArrowRight, Calendar, Building2 } from "lucide-react";
 import type { NewsItem } from "@/config/homepage-data";
 import { Badge } from "@/components/ui/badge";
 import { ASSETS } from "@/config/assets";
+import { cn } from "@/lib/utils";
+import {
+  CARD_INTERACTIVE_CLASSES,
+  CARD_IMAGE_ZOOM_CLASSES,
+  CARD_ARROW_SHIFT_CLASSES,
+} from "@/lib/card-styles";
 
 interface NewsCardProps {
   news: NewsItem;
@@ -13,7 +19,12 @@ interface NewsCardProps {
 export function NewsCard({ news, featured = false }: NewsCardProps) {
   if (featured) {
     return (
-      <article className="bg-white border border-gray-200 rounded-xs overflow-hidden shadow-2xs hover:shadow-xs hover:border-burgundy-700 focus-within:border-burgundy-700 focus-within:shadow-xs transition-all duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col justify-between h-full group">
+      <article
+        className={cn(
+          "bg-white border border-gray-200 rounded-xs overflow-hidden shadow-2xs flex flex-col justify-between h-full group",
+          CARD_INTERACTIVE_CLASSES
+        )}
+      >
         <div>
           {/* Featured Graphic Banner with next/image via centralized registry */}
           <div className="relative h-60 sm:h-68 lg:h-76 w-full bg-slate-950 overflow-hidden">
@@ -22,7 +33,7 @@ export function NewsCard({ news, featured = false }: NewsCardProps) {
               alt={ASSETS.news.undasBanner.alt}
               fill
               sizes="(max-width: 1024px) 100vw, 60vw"
-              className="object-cover object-center"
+              className={cn("object-cover object-center", CARD_IMAGE_ZOOM_CLASSES)}
             />
             {/* Top Badge Overlay */}
             <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10">
@@ -42,7 +53,7 @@ export function NewsCard({ news, featured = false }: NewsCardProps) {
               <span>{news.publishingOffice}</span>
             </div>
 
-            <h3 className="text-xl sm:text-2xl font-black text-gov-charcoal tracking-tight leading-snug mb-3 group-hover:text-burgundy-800 group-focus-within:text-burgundy-800 transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]">
+            <h3 className="text-xl sm:text-2xl font-black text-gov-charcoal tracking-tight leading-snug mb-3 group-hover:text-burgundy-800 group-focus-within:text-burgundy-800 transition-colors duration-200">
               <Link href={news.href} className="focus-visible:outline-none focus-visible:underline">{news.title}</Link>
             </h3>
 
@@ -55,10 +66,10 @@ export function NewsCard({ news, featured = false }: NewsCardProps) {
         <div className="p-6 pt-0">
           <Link
             href={news.href}
-            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-burgundy-800 hover:text-burgundy-900 focus-visible:outline-none focus-visible:underline transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-burgundy-800 hover:text-burgundy-900 focus-visible:outline-none focus-visible:underline transition-colors duration-200"
           >
             <span>Read Full Advisory</span>
-            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 group-focus-within:translate-x-1 transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+            <ArrowRight className={cn("h-3.5 w-3.5", CARD_ARROW_SHIFT_CLASSES)} />
           </Link>
         </div>
       </article>
@@ -67,7 +78,12 @@ export function NewsCard({ news, featured = false }: NewsCardProps) {
 
   // Secondary Compact News Item Card
   return (
-    <article className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs hover:shadow-xs hover:border-burgundy-700 focus-within:border-burgundy-700 focus-within:shadow-xs transition-all duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col justify-between group">
+    <article
+      className={cn(
+        "bg-white border border-gray-200 rounded-xs p-5 shadow-2xs flex flex-col justify-between group",
+        CARD_INTERACTIVE_CLASSES
+      )}
+    >
       <div>
         <div className="flex items-center justify-between gap-2 mb-2 text-[11px]">
           <Badge variant="burgundy">{news.category}</Badge>
@@ -77,7 +93,7 @@ export function NewsCard({ news, featured = false }: NewsCardProps) {
           </span>
         </div>
 
-        <h3 className="text-sm sm:text-base font-bold text-gov-charcoal tracking-tight leading-snug mb-2 group-hover:text-burgundy-800 group-focus-within:text-burgundy-800 transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]">
+        <h3 className="text-sm sm:text-base font-bold text-gov-charcoal tracking-tight leading-snug mb-2 group-hover:text-burgundy-800 group-focus-within:text-burgundy-800 transition-colors duration-200">
           <Link href={news.href} className="focus-visible:outline-none focus-visible:underline">{news.title}</Link>
         </h3>
 
@@ -92,10 +108,10 @@ export function NewsCard({ news, featured = false }: NewsCardProps) {
         </span>
         <Link
           href={news.href}
-          className="inline-flex items-center gap-1 text-[11px] font-bold text-burgundy-800 hover:text-burgundy-950 focus-visible:outline-none focus-visible:underline transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-burgundy-800 hover:text-burgundy-950 focus-visible:outline-none focus-visible:underline transition-colors duration-200"
         >
           <span>Read More</span>
-          <ArrowRight className="h-3 w-3 group-hover:translate-x-1 group-focus-within:translate-x-1 transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+          <ArrowRight className={cn("h-3 w-3", CARD_ARROW_SHIFT_CLASSES)} />
         </Link>
       </div>
     </article>

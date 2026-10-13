@@ -4,6 +4,12 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { NewsArticle } from "@/config/news-data";
 import { ASSETS } from "@/config/assets";
+import { cn } from "@/lib/utils";
+import {
+  CARD_LINK_INTERACTIVE_CLASSES,
+  CARD_IMAGE_ZOOM_CLASSES,
+  CARD_ARROW_SHIFT_CLASSES,
+} from "@/lib/card-styles";
 
 export interface OtherNewsSidebarProps {
   articles: NewsArticle[];
@@ -33,7 +39,10 @@ export function OtherNewsSidebar({ articles }: OtherNewsSidebarProps) {
             <article key={item.id} className="group">
               <Link
                 href={`/news/${item.slug}`}
-                className="block relative w-full aspect-16/10 rounded-xs overflow-hidden bg-slate-900 shadow-2xs hover:shadow-xs transition-shadow"
+                className={cn(
+                  "block relative w-full aspect-16/10 rounded-xs overflow-hidden bg-slate-900 shadow-2xs",
+                  CARD_LINK_INTERACTIVE_CLASSES
+                )}
               >
                 {/* Background Image */}
                 <Image
@@ -41,7 +50,7 @@ export function OtherNewsSidebar({ articles }: OtherNewsSidebarProps) {
                   alt={imgAlt}
                   fill
                   sizes="(max-width: 1024px) 100vw, 320px"
-                  className="object-cover object-center group-hover:scale-103 transition-transform duration-300"
+                  className={cn("object-cover object-center", CARD_IMAGE_ZOOM_CLASSES)}
                 />
 
                 {/* Dark Gradient Overlay for Title Legibility */}
@@ -59,7 +68,7 @@ export function OtherNewsSidebar({ articles }: OtherNewsSidebarProps) {
 
                 {/* Bottom Overlay Title */}
                 <div className="absolute bottom-0 inset-x-0 p-3 z-10">
-                  <h3 className="text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-gold-300 transition-colors">
+                  <h3 className="text-xs font-bold text-white leading-snug line-clamp-2 group-hover:text-gold-300 group-focus-visible:text-gold-300 transition-colors duration-200">
                     {item.title}
                   </h3>
                 </div>
@@ -76,7 +85,7 @@ export function OtherNewsSidebar({ articles }: OtherNewsSidebarProps) {
           className="text-xs font-bold text-burgundy-700 hover:text-burgundy-900 inline-flex items-center gap-1 group"
         >
           <span>View All Municipal News</span>
-          <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          <ArrowRight className={cn("h-3 w-3", CARD_ARROW_SHIFT_CLASSES)} aria-hidden="true" />
         </Link>
       </div>
     </aside>

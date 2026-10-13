@@ -4,6 +4,11 @@ import { ArrowRight, ShieldCheck, FileCheck, Banknote, Landmark, FileText, Scale
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { TRANSPARENCY_DATA } from "@/config/homepage-data";
+import { cn } from "@/lib/utils";
+import {
+  CARD_INTERACTIVE_CLASSES,
+  CARD_ARROW_SHIFT_CLASSES,
+} from "@/lib/card-styles";
 
 const transparencyIcons = [
   ShieldCheck,
@@ -32,16 +37,16 @@ export function TransparencySection() {
             </p>
           </div>
 
-          <Link href="/transparency">
+          <div>
             <Button
               variant="outline"
               size="sm"
-              className="border-burgundy-700 text-burgundy-700 hover:bg-burgundy-50 font-bold"
+              disabled
+              className="border-gray-300 text-gray-400 font-bold cursor-not-allowed"
             >
-              <span>View Transparency Portal</span>
-              <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+              <span>Transparency Portal (Pending CMS)</span>
             </Button>
-          </Link>
+          </div>
         </div>
 
         {/* 6-Card Transparency Grid */}
@@ -51,11 +56,14 @@ export function TransparencySection() {
             return (
               <div
                 key={item.code}
-                className="bg-gov-surface border border-gray-200/90 rounded-xs p-5 sm:p-6 shadow-2xs hover:shadow-xs hover:border-burgundy-700 hover:bg-white transition-all flex flex-col justify-between h-full group"
+                className={cn(
+                  "bg-gov-surface border border-gray-200/90 rounded-xs p-5 sm:p-6 shadow-2xs hover:bg-white flex flex-col justify-between h-full group",
+                  CARD_INTERACTIVE_CLASSES
+                )}
               >
                 <div>
                   <div className="flex items-center justify-between mb-3.5">
-                    <div className="w-10 h-10 rounded-xs bg-white border border-gray-200 flex items-center justify-center text-burgundy-700 group-hover:bg-burgundy-800 group-hover:text-white transition-colors">
+                    <div className="w-10 h-10 rounded-xs bg-white border border-gray-200 flex items-center justify-center text-burgundy-700 group-hover:bg-burgundy-800 group-hover:text-white transition-colors duration-200">
                       <Icon className="h-4.5 w-4.5" />
                     </div>
                     <span className="text-[10px] font-mono font-bold uppercase bg-gray-100 text-slate-700 px-2 py-0.5 rounded-xs border border-gray-200">
@@ -63,7 +71,7 @@ export function TransparencySection() {
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold text-gov-charcoal tracking-tight leading-snug mb-2 group-hover:text-burgundy-800 transition-colors">
+                  <h3 className="text-base font-bold text-gov-charcoal tracking-tight leading-snug mb-2 group-hover:text-burgundy-800 group-focus-within:text-burgundy-800 transition-colors duration-200">
                     {item.title}
                   </h3>
 
@@ -75,10 +83,10 @@ export function TransparencySection() {
                 <div className="mt-5 pt-3.5 border-t border-gray-200/80">
                   <Link
                     href={item.href}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-burgundy-700 hover:text-burgundy-900 group"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-burgundy-700 hover:text-burgundy-900 focus-visible:outline-none focus-visible:underline transition-colors duration-200 group"
                   >
                     <span>Inspect Records</span>
-                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    <ArrowRight className={cn("h-3.5 w-3.5", CARD_ARROW_SHIFT_CLASSES)} />
                   </Link>
                 </div>
               </div>

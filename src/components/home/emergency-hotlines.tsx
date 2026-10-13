@@ -8,7 +8,7 @@ export function EmergencyHotlines() {
   return (
     <section
       id="emergency-hotlines"
-      className="bg-burgundy-900 text-white py-14 sm:py-18 border-y-4 border-gold-600 shadow-inner"
+      className="bg-burgundy-900 text-white py-14 sm:py-18 border-y-4 border-gold-600 shadow-inner scroll-mt-28"
     >
       <Container>
         {/* Section Header with zero-delay scroll reveal (never delays content) */}

@@ -65,7 +65,7 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/government" className="hover:text-gold-300 transition-colors">
+                <Link href="/government/officials" className="hover:text-gold-300 transition-colors">
                   Municipal Officials
                 </Link>
               </li>
@@ -75,8 +75,8 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/services/citizens-charter" className="hover:text-gold-300 transition-colors">
-                  Citizen&apos;s Charter
+                <Link href="/news" className="hover:text-gold-300 transition-colors">
+                  News & Announcements
                 </Link>
               </li>
             </ul>
@@ -90,7 +90,7 @@ export function SiteFooter() {
             <ul className="space-y-2 text-xs text-white/85">
               <li>
                 <Link href="/services/citizens-charter" className="hover:text-gold-300 transition-colors">
-                  Citizen Charter
+                  Citizen&apos;s Charter
                 </Link>
               </li>
               <li>
@@ -99,17 +99,17 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/services/forms" className="hover:text-gold-300 transition-colors">
+                <Link href="/services/downloadable-forms" className="hover:text-gold-300 transition-colors">
                   Downloadable Forms
                 </Link>
               </li>
               <li>
-                <Link href="/services/careers" className="hover:text-gold-300 transition-colors">
+                <Link href="/services/job-opportunities" className="hover:text-gold-300 transition-colors">
                   Job Opportunities
                 </Link>
               </li>
               <li>
-                <Link href="#emergency-hotlines" className="hover:text-gold-300 transition-colors">
+                <Link href="/#emergency-hotlines" className="hover:text-gold-300 transition-colors">
                   Emergency Hotlines
                 </Link>
               </li>

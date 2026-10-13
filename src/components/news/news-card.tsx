@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { NewsArticle } from "@/config/news-data";
 import { ASSETS } from "@/config/assets";
+import { CARD_IMAGE_ZOOM_CLASSES } from "@/lib/card-styles";
 
 export interface NewsCardProps {
   article: NewsArticle;
@@ -32,7 +33,7 @@ export function NewsCard({ article, className }: NewsCardProps) {
           alt={imageAlt}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
-          className="object-cover object-center group-hover:scale-102 transition-transform duration-300"
+          className={cn("object-cover object-center", CARD_IMAGE_ZOOM_CLASSES)}
         />
       </Link>
 
@@ -50,7 +51,7 @@ export function NewsCard({ article, className }: NewsCardProps) {
           </div>
 
           {/* Headline */}
-          <h3 className="text-base sm:text-[17px] font-black text-gov-charcoal group-hover:text-burgundy-800 transition-colors line-clamp-2 leading-snug tracking-tight mb-2">
+          <h3 className="text-base sm:text-[17px] font-black text-gov-charcoal group-hover:text-burgundy-800 transition-colors duration-200 line-clamp-2 leading-snug tracking-tight mb-2">
             <Link
               href={`/news/${article.slug}`}
               className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 rounded-xs"

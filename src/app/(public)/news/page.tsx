@@ -5,7 +5,7 @@ import { NewsGrid } from "@/components/news/news-grid";
 import { getAllPublishedArticles } from "@/config/news-data";
 
 export const metadata: Metadata = {
-  title: "News & Announcements | Municipality of San Felipe, Zambales",
+  title: "News & Announcements",
   description:
     "Stay informed about the latest news, announcements, advisories, and public notices from the Municipal Government of San Felipe, Zambales.",
 };

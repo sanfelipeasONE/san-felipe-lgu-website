@@ -5,6 +5,12 @@ import { Calendar, Building2, ArrowRight } from "lucide-react";
 import { NewsBadge } from "@/components/news/news-badge";
 import type { NewsArticle } from "@/config/news-data";
 import { ASSETS } from "@/config/assets";
+import { cn } from "@/lib/utils";
+import {
+  CARD_INTERACTIVE_CLASSES,
+  CARD_IMAGE_ZOOM_CLASSES,
+  CARD_ARROW_SHIFT_CLASSES,
+} from "@/lib/card-styles";
 
 export interface FeaturedNewsProps {
   primary: NewsArticle;
@@ -31,7 +37,12 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
       {/* Asymmetric 2-Column Layout on Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Primary Featured Article (Left 7 Cols) */}
-        <article className="lg:col-span-7 bg-white border border-gray-200 rounded-xs overflow-hidden shadow-xs hover:border-burgundy-700/60 transition-all flex flex-col justify-between group">
+        <article
+          className={cn(
+            "lg:col-span-7 bg-white border border-gray-200 rounded-xs overflow-hidden shadow-xs flex flex-col justify-between group",
+            CARD_INTERACTIVE_CLASSES
+          )}
+        >
           <div>
             {/* Primary Landscape Image */}
             <Link
@@ -45,7 +56,7 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
                 alt={primaryImgAlt}
                 fill
                 sizes="(max-width: 1024px) 100vw, 60vw"
-                className="object-cover object-center group-hover:scale-102 transition-transform duration-300"
+                className={cn("object-cover object-center", CARD_IMAGE_ZOOM_CLASSES)}
                 priority
               />
               <div className="absolute top-4 left-4 z-10">
@@ -67,7 +78,7 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
                 </div>
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-black text-gov-charcoal tracking-tight leading-tight group-hover:text-burgundy-800 transition-colors mb-3">
+              <h3 className="text-xl sm:text-2xl font-black text-gov-charcoal tracking-tight leading-tight group-hover:text-burgundy-800 group-focus-within:text-burgundy-800 transition-colors duration-200 mb-3">
                 <Link
                   href={`/news/${primary.slug}`}
                   className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 rounded-xs"
@@ -85,10 +96,10 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
           <div className="p-6 pt-0">
             <Link
               href={`/news/${primary.slug}`}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-burgundy-800 hover:bg-burgundy-900 text-white rounded-xs text-xs font-bold uppercase tracking-wider transition-colors shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-burgundy-800 hover:bg-burgundy-900 text-white rounded-xs text-xs font-bold uppercase tracking-wider transition-colors duration-200 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
             >
               <span>Read Full Priority Advisory</span>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <ArrowRight className={cn("h-3.5 w-3.5", CARD_ARROW_SHIFT_CLASSES)} aria-hidden="true" />
             </Link>
           </div>
         </article>
@@ -102,7 +113,10 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
             return (
               <article
                 key={article.id}
-                className="bg-white border border-gray-200 rounded-xs p-4 sm:p-5 shadow-2xs hover:border-burgundy-700/60 hover:shadow-xs transition-all flex flex-col sm:flex-row lg:flex-col gap-4 group justify-between"
+                className={cn(
+                  "bg-white border border-gray-200 rounded-xs p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row lg:flex-col gap-4 group justify-between",
+                  CARD_INTERACTIVE_CLASSES
+                )}
               >
                 <div className="flex gap-4 items-start">
                   {/* Thumbnail */}
@@ -117,7 +131,7 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
                       alt={article.title}
                       fill
                       sizes="130px"
-                      className="object-cover object-center group-hover:scale-103 transition-transform duration-300"
+                      className={cn("object-cover object-center", CARD_IMAGE_ZOOM_CLASSES)}
                     />
                   </Link>
 
@@ -130,7 +144,7 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
                       </span>
                     </div>
 
-                    <h4 className="text-sm font-extrabold text-gov-charcoal group-hover:text-burgundy-800 transition-colors line-clamp-2 leading-snug mb-1">
+                    <h4 className="text-sm font-extrabold text-gov-charcoal group-hover:text-burgundy-800 group-focus-within:text-burgundy-800 transition-colors duration-200 line-clamp-2 leading-snug mb-1">
                       <Link
                         href={`/news/${article.slug}`}
                         className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 rounded-xs"
@@ -148,10 +162,10 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
                 <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
                   <Link
                     href={`/news/${article.slug}`}
-                    className="inline-flex items-center text-xs font-bold text-burgundy-700 hover:text-burgundy-900 transition-colors"
+                    className="inline-flex items-center text-xs font-bold text-burgundy-700 hover:text-burgundy-900 transition-colors duration-200"
                   >
                     <span>Read Details</span>
-                    <ArrowRight className="h-3 w-3 ml-1 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                    <ArrowRight className={cn("h-3 w-3 ml-1", CARD_ARROW_SHIFT_CLASSES)} aria-hidden="true" />
                   </Link>
 
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">

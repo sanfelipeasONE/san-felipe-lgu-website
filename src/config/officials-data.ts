@@ -97,8 +97,8 @@ export const MUNICIPAL_OFFICIALS_DATA: {
     regularMembers: [
       {
         id: "sb-member-1",
-        slug: "robert-torres",
-        name: "HON. ROBERT TORRES",
+        slug: "robert-r-torres",
+        name: "HON. ROBERT R. TORRES",
         position: "Sangguniang Bayan Member",
         seat: "SB Councilor",
         branch: "legislative",
@@ -114,8 +114,8 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       },
       {
         id: "sb-member-2",
-        slug: "jetro-de-jesus",
-        name: "HON. JETRO DE JESUS",
+        slug: "ronald-jetro-de-jesus",
+        name: "HON. RONALD JETRO L. DE JESUS",
         position: "Sangguniang Bayan Member",
         seat: "SB Councilor",
         branch: "legislative",
@@ -131,8 +131,8 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       },
       {
         id: "sb-member-3",
-        slug: "gala-abille",
-        name: "HON. GALA ABILLE",
+        slug: "alfred-abille",
+        name: "HON. ALFRED A. ABILLE",
         position: "Sangguniang Bayan Member",
         seat: "SB Councilor",
         branch: "legislative",
@@ -165,8 +165,8 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       },
       {
         id: "sb-member-5",
-        slug: "rex-asutilla",
-        name: "HON. REX ASUTILLA",
+        slug: "rex-daniel-asutilla",
+        name: "HON. REX DANIEL A. ASUTILLA",
         position: "Sangguniang Bayan Member",
         seat: "SB Councilor",
         branch: "legislative",
@@ -199,8 +199,8 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       },
       {
         id: "sb-member-7",
-        slug: "ray-frondarina",
-        name: "HON. RAY FRONDARINA",
+        slug: "ray-a-frondarina",
+        name: "HON. RAY A. FRONDARINA",
         position: "Sangguniang Bayan Member",
         seat: "SB Councilor",
         branch: "legislative",
@@ -216,8 +216,8 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       },
       {
         id: "sb-member-8",
-        slug: "gary-farinas",
-        name: "HON. GARY FARINAS",
+        slug: "gary-michael-farinas",
+        name: "HON. GARY MICHAEL P. FARINAS",
         position: "Sangguniang Bayan Member",
         seat: "SB Councilor",
         branch: "legislative",
@@ -255,8 +255,8 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       },
       {
         id: "ex-officio-skf",
-        slug: "iverson-alcantara",
-        name: "HON. IVERSON G. ALCANTARA",
+        slug: "iver-son-alcantara",
+        name: "HON. IVER-SON G. ALCANTARA",
         eyebrow: "SANGGUNIANG KABATAAN FEDERATION",
         position: "SK Federation President",
         seat: "Sangguniang Kabataan Federation President",

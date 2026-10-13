@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import { OFFICIALS_DATA } from "@/config/homepage-data";
 import { ASSETS } from "@/config/assets";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { cn } from "@/lib/utils";
+import {
+  CARD_INTERACTIVE_CLASSES,
+  CARD_IMAGE_ZOOM_CLASSES,
+} from "@/lib/card-styles";
 
 export function MunicipalOfficialsPreview() {
   const { mayor, viceMayor } = OFFICIALS_DATA;
@@ -33,7 +38,12 @@ export function MunicipalOfficialsPreview() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 items-stretch">
           {/* Mayor Card */}
           <ScrollReveal variant="fade-only" staggerIndex={0} className="h-full">
-            <div className="bg-white border border-gray-200 rounded-xs p-6 sm:p-7 shadow-xs hover:border-burgundy-700/60 focus-within:border-burgundy-700/60 transition-all duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col sm:flex-row gap-6 justify-between h-full">
+            <div
+              className={cn(
+                "bg-white border border-gray-200 rounded-xs p-6 sm:p-7 shadow-xs flex flex-col sm:flex-row gap-6 justify-between h-full group",
+                CARD_INTERACTIVE_CLASSES
+              )}
+            >
               {/* Verified Mayor Portrait from Centralized Assets */}
               <div className="shrink-0 flex flex-col items-center mx-auto sm:mx-0">
                 <div className="relative w-36 h-48 sm:w-44 sm:h-56 rounded-xs border border-gold-600/60 shadow-xs overflow-hidden bg-white">
@@ -42,7 +52,7 @@ export function MunicipalOfficialsPreview() {
                     alt={ASSETS.officials.mayor.alt}
                     fill
                     sizes="(max-width: 640px) 144px, 176px"
-                    className="object-contain object-center"
+                    className={cn("object-contain object-center", CARD_IMAGE_ZOOM_CLASSES)}
                     priority
                   />
                 </div>
@@ -54,7 +64,7 @@ export function MunicipalOfficialsPreview() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy-700 block">
                     {mayor.officeTitle}
                   </span>
-                  <h3 className="text-lg sm:text-xl font-black text-burgundy-900 tracking-tight leading-tight mt-1">
+                  <h3 className="text-lg sm:text-xl font-black text-burgundy-900 tracking-tight leading-tight mt-1 group-hover:text-burgundy-700 transition-colors duration-200">
                     {mayor.name}
                   </h3>
                   <p className="text-xs font-semibold text-slate-500 mt-0.5">
@@ -63,7 +73,7 @@ export function MunicipalOfficialsPreview() {
                 </div>
 
                 {/* Quote bubble */}
-                <div className="bg-slate-50 border border-slate-200/90 rounded-xs p-4 relative text-xs sm:text-[13px] text-slate-700 leading-relaxed italic mt-2 shadow-2xs">
+                <div className="bg-slate-50 border border-slate-200/90 rounded-xs p-4 relative text-xs sm:text-[13px] text-slate-700 leading-relaxed italic mt-2 shadow-2xs group-hover:border-gold-500/40 group-hover:bg-white transition-colors duration-200">
                   <Quote className="h-4 w-4 text-burgundy-700/20 absolute top-2 right-2" aria-hidden="true" />
                   &ldquo;{mayor.quote}&rdquo;
                 </div>
@@ -73,7 +83,12 @@ export function MunicipalOfficialsPreview() {
 
           {/* Vice Mayor Card */}
           <ScrollReveal variant="fade-only" staggerIndex={1} className="h-full">
-            <div className="bg-white border border-gray-200 rounded-xs p-6 sm:p-7 shadow-xs hover:border-burgundy-700/60 focus-within:border-burgundy-700/60 transition-all duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col sm:flex-row gap-6 justify-between h-full">
+            <div
+              className={cn(
+                "bg-white border border-gray-200 rounded-xs p-6 sm:p-7 shadow-xs flex flex-col sm:flex-row gap-6 justify-between h-full group",
+                CARD_INTERACTIVE_CLASSES
+              )}
+            >
               {/* Verified Vice Mayor Portrait from Centralized Assets */}
               <div className="shrink-0 flex flex-col items-center mx-auto sm:mx-0">
                 <div className="relative w-36 h-48 sm:w-44 sm:h-56 rounded-xs border border-gold-600/60 shadow-xs overflow-hidden bg-white">
@@ -82,7 +97,7 @@ export function MunicipalOfficialsPreview() {
                     alt={ASSETS.officials.viceMayor.alt}
                     fill
                     sizes="(max-width: 640px) 144px, 176px"
-                    className="object-contain object-center"
+                    className={cn("object-contain object-center", CARD_IMAGE_ZOOM_CLASSES)}
                     priority
                   />
                 </div>
@@ -94,7 +109,7 @@ export function MunicipalOfficialsPreview() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy-700 block">
                     {viceMayor.officeTitle}
                   </span>
-                  <h3 className="text-lg sm:text-xl font-black text-burgundy-900 tracking-tight leading-tight mt-1">
+                  <h3 className="text-lg sm:text-xl font-black text-burgundy-900 tracking-tight leading-tight mt-1 group-hover:text-burgundy-700 transition-colors duration-200">
                     {viceMayor.name}
                   </h3>
                   <p className="text-xs font-semibold text-slate-500 mt-0.5">
@@ -108,7 +123,7 @@ export function MunicipalOfficialsPreview() {
                 </div>
 
                 {/* Quote bubble */}
-                <div className="bg-slate-50 border border-slate-200/90 rounded-xs p-4 relative text-xs sm:text-[13px] text-slate-700 leading-relaxed italic mt-2 shadow-2xs">
+                <div className="bg-slate-50 border border-slate-200/90 rounded-xs p-4 relative text-xs sm:text-[13px] text-slate-700 leading-relaxed italic mt-2 shadow-2xs group-hover:border-gold-500/40 group-hover:bg-white transition-colors duration-200">
                   <Quote className="h-4 w-4 text-burgundy-700/20 absolute top-2 right-2" aria-hidden="true" />
                   &ldquo;{viceMayor.quote}&rdquo;
                 </div>
@@ -119,7 +134,7 @@ export function MunicipalOfficialsPreview() {
 
         {/* Center CTA Button (fade-only) */}
         <ScrollReveal variant="fade-only" className="text-center">
-          <Link href="/government" className="group inline-block">
+          <Link href="/government/officials" className="group inline-block">
             <Button
               variant="primary"
               size="lg"

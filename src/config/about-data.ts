@@ -37,8 +37,7 @@ export const ABOUT_DATA: AboutData = {
   provenance: "VERIFIED_CLIENT_INFORMATION",
   header: {
     breadcrumb: [
-      { label: "About", href: "/about" },
-      { label: "History of San Felipe" },
+      { label: "About San Felipe" },
     ],
     eyebrow: "ABOUT OUR MUNICIPALITY",
     title: "History of San Felipe",

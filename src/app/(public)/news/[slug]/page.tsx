@@ -32,12 +32,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!article) {
     return {
-      title: "Notice Not Found | Municipality of San Felipe, Zambales",
+      title: "Notice Not Found",
     };
   }
 
   return {
-    title: `${article.title} | Municipality of San Felipe, Zambales`,
+    title: article.title,
     description: article.excerpt,
     openGraph: {
       title: article.title,

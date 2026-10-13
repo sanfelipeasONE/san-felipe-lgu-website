@@ -1,12 +1,67 @@
 import * as React from "react";
 import Image from "next/image";
-import { CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Official } from "@/config/officials-data";
 
 /**
+ * Shared Civic Interaction Tokens for Municipal Official Cards
+ * Restrained, dignified, and responsive:
+ * - 200-250ms ease-out transitions
+ * - Subtle lift (3-4px) and shadow elevation
+ * - Restrained portrait scale (1.02x - 1.03x) inside overflow-hidden frames
+ * - Soft border & name transition to San Felipe burgundy (#8B1E2D)
+ * - Accessible prefers-reduced-motion resets
+ */
+const CARD_BASE_INTERACTION =
+  "transition-all duration-200 ease-out hover:shadow-md group relative overflow-hidden";
+
+/** Regular Sangguniang Bayan Member Card interaction (-4px lift, burgundy border shift) */
+const SB_CARD_INTERACTION = cn(
+  CARD_BASE_INTERACTION,
+  "hover:-translate-y-1 hover:border-burgundy-700/70 motion-reduce:hover:translate-none"
+);
+
+/** Mayor & Vice Mayor Executive Leadership card interaction (-3px lift, subtle emphasis) */
+const EXECUTIVE_CARD_INTERACTION = cn(
+  CARD_BASE_INTERACTION,
+  "hover:-translate-y-[3px] hover:border-burgundy-700/80 motion-reduce:hover:translate-none"
+);
+
+/** Ex-Officio Member card interaction (-3px lift, visually subordinate) */
+const EX_OFFICIO_CARD_INTERACTION = cn(
+  CARD_BASE_INTERACTION,
+  "hover:-translate-y-[3px] hover:border-burgundy-700/60 motion-reduce:hover:translate-none"
+);
+
+/** Portrait zoom styling variants */
+const PORTRAIT_ZOOM_SB =
+  "transition-transform duration-250 ease-out group-hover:scale-[1.03] motion-reduce:group-hover:scale-100";
+
+const PORTRAIT_ZOOM_EXECUTIVE =
+  "transition-transform duration-250 ease-out group-hover:scale-[1.02] motion-reduce:group-hover:scale-100";
+
+const PORTRAIT_ZOOM_EX_OFFICIO =
+  "transition-transform duration-250 ease-out group-hover:scale-[1.025] motion-reduce:group-hover:scale-100";
+
+/** Official name color transition to primary burgundy (#8B1E2D) */
+const OFFICIAL_NAME_HOVER =
+  "transition-colors duration-200 group-hover:text-burgundy-700";
+
+/** Expanding thin (2px) top burgundy accent line for Council & Ex-Officio cards */
+function CardTopAccent() {
+  return (
+    <div
+      className="absolute top-0 left-0 right-0 h-[2px] bg-slate-100 z-10 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
+      <div className="h-full w-full bg-burgundy-700 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-250 ease-out motion-reduce:transform-none motion-reduce:opacity-0 motion-reduce:group-hover:opacity-100" />
+    </div>
+  );
+}
+
+/**
  * Executive Leadership Card (Mayor & Vice Mayor)
- * Refined prominence with verified badges and official institutional typography.
+ * Refined prominence with official institutional typography.
  */
 export function ExecutiveOfficialCard({
   official,
@@ -20,12 +75,16 @@ export function ExecutiveOfficialCard({
   return (
     <article
       className={cn(
-        "bg-white border border-gray-200 rounded-xs shadow-xs overflow-hidden flex flex-col sm:flex-row gap-5 p-5 sm:p-6 items-center sm:items-start text-center sm:text-left transition-all hover:border-burgundy-700/60 hover:shadow-sm relative",
+        "bg-white border border-gray-200 rounded-xs shadow-xs flex flex-col sm:flex-row gap-5 p-5 sm:p-6 items-center sm:items-start text-center sm:text-left",
+        EXECUTIVE_CARD_INTERACTION,
         className
       )}
     >
       {/* Top Burgundy Accent Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-burgundy-900" aria-hidden="true" />
+      <div
+        className="absolute top-0 left-0 right-0 h-1 bg-burgundy-900 group-hover:bg-burgundy-700 transition-colors duration-200"
+        aria-hidden="true"
+      />
 
       {/* Portrait Container */}
       <div
@@ -41,29 +100,20 @@ export function ExecutiveOfficialCard({
           alt={official.portrait.alt}
           fill
           sizes="(max-width: 640px) 128px, 144px"
-          className="object-cover object-top"
+          className={cn("object-cover object-top", PORTRAIT_ZOOM_EXECUTIVE)}
           priority
         />
       </div>
 
       {/* Official Information */}
       <div className="flex-1 space-y-1.5 flex flex-col justify-center mt-1">
-        <div className="flex items-center justify-center sm:justify-between gap-2 flex-wrap">
-          {official.eyebrow && (
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block">
-              {official.eyebrow}
-            </span>
-          )}
+        {official.eyebrow && (
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block">
+            {official.eyebrow}
+          </span>
+        )}
 
-          {official.isPortraitVerified && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-xs">
-              <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600" aria-hidden="true" />
-              <span>Verified Portrait</span>
-            </span>
-          )}
-        </div>
-
-        <h3 className="text-base sm:text-lg font-black text-gov-charcoal uppercase leading-snug tracking-tight">
+        <h3 className={cn("text-base sm:text-lg font-black text-gov-charcoal uppercase leading-snug tracking-tight", OFFICIAL_NAME_HOVER)}>
           {official.name}
         </h3>
 
@@ -71,10 +121,19 @@ export function ExecutiveOfficialCard({
           {official.position}
         </p>
 
-        {official.roleDescription && (
+        {!isMayor && official.roleDescription && (
           <p className="text-xs text-slate-500 font-medium leading-relaxed">
             {official.roleDescription}
           </p>
+        )}
+
+        {/* Role Badge for Mayor (e.g. Local Chief Executive • Municipality of San Felipe) */}
+        {isMayor && official.roleDescription && (
+          <div className="pt-1.5">
+            <span className="inline-block text-[11px] font-semibold text-burgundy-800 bg-burgundy-50 border border-burgundy-200/80 px-2.5 py-1 rounded-xs">
+              {official.roleDescription}
+            </span>
+          </div>
         )}
 
         {/* Committee Assignment (e.g. Vice Mayor) */}
@@ -104,10 +163,14 @@ export function CouncilorCard({
   return (
     <article
       className={cn(
-        "bg-white border border-gray-200 rounded-xs overflow-hidden shadow-2xs hover:border-burgundy-700/60 hover:shadow-xs transition-all flex flex-col justify-between text-left",
+        "bg-white border border-gray-200 rounded-xs shadow-2xs flex flex-col justify-between text-left",
+        SB_CARD_INTERACTION,
         className
       )}
     >
+      {/* Expanding Top Burgundy Accent */}
+      <CardTopAccent />
+
       <div>
         {/* Full-Width Portrait Area */}
         <div className="relative w-full aspect-4/5 bg-slate-100 overflow-hidden border-b border-gray-200">
@@ -116,7 +179,7 @@ export function CouncilorCard({
             alt={official.portrait.alt}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px"
-            className="object-cover object-center"
+            className={cn("object-cover object-center", PORTRAIT_ZOOM_SB)}
           />
         </div>
 
@@ -126,7 +189,7 @@ export function CouncilorCard({
             {official.seat || "SB COUNCILOR"}
           </span>
 
-          <h3 className="text-sm sm:text-base font-extrabold text-gov-charcoal uppercase leading-tight">
+          <h3 className={cn("text-sm sm:text-base font-extrabold text-gov-charcoal uppercase leading-tight", OFFICIAL_NAME_HOVER)}>
             {official.name}
           </h3>
 
@@ -157,10 +220,14 @@ export function ExOfficioCard({
   return (
     <article
       className={cn(
-        "bg-white border border-gray-200 rounded-xs p-4 sm:p-5 shadow-2xs flex flex-row gap-4 items-center text-left hover:border-burgundy-700/60 hover:shadow-xs transition-all",
+        "bg-white border border-gray-200 rounded-xs p-4 sm:p-5 shadow-2xs flex flex-row gap-4 items-center text-left",
+        EX_OFFICIO_CARD_INTERACTION,
         className
       )}
     >
+      {/* Expanding Top Burgundy Accent */}
+      <CardTopAccent />
+
       {/* Portrait Container */}
       <div className="w-24 h-28 sm:w-28 sm:h-32 shrink-0 aspect-4/5 relative rounded-xs overflow-hidden border border-gray-200 bg-slate-100 shadow-2xs">
         <Image
@@ -168,7 +235,7 @@ export function ExOfficioCard({
           alt={official.portrait.alt}
           fill
           sizes="(max-width: 640px) 96px, 112px"
-          className="object-cover object-center"
+          className={cn("object-cover object-center", PORTRAIT_ZOOM_EX_OFFICIO)}
         />
       </div>
 
@@ -180,7 +247,7 @@ export function ExOfficioCard({
           </span>
         )}
 
-        <h3 className="text-sm sm:text-base font-extrabold text-gov-charcoal uppercase leading-tight">
+        <h3 className={cn("text-sm sm:text-base font-extrabold text-gov-charcoal uppercase leading-tight", OFFICIAL_NAME_HOVER)}>
           {official.name}
         </h3>
 

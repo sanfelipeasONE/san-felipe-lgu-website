@@ -5,7 +5,7 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { ABOUT_DATA } from "@/config/about-data";
 
 export const metadata: Metadata = {
-  title: "History of San Felipe | Municipality of San Felipe",
+  title: "History of San Felipe",
   description:
     "Learn about the history, vision, and mission of the Municipality of San Felipe, Zambales.",
 };
