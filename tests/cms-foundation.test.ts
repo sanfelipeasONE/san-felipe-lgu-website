@@ -49,6 +49,7 @@ async function runCMSFoundationTests() {
       "events.create", "events.update", "events.publish",
       "audit.view", "settings.manage",
       "services.view", "services.update", "services.publish",
+      "jobs.view", "jobs.create", "jobs.update", "jobs.publish", "jobs.archive",
     ],
   };
 
@@ -242,15 +243,16 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 4,
-    "Exactly 4 routes are marked isImplemented: true in Phase 14 (/admin, /admin/news, /admin/services, and /admin/documents)"
+    implementedItems.length === 5,
+    "Exactly 5 routes are marked isImplemented: true in Phase 15 (/admin, /admin/news, /admin/services, /admin/documents, and /admin/jobs)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
       implementedItems.some((i) => i.href === "/admin/news") &&
       implementedItems.some((i) => i.href === "/admin/services") &&
-      implementedItems.some((i) => i.href === "/admin/documents"),
-    "The active implemented routes are /admin, /admin/news, /admin/services, and /admin/documents"
+      implementedItems.some((i) => i.href === "/admin/documents") &&
+      implementedItems.some((i) => i.href === "/admin/jobs"),
+    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, and /admin/jobs"
   );
 
   const newsItem = allConfigItems.find((i) => i.id === "news");
@@ -261,6 +263,9 @@ async function runCMSFoundationTests() {
 
   const downloadableFormsItem = allConfigItems.find((i) => i.id === "downloadable-forms");
   assert(downloadableFormsItem?.isImplemented === true, "Downloadable Forms item is activated with isImplemented: true in Phase 14");
+
+  const jobOpportunitiesItem = allConfigItems.find((i) => i.id === "job-opportunities");
+  assert(jobOpportunitiesItem?.isImplemented === true, "Job Opportunities item is activated with isImplemented: true in Phase 15");
 
   const usersItem = allConfigItems.find((i) => i.id === "users");
   assert(usersItem?.isImplemented === false, "Users item is marked isImplemented: false (scheduled for Phase 17)");

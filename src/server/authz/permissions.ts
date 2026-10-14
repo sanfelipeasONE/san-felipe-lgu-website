@@ -48,6 +48,13 @@ export const PERMISSIONS = {
   SERVICES_VIEW: "services.view",
   SERVICES_UPDATE: "services.update",
   SERVICES_PUBLISH: "services.publish",
+
+  // Municipal Job Opportunities (Phase 15)
+  JOBS_VIEW: "jobs.view",
+  JOBS_CREATE: "jobs.create",
+  JOBS_UPDATE: "jobs.update",
+  JOBS_PUBLISH: "jobs.publish",
+  JOBS_ARCHIVE: "jobs.archive",
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

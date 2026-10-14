@@ -43,6 +43,7 @@ model Office {
   newsArticles NewsArticle[]
   servicePages ServicePage[]
   documents   Document[]
+  jobOpportunities JobOpportunity[]
 
   @@index([status])
   @@map("offices")
@@ -80,6 +81,10 @@ model User {
   // Documents & Downloadable Forms authorship (Phase 14)
   documentsCreated Document[] @relation("DocumentsCreated")
   documentsUpdated Document[] @relation("DocumentsUpdated")
+
+  // Job Opportunities authorship (Phase 15)
+  jobsCreated JobOpportunity[] @relation("JobsCreated")
+  jobsUpdated JobOpportunity[] @relation("JobsUpdated")
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -325,6 +330,8 @@ model Document {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
+  jobOpportunities JobOpportunity[]
+
   @@index([status])
   @@index([officeId])
   @@index([category])
@@ -332,4 +339,56 @@ model Document {
   @@index([status, officeId])
   @@map("documents")
 }
+
+enum JobOpportunityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Official municipal job vacancies and career recruitment notices (Phase 15).
+model JobOpportunity {
+  id                      String               @id @default(cuid())
+  title                   String               // Position Title
+  slug                    String               @unique
+  itemNumber              String?              // Plantilla Item Number (e.g. "MHO-01")
+  officeId                String
+  office                  Office               @relation(fields: [officeId], references: [id], onDelete: Restrict)
+  employmentType          String?              // "Permanent" | "Contractual" | "Casual" | "Co-Terminous"
+  salaryGrade             String?              // e.g. "11", "SG 11"
+  monthlySalary           String?              // e.g. "₱27,000.00"
+  description             String?              @db.Text
+  education               String?              @db.Text
+  training                String?              @db.Text
+  experience              String?              @db.Text
+  eligibility             String?              @db.Text
+  competency              String?              @db.Text
+  applicationInstructions String?              @db.Text
+  postingDate             DateTime?
+  closingDate             DateTime?
+  status                  JobOpportunityStatus @default(DRAFT)
+
+  // Optional attachment reference to an existing Phase 14 official municipal Document
+  attachmentDocumentId    String?
+  attachmentDocument      Document?            @relation(fields: [attachmentDocumentId], references: [id], onDelete: SetNull)
+
+  // Authorship & audit tracking
+  createdById             String
+  createdBy               User                 @relation("JobsCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedById             String?
+  updatedBy               User?                @relation("JobsUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  // Lifecycle timestamps
+  publishedAt             DateTime?
+  archivedAt              DateTime?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  @@index([status])
+  @@index([officeId])
+  @@index([status, publishedAt])
+  @@index([status, closingDate])
+  @@map("job_opportunities")
+}
+
 

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { JobOpportunitiesView } from "@/components/services/job-opportunities-view";
 import { PublishedServiceSections } from "@/components/services/published-service-sections";
-import { getJobOpportunities } from "@/config/services-data";
 import { getPublishedServicePage } from "@/server/services/service";
+import { getPublishedJobOpportunities } from "@/server/jobs/service";
+import type { JobOpportunity } from "@/config/services-data";
 
 export const instant = false;
 
@@ -18,14 +19,37 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function JobOpportunitiesPage() {
-  const [publishedPage, opportunities] = await Promise.all([
+  const [publishedPage, publishedJobs] = await Promise.all([
     getPublishedServicePage("job-opportunities"),
-    Promise.resolve(getJobOpportunities()),
+    getPublishedJobOpportunities(),
   ]);
 
   const hasPublishedContent = Boolean(
     publishedPage && publishedPage.sections.length > 0
   );
+
+  // Map database published vacancies to public view model
+  const opportunities: JobOpportunity[] = publishedJobs.map((job) => ({
+    id: job.id,
+    slug: job.slug,
+    positionTitle: job.positionTitle,
+    itemNumber: job.itemNumber,
+    officeId: job.officeId,
+    officeName: job.officeName,
+    employmentType: job.employmentType || undefined,
+    salaryGrade: job.salaryGrade,
+    monthlySalary: job.monthlySalary,
+    postingDate: job.postingDate,
+    closingDate: job.closingDate,
+    educationRequirement: job.educationRequirement,
+    trainingRequirement: job.trainingRequirement,
+    experienceRequirement: job.experienceRequirement,
+    eligibilityRequirement: job.eligibilityRequirement,
+    competencyRequirements: job.competencyRequirements,
+    applicationInstructions: job.applicationInstructions,
+    officialAttachmentUrl: job.officialAttachmentUrl,
+    status: job.status,
+  }));
 
   return (
     <main>
@@ -49,7 +73,7 @@ export default async function JobOpportunitiesPage() {
         />
       )}
 
-      {/* Phase 15 Boundary: Structured Job Vacancy Repository remains in safe empty state */}
+      {/* Database-backed municipal job vacancy announcements repository */}
       <JobOpportunitiesView opportunities={opportunities} />
     </main>
   );

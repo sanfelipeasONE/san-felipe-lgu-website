@@ -111,13 +111,12 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
       {
         id: "job-opportunities",
         label: "Job Opportunities",
-        href: "/admin/services/job-opportunities",
+        href: "/admin/jobs",
         icon: Users2,
         section: "content",
         description: "LGU career vacancies and application guidelines",
-        requiredPermission: "documents.view",
-        isImplemented: false,
-        phaseLabel: "Upcoming",
+        requiredPermission: "jobs.view",
+        isImplemented: true,
       },
       {
         id: "emergency-hotlines",

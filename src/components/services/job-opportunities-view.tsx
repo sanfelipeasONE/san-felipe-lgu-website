@@ -112,7 +112,7 @@ export function JobOpportunitiesView({ opportunities }: JobOpportunitiesViewProp
           {filteredJobs.length === 0 ? (
             <ServiceEmptyState
               icon={Briefcase}
-              title="No verified job opportunities are currently published on this website."
+              title="There are currently no job opportunities published on this website."
               description="Official career opportunities and personnel notices published by the Municipality of San Felipe will appear here."
               primaryAction={{
                 label: "Explore Municipal Offices Directory",
@@ -141,9 +141,11 @@ export function JobOpportunitiesView({ opportunities }: JobOpportunitiesViewProp
                     >
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs bg-burgundy-50 text-burgundy-800 border border-burgundy-100">
-                            {job.employmentType}
-                          </span>
+                          {job.employmentType && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs bg-burgundy-50 text-burgundy-800 border border-burgundy-100">
+                              {job.employmentType}
+                            </span>
+                          )}
                           {job.salaryGrade && (
                             <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs bg-slate-100 text-slate-700">
                               SG {job.salaryGrade}

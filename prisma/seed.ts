@@ -51,6 +51,13 @@ const BASELINE_PERMISSIONS = [
   { code: "services.view", name: "View Services", module: "services", description: "View municipal service pages and drafts" },
   { code: "services.update", name: "Update Services", module: "services", description: "Edit municipal service page content and sections" },
   { code: "services.publish", name: "Publish Services", module: "services", description: "Publish municipal service content to the public portal" },
+
+  // Municipal Job Opportunities (Phase 15)
+  { code: "jobs.view", name: "View Job Opportunities", module: "jobs", description: "View municipal vacancies and recruitment announcements" },
+  { code: "jobs.create", name: "Create Job Opportunities", module: "jobs", description: "Draft municipal job opportunities" },
+  { code: "jobs.update", name: "Update Job Opportunities", module: "jobs", description: "Edit municipal job vacancy details" },
+  { code: "jobs.publish", name: "Publish Job Opportunities", module: "jobs", description: "Publish official job vacancies directly to the portal" },
+  { code: "jobs.archive", name: "Archive Job Opportunities", module: "jobs", description: "Archive municipal job opportunities" },
 ];
 
 const BASELINE_ROLES = [
@@ -158,6 +165,7 @@ async function main() {
     "documents.view", "documents.create", "documents.update",
     "events.create", "events.update",
     "services.view", "services.update", "services.publish",
+    "jobs.view", "jobs.create", "jobs.update", "jobs.publish",
   ];
   for (const code of editorPermCodes) {
     const permId = permissionMap.get(code);
@@ -179,6 +187,7 @@ async function main() {
     "documents.view", "documents.create", "documents.update", "documents.publish", "documents.archive",
     "events.create", "events.update",
     "services.view", "services.update", "services.publish",
+    "jobs.view", "jobs.create", "jobs.update", "jobs.publish", "jobs.archive",
   ];
   for (const code of staffPermCodes) {
     const permId = permissionMap.get(code);
@@ -200,6 +209,7 @@ async function main() {
     "documents.view", "documents.approve", "documents.publish", "documents.archive",
     "events.publish",
     "services.view", "services.publish",
+    "jobs.view", "jobs.publish", "jobs.archive",
   ];
   for (const code of approverPermCodes) {
     const permId = permissionMap.get(code);
@@ -222,6 +232,7 @@ async function main() {
     "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish", "documents.archive",
     "events.create", "events.update", "events.publish",
     "services.view", "services.update", "services.publish",
+    "jobs.view", "jobs.create", "jobs.update", "jobs.publish", "jobs.archive",
   ];
   for (const code of officeAdminPermCodes) {
     const permId = permissionMap.get(code);
@@ -246,6 +257,7 @@ async function main() {
     "events.create", "events.update", "events.publish",
     "audit.view", "settings.manage",
     "services.view", "services.update", "services.publish",
+    "jobs.view", "jobs.create", "jobs.update", "jobs.publish", "jobs.archive",
   ];
   for (const code of siteAdminPermCodes) {
     const permId = permissionMap.get(code);
