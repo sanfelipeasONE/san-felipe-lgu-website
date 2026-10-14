@@ -793,12 +793,66 @@ async function runNewsManagementTestSuite() {
     assert(recordedActions.has(AUDIT_ACTIONS.POST_IMAGE_REMOVED), "POST_IMAGE_REMOVED audit event logged");
   } finally {
     // -------------------------------------------------------------------------
-    // Cleanup temporary test articles
+    // Cleanup temporary test articles, users, and offices
     // -------------------------------------------------------------------------
-    if (createdArticleIds.length > 0) {
+    try {
+      if (createdArticleIds.length > 0) {
+        await prisma.newsArticle.deleteMany({
+          where: { id: { in: createdArticleIds } },
+        });
+      }
       await prisma.newsArticle.deleteMany({
-        where: { id: { in: createdArticleIds } },
+        where: {
+          office: {
+            slug: { in: ["test-mho", "test-treasury"] },
+          },
+        },
       });
+      const testOffices = await prisma.office.findMany({
+        where: { slug: { in: ["test-mho", "test-treasury"] } },
+        select: { id: true },
+      });
+      const testOfficeIds = testOffices.map((o) => o.id);
+
+      await prisma.auditLog.deleteMany({
+        where: {
+          OR: [
+            {
+              user: {
+                email: {
+                  in: [
+                    "test.superadmin@sanfelipe.gov.ph",
+                    "test.mhoadmin@sanfelipe.gov.ph",
+                    "test.mhostaff@sanfelipe.gov.ph",
+                    "test.treasurystaff@sanfelipe.gov.ph",
+                    "test.viewer@sanfelipe.gov.ph",
+                  ],
+                },
+              },
+            },
+            ...(testOfficeIds.length > 0 ? [{ officeId: { in: testOfficeIds } }] : []),
+          ],
+        },
+      });
+      await prisma.user.deleteMany({
+        where: {
+          email: {
+            in: [
+              "test.mhoadmin@sanfelipe.gov.ph",
+              "test.mhostaff@sanfelipe.gov.ph",
+              "test.treasurystaff@sanfelipe.gov.ph",
+              "test.viewer@sanfelipe.gov.ph",
+            ],
+          },
+        },
+      });
+      await prisma.office.deleteMany({
+        where: {
+          slug: { in: ["test-mho", "test-treasury"] },
+        },
+      });
+    } catch (cleanupErr) {
+      console.warn("News test cleanup warning:", cleanupErr);
     }
     await prisma.$disconnect();
   }

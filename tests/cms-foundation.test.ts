@@ -243,8 +243,8 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 8,
-    "Exactly 8 routes are marked isImplemented: true in Phase 17 (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/offices, /admin/users, /admin/roles)"
+    implementedItems.length === 9,
+    "Exactly 9 routes are marked isImplemented: true in Phase 18 (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/offices, /admin/users, /admin/roles, /admin/audit-logs)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
@@ -254,8 +254,9 @@ async function runCMSFoundationTests() {
       implementedItems.some((i) => i.href === "/admin/jobs") &&
       implementedItems.some((i) => i.href === "/admin/users") &&
       implementedItems.some((i) => i.href === "/admin/offices") &&
-      implementedItems.some((i) => i.href === "/admin/roles"),
-    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/users, /admin/offices, and /admin/roles"
+      implementedItems.some((i) => i.href === "/admin/roles") &&
+      implementedItems.some((i) => i.href === "/admin/audit-logs"),
+    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/users, /admin/offices, /admin/roles, and /admin/audit-logs"
   );
 
   const newsItem = allConfigItems.find((i) => i.id === "news");
@@ -278,6 +279,9 @@ async function runCMSFoundationTests() {
 
   const rolesItem = allConfigItems.find((i) => i.id === "roles");
   assert(rolesItem?.isImplemented === true, "Roles item is activated with isImplemented: true in Phase 17");
+
+  const auditLogsItem = allConfigItems.find((i) => i.id === "audit-logs");
+  assert(auditLogsItem?.isImplemented === true, "Audit Logs item is activated with isImplemented: true in Phase 18");
 
   assert(
     upcomingItems.every((item) => Boolean(item.phaseLabel)),

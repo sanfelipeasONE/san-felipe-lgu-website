@@ -271,3 +271,85 @@ export async function revokeOfficeSessions(officeId: string): Promise<number> {
   return result.count;
 }
 
+export interface UserSessionRecord {
+  id: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+  isCurrent: boolean;
+}
+
+/**
+ * Lists active server sessions for a given user, marking the current session.
+ * Never returns tokens or token hashes.
+ */
+export async function listUserSessions(
+  userId: string,
+  currentSessionId?: string
+): Promise<UserSessionRecord[]> {
+  const sessions = await prisma.session.findMany({
+    where: {
+      userId,
+      revokedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      ipAddress: true,
+      userAgent: true,
+      createdAt: true,
+      lastUsedAt: true,
+    },
+  });
+
+  return sessions.map((s) => ({
+    ...s,
+    isCurrent: s.id === currentSessionId,
+  }));
+}
+
+/**
+ * Revokes a specific session belonging to a caller user.
+ * Caller cannot revoke other users' sessions.
+ */
+export async function revokeSessionById(
+  callerUserId: string,
+  sessionId: string
+): Promise<boolean> {
+  const result = await prisma.session.updateMany({
+    where: {
+      id: sessionId,
+      userId: callerUserId,
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+
+  return result.count > 0;
+}
+
+/**
+ * Revokes all sessions belonging to the caller except the current active session.
+ */
+export async function revokeAllOtherSessions(
+  callerUserId: string,
+  currentSessionId: string
+): Promise<number> {
+  const result = await prisma.session.updateMany({
+    where: {
+      userId: callerUserId,
+      id: { not: currentSessionId },
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+
+  return result.count;
+}
+

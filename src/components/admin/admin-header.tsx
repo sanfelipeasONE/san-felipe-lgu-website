@@ -10,6 +10,7 @@ import {
   Shield,
   Building2,
   ChevronDown,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logoutStaff } from "@/app/(auth)/staff/login/actions";
@@ -167,6 +168,18 @@ export function AdminHeader({
                     </span>
                   </div>
                 </div>
+              </div>
+
+              {/* Account Security Link */}
+              <div className="px-2 pt-1.5 pb-1 border-b border-gray-100">
+                <Link
+                  href="/admin/account/security"
+                  onClick={() => setIsAccountMenuOpen(false)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xs text-xs text-gov-charcoal hover:bg-slate-50 transition-colors font-medium"
+                >
+                  <KeyRound className="h-3.5 w-3.5 text-burgundy-700 shrink-0" />
+                  <span>Account Security</span>
+                </Link>
               </div>
 
               {/* Logout Action */}

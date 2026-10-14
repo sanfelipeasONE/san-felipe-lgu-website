@@ -47,11 +47,13 @@ async function validateRequestOrigin(): Promise<boolean> {
 
 /**
  * Extracts sanitized client network information for audit and rate-limiting.
+ * Behind Nginx reverse proxy, x-real-ip is trusted as populated by the edge.
  */
 async function getClientContext(): Promise<{ ipAddress: string; userAgent: string }> {
   const headerList = await headers();
+  const realIp = headerList.get("x-real-ip");
   const forwardedFor = headerList.get("x-forwarded-for");
-  const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : headerList.get("x-real-ip") || "127.0.0.1";
+  const ipAddress = realIp || (forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1");
   const userAgent = headerList.get("user-agent") || "unknown";
   return { ipAddress, userAgent };
 }
@@ -143,7 +145,7 @@ export async function authenticateStaff(
 
     return {
       success: false,
-      message: "Invalid credentials.",
+      message: "Invalid email or password.",
     };
   }
 
@@ -168,7 +170,7 @@ export async function authenticateStaff(
 
     return {
       success: false,
-      message: "Invalid credentials.",
+      message: "Invalid email or password.",
     };
   }
 
@@ -191,7 +193,7 @@ export async function authenticateStaff(
 
     return {
       success: false,
-      message: "This municipal staff account is currently inactive. Please contact the ICT Office.",
+      message: "Invalid email or password.",
     };
   }
 
@@ -214,7 +216,7 @@ export async function authenticateStaff(
 
     return {
       success: false,
-      message: "Your assigned municipal office is currently inactive. Please contact the system administrator.",
+      message: "Invalid email or password.",
     };
   }
 

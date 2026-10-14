@@ -13,40 +13,90 @@ export interface LogAuditOptions {
 }
 
 /**
- * Sensitive field names that must never be recorded in audit logs.
+ * Sensitive field names that must never be recorded or displayed in audit logs.
  */
-const SENSITIVE_KEYS = new Set([
+export const SENSITIVE_KEYS = new Set([
   "password",
-  "plainText",
-  "passwordHash",
+  "plaintext",
+  "passwordhash",
   "token",
-  "tokenHash",
+  "tokenhash",
+  "sessiontoken",
   "secret",
   "authorization",
   "cookie",
+  "apikey",
+  "privatekey",
+  "secretkey",
+  "encryptionkey",
 ]);
 
 /**
- * Deep sanitization function to strip any sensitive credentials or bearer tokens.
+ * Checks if a property key should be considered sensitive.
+ * Avoids over-redacting benign keys such as `serviceKey`, `cacheKey`, or `key`.
+ */
+function isSensitiveKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  if (SENSITIVE_KEYS.has(lower)) return true;
+  if (
+    lower.includes("password") ||
+    lower.includes("secret") ||
+    lower.includes("recoverycode")
+  ) {
+    return true;
+  }
+  // Check token but avoid matching harmless words
+  if (lower === "token" || lower.endsWith("token") || lower.startsWith("token")) {
+    return true;
+  }
+  // Match specific sensitive key combinations without catching benign keys like "serviceKey"
+  if (
+    lower.includes("apikey") ||
+    lower.includes("privatekey") ||
+    lower.includes("secretkey") ||
+    lower.includes("encryptionkey")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Deep recursive redaction function to strip any sensitive credentials, bearer tokens, or secrets.
+ * Safely processes objects, arrays, and primitive values.
+ */
+export function redactSensitiveMetadata(data: unknown): unknown {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => redactSensitiveMetadata(item));
+  }
+
+  if (typeof data === "object") {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+      if (isSensitiveKey(key)) {
+        sanitized[key] = "[REDACTED]";
+      } else {
+        sanitized[key] = redactSensitiveMetadata(value);
+      }
+    }
+    return sanitized;
+  }
+
+  return data;
+}
+
+/**
+ * Deep sanitization function to strip any sensitive credentials or bearer tokens from audit details.
  */
 function sanitizeAuditDetails(
   details: Record<string, unknown> | null | undefined
 ): Record<string, unknown> | undefined {
   if (!details) return undefined;
-
-  const sanitized: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(details)) {
-    if (SENSITIVE_KEYS.has(key.toLowerCase())) {
-      sanitized[key] = "[REDACTED]";
-    } else if (value && typeof value === "object" && !Array.isArray(value)) {
-      sanitized[key] = sanitizeAuditDetails(value as Record<string, unknown>);
-    } else {
-      sanitized[key] = value;
-    }
-  }
-
-  return sanitized;
+  return redactSensitiveMetadata(details) as Record<string, unknown>;
 }
 
 /**
