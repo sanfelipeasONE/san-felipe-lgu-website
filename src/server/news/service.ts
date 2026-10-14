@@ -190,10 +190,13 @@ export async function createNewsArticle(
     }
     const officeExists = await prisma.office.findUnique({
       where: { id: input.officeId },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!officeExists) {
       throw new NewsError("Selected municipal office does not exist.");
+    }
+    if (officeExists.status !== "ACTIVE") {
+      throw new NewsError("News articles can only be assigned to active municipal offices.");
     }
     targetOfficeId = input.officeId;
   } else {
@@ -344,14 +347,20 @@ export async function updateNewsArticle(
  * - Office ownership boundary
  * - Validation of publish requirements (alt text, content length)
  * - Assigns publishedAt server-side (preserves publishedAt if already published)
+ * - Optimistic concurrency protection when expectedUpdatedAt is supplied
  */
-export async function publishNewsArticle(user: SessionUser, id: string) {
+export async function publishNewsArticle(
+  user: SessionUser,
+  id: string,
+  expectedUpdatedAt?: string
+) {
   if (!hasPermission(user, PERMISSIONS.POSTS_PUBLISH)) {
     throw new NewsError("Missing required permission: posts.publish", 403);
   }
 
   const existing = await prisma.newsArticle.findUnique({
     where: { id },
+    include: { office: { select: { id: true, status: true } } },
   });
 
   if (!existing) {
@@ -362,8 +371,22 @@ export async function publishNewsArticle(user: SessionUser, id: string) {
     throw new NewsError("Access restricted: you do not hold authorization for this office.", 403);
   }
 
+  if (existing.office.status !== "ACTIVE") {
+    throw new NewsError("Cannot publish news articles for an inactive municipal office.", 400);
+  }
+
   if (existing.status === "ARCHIVED") {
     throw new NewsError("Archived articles cannot be published directly.", 400);
+  }
+
+  if (
+    expectedUpdatedAt &&
+    existing.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new NewsError(
+      "This article was modified by another user. Please refresh and review before publishing.",
+      409
+    );
   }
 
   const validation = validateForPublish({
@@ -413,8 +436,13 @@ export async function publishNewsArticle(user: SessionUser, id: string) {
  * - Office ownership boundary
  * - Retains database record and Cloudinary asset (non-destructive)
  * - Sets status = ARCHIVED and archivedAt = now()
+ * - Optimistic concurrency protection when expectedUpdatedAt is supplied
  */
-export async function archiveNewsArticle(user: SessionUser, id: string) {
+export async function archiveNewsArticle(
+  user: SessionUser,
+  id: string,
+  expectedUpdatedAt?: string
+) {
   const canArchive =
     hasPermission(user, PERMISSIONS.POSTS_ARCHIVE) ||
     hasPermission(user, PERMISSIONS.POSTS_DELETE);
@@ -433,6 +461,16 @@ export async function archiveNewsArticle(user: SessionUser, id: string) {
 
   if (!canAccessOffice(user, existing.officeId)) {
     throw new NewsError("Access restricted: you do not hold authorization for this office.", 403);
+  }
+
+  if (
+    expectedUpdatedAt &&
+    existing.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new NewsError(
+      "This article was modified by another user. Please refresh and review before archiving.",
+      409
+    );
   }
 
   const archived = await prisma.newsArticle.update({

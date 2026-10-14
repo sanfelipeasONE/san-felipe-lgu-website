@@ -118,7 +118,8 @@ export async function publishServiceAction(
  * Server Action: Unpublishes a service page back to DRAFT.
  */
 export async function unpublishServiceAction(
-  serviceKey: string
+  serviceKey: string,
+  expectedUpdatedAt?: string
 ): Promise<ActionResult<{ serviceKey: string }>> {
   try {
     const user = await requireUser();
@@ -128,7 +129,7 @@ export async function unpublishServiceAction(
       return { success: false, error: "Invalid canonical service key." };
     }
 
-    const unpublished = await unpublishServicePage(user, keyValidation.data);
+    const unpublished = await unpublishServicePage(user, keyValidation.data, expectedUpdatedAt);
 
     revalidatePath("/admin/services");
     revalidatePath(`/admin/services/${serviceKey}/edit`);

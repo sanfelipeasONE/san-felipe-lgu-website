@@ -16,7 +16,8 @@
     "test:news": "tsx tests/news-management.test.ts",
     "test:services": "tsx tests/service-content.test.ts",
     "test:documents": "tsx tests/document-management.test.ts",
-    "test:jobs": "tsx tests/job-opportunities.test.ts"
+    "test:jobs": "tsx tests/job-opportunities.test.ts",
+    "test:publishing": "tsx tests/publishing-consistency.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

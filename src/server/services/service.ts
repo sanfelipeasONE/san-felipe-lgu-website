@@ -335,7 +335,10 @@ export async function publishServicePage(
 
   const existing = await prisma.servicePage.findUnique({
     where: { serviceKey },
-    include: { sections: true },
+    include: {
+      sections: true,
+      office: { select: { id: true, status: true } },
+    },
   });
 
   if (!existing) {
@@ -350,6 +353,11 @@ export async function publishServicePage(
     if (!existing.officeId) {
       throw new ServiceError("This service page is unassigned and can only be published by system administrators.", 403);
     }
+  }
+
+  // Active office check if assigned to an office
+  if (existing.office && existing.office.status !== "ACTIVE") {
+    throw new ServiceError("Cannot publish service page assigned to an inactive municipal office.", 400);
   }
 
   // Validate structural readiness for publication
@@ -398,10 +406,12 @@ export async function publishServicePage(
  * Unpublishes a service page back to DRAFT status.
  * Content is removed from public view immediately while preserved in CMS.
  * Strictly requires services.publish permission.
+ * Supports optimistic concurrency protection when expectedUpdatedAt is supplied.
  */
 export async function unpublishServicePage(
   user: SessionUser,
-  serviceKey: string
+  serviceKey: string,
+  expectedUpdatedAt?: string
 ) {
   if (!hasPermission(user, PERMISSIONS.SERVICES_PUBLISH)) {
     throw new ServiceError("Missing required permission: services.publish to unpublish service content.", 403);
@@ -426,6 +436,17 @@ export async function unpublishServicePage(
     if (!existing.officeId) {
       throw new ServiceError("This service page is unassigned and can only be managed by system administrators.", 403);
     }
+  }
+
+  // Optimistic concurrency check
+  if (
+    expectedUpdatedAt &&
+    existing.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new ServiceError(
+      "This service page was modified by another staff member. Please refresh to load the latest version before unpublishing.",
+      409
+    );
   }
 
   const unpublished = await prisma.servicePage.update({

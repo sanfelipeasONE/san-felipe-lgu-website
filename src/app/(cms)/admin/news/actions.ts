@@ -94,11 +94,12 @@ export async function updateNewsAction(
  * Server Action: Publishes a News article (transitions DRAFT -> PUBLISHED).
  */
 export async function publishNewsAction(
-  id: string
+  id: string,
+  expectedUpdatedAt?: string
 ): Promise<ActionResult<{ id: string; slug: string }>> {
   try {
     const user = await requireUser();
-    const published = await publishNewsArticle(user, id);
+    const published = await publishNewsArticle(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/news");
     revalidatePath(`/admin/news/${id}/edit`);
@@ -119,10 +120,13 @@ export async function publishNewsAction(
 /**
  * Server Action: Archives a News article (transitions PUBLISHED -> ARCHIVED).
  */
-export async function archiveNewsAction(id: string): Promise<ActionResult<{ id: string }>> {
+export async function archiveNewsAction(
+  id: string,
+  expectedUpdatedAt?: string
+): Promise<ActionResult<{ id: string }>> {
   try {
     const user = await requireUser();
-    const archived = await archiveNewsArticle(user, id);
+    const archived = await archiveNewsArticle(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/news");
     revalidatePath(`/admin/news/${id}/edit`);
