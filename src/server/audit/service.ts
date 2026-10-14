@@ -73,3 +73,6 @@ export async function recordAuditEvent(options: LogAuditOptions): Promise<void> 
     console.error("[AUDIT FAILURE] Could not persist audit log:", error);
   }
 }
+
+export { recordAuditEvent as logAuditEvent };
+

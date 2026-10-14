@@ -3,10 +3,24 @@ import { Info, AlertTriangle, AlertCircle } from "lucide-react";
 import type { ArticleBodyBlock } from "@/config/news-data";
 
 export interface ArticleBodyProps {
-  blocks: ArticleBodyBlock[];
+  blocks?: ArticleBodyBlock[];
+  html?: string;
 }
 
-export function ArticleBody({ blocks }: ArticleBodyProps) {
+export function ArticleBody({ blocks, html }: ArticleBodyProps) {
+  if (html) {
+    return (
+      <div
+        className="prose prose-slate max-w-none text-slate-700 leading-relaxed text-sm sm:text-base space-y-4"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  }
+
+  if (!blocks || blocks.length === 0) {
+    return null;
+  }
+
   return (
     <div className="prose-gov space-y-6 text-slate-700 leading-relaxed text-sm sm:text-base">
       {blocks.map((block, index) => {

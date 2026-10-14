@@ -22,6 +22,7 @@ export const PERMISSIONS = {
   POSTS_SUBMIT: "posts.submit",
   POSTS_APPROVE: "posts.approve",
   POSTS_PUBLISH: "posts.publish",
+  POSTS_ARCHIVE: "posts.archive",
 
   // Official Documents & Transparency
   DOCUMENTS_VIEW: "documents.view",

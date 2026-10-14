@@ -63,8 +63,7 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "content",
         description: "Press releases, public advisories, and municipal news",
         requiredPermission: "posts.view",
-        isImplemented: false,
-        phaseLabel: "Phase 12",
+        isImplemented: true,
       },
       {
         id: "citizens-charter",

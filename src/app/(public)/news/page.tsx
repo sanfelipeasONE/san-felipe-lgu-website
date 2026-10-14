@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
 import { PageHeader } from "@/components/layout/page-header";
 import { NewsGrid } from "@/components/news/news-grid";
-import { getAllPublishedArticles } from "@/config/news-data";
+import { getPublicPublishedNews } from "@/server/news/service";
+import { mapDbArticleToPublicArticle } from "@/server/news/mapper";
+
+export const instant = false;
 
 export const metadata: Metadata = {
   title: "News & Announcements",
@@ -10,8 +13,9 @@ export const metadata: Metadata = {
     "Stay informed about the latest news, announcements, advisories, and public notices from the Municipal Government of San Felipe, Zambales.",
 };
 
-export default function NewsArchivePage() {
-  const allArticles = getAllPublishedArticles();
+export default async function NewsArchivePage() {
+  const { articles } = await getPublicPublishedNews({ pageSize: 100 });
+  const allArticles = articles.map(mapDbArticleToPublicArticle);
 
   return (
     <>
@@ -32,3 +36,4 @@ export default function NewsArchivePage() {
     </>
   );
 }
+

@@ -27,7 +27,9 @@ export default function HomePage() {
       <MunicipalOfficesPreview />
 
       {/* 6. Latest News & Announcements */}
-      <LatestNews />
+      <React.Suspense fallback={<div className="py-14 bg-slate-50/60" />}>
+        <LatestNews />
+      </React.Suspense>
 
       {/* 7. Emergency Hotlines (Prominent Burgundy Section) */}
       <EmergencyHotlines />

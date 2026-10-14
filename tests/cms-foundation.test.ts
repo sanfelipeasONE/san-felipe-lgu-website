@@ -237,12 +237,18 @@ async function runCMSFoundationTests() {
   const implementedItems = allConfigItems.filter((i) => i.isImplemented);
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
-  assert(implementedItems.length === 1, "Only 1 route is marked isImplemented: true in Phase 11");
-  assert(implementedItems[0].href === "/admin", "The sole active implemented route is /admin");
+  assert(
+    implementedItems.length === 2,
+    "Exactly 2 routes are marked isImplemented: true in Phase 12 (/admin and /admin/news)"
+  );
+  assert(
+    implementedItems.some((i) => i.href === "/admin") &&
+      implementedItems.some((i) => i.href === "/admin/news"),
+    "The active implemented routes are /admin and /admin/news"
+  );
 
   const newsItem = allConfigItems.find((i) => i.id === "news");
-  assert(newsItem?.isImplemented === false, "News item is marked isImplemented: false (scheduled for Phase 12)");
-  assert(newsItem?.phaseLabel === "Phase 12", "News item displays Phase 12 badge");
+  assert(newsItem?.isImplemented === true, "News item is activated with isImplemented: true in Phase 12");
 
   const usersItem = allConfigItems.find((i) => i.id === "users");
   assert(usersItem?.isImplemented === false, "Users item is marked isImplemented: false (scheduled for Phase 17)");
@@ -251,6 +257,41 @@ async function runCMSFoundationTests() {
   assert(
     upcomingItems.every((item) => Boolean(item.phaseLabel)),
     "All upcoming items have explicit phase labels to render as accessible non-link badges"
+  );
+
+  // -------------------------------------------------------------
+  // Test 5: Server-Component Boundary & DataTable Architecture (Phase 12 Regression)
+  // -------------------------------------------------------------
+  console.log("\n5. Server-Component Boundary & DataTable Architecture");
+
+  const fs = await import("fs");
+  const path = await import("path");
+
+  const dataTableContent = fs.readFileSync(
+    path.resolve(process.cwd(), "src/components/admin/data-table.tsx"),
+    "utf-8"
+  );
+  assert(
+    !dataTableContent.trim().startsWith('"use client"') && !dataTableContent.trim().startsWith("'use client'"),
+    "DataTable is a Server Component (no 'use client' directive, allowing renderRow callbacks from RSC)"
+  );
+
+  const paginationContent = fs.readFileSync(
+    path.resolve(process.cwd(), "src/components/admin/data-table-pagination.tsx"),
+    "utf-8"
+  );
+  assert(
+    paginationContent.includes('"use client"') || paginationContent.includes("'use client'"),
+    "DataTablePagination is an isolated Client Component ('use client') with serializable numeric/string props"
+  );
+
+  const searchContent = fs.readFileSync(
+    path.resolve(process.cwd(), "src/components/admin/data-table-search.tsx"),
+    "utf-8"
+  );
+  assert(
+    searchContent.includes('"use client"') || searchContent.includes("'use client'"),
+    "DataTableSearch is an isolated Client Component ('use client') with serializable string props"
   );
 
   // -------------------------------------------------------------

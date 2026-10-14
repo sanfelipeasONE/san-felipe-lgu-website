@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "test:auth": "tsx tests/auth.test.ts",
-    "test:cms": "tsx tests/cms-foundation.test.ts"
+    "test:cms": "tsx tests/cms-foundation.test.ts",
+    "test:news": "tsx tests/news-management.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -21,12 +22,18 @@
     "@hookform/resolvers": "^5.9.1",
     "@node-rs/argon2": "^2.2.2",
     "@prisma/client": "6.19.3",
+    "@tiptap/extension-link": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
+    "@types/sanitize-html": "^2.16.2",
+    "cloudinary": "^2.11.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.55.0",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "^7.90.0",
+    "sanitize-html": "^2.18.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.7.0",
     "zod": "^3.25.76"

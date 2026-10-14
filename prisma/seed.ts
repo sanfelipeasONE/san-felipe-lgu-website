@@ -25,6 +25,7 @@ const BASELINE_PERMISSIONS = [
   { code: "posts.submit", name: "Submit Posts", module: "posts", description: "Submit post drafts for review" },
   { code: "posts.approve", name: "Approve Posts", module: "posts", description: "Review and approve submitted posts" },
   { code: "posts.publish", name: "Publish Posts", module: "posts", description: "Publish approved posts to the public website" },
+  { code: "posts.archive", name: "Archive Posts", module: "posts", description: "Archive municipal posts and news items" },
 
   // Documents & Transparency
   { code: "documents.view", name: "View Documents", module: "documents", description: "View uploaded documents and full disclosure records" },
@@ -182,7 +183,7 @@ async function main() {
   const officeAdminRoleId = roleMap.get("office-admin")!;
   const officeAdminPermCodes = [
     "users.view", "offices.view", "offices.update",
-    "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve",
+    "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.archive",
     "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve",
     "events.create", "events.update", "events.publish",
   ];
@@ -204,7 +205,7 @@ async function main() {
   const siteAdminPermCodes = [
     "users.view", "users.create", "users.update", "users.disable",
     "offices.view", "offices.update",
-    "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.publish",
+    "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.publish", "posts.archive",
     "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish",
     "events.create", "events.update", "events.publish",
     "audit.view", "settings.manage",

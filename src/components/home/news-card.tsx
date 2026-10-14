@@ -29,8 +29,8 @@ export function NewsCard({ news, featured = false }: NewsCardProps) {
           {/* Featured Graphic Banner with next/image via centralized registry */}
           <div className="relative h-60 sm:h-68 lg:h-76 w-full bg-slate-950 overflow-hidden">
             <Image
-              src={ASSETS.news.undasBanner.src}
-              alt={ASSETS.news.undasBanner.alt}
+              src={news.imageUrl || ASSETS.news.placeholder.src}
+              alt={news.imageAlt || news.title}
               fill
               sizes="(max-width: 1024px) 100vw, 60vw"
               className={cn("object-cover object-center", CARD_IMAGE_ZOOM_CLASSES)}

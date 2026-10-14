@@ -200,7 +200,10 @@ export interface NewsItem {
   excerpt: string;
   href: string;
   isFeatured?: boolean;
+  imageUrl?: string;
+  imageAlt?: string;
 }
+
 
 export const NEWS_DATA = {
   featured: {

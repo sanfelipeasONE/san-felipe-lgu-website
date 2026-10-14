@@ -40,6 +40,7 @@ model Office {
   updatedAt   DateTime     @updatedAt
 
   users       User[]
+  newsArticles NewsArticle[]
 
   @@index([status])
   @@map("offices")
@@ -65,6 +66,10 @@ model User {
   // Sessions and audit trail
   sessions     Session[]
   auditLogs    AuditLog[]
+
+  // News & Content authorship
+  newsCreated  NewsArticle[] @relation("NewsArticlesCreated")
+  newsUpdated  NewsArticle[] @relation("NewsArticlesUpdated")
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -163,5 +168,56 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+enum NewsStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// News & Announcements content entity for municipal publications.
+model NewsArticle {
+  id                    String      @id @default(cuid())
+  slug                  String      @unique
+  title                 String
+  excerpt               String      @db.Text
+  body                  String      @db.Text // Sanitized HTML content from editor
+  type                  String      @default("news") // "news" | "announcement" | "advisory" | "notice"
+  category              String      @default("GENERAL") // e.g. "PUBLIC SAFETY", "COMMERCE", etc.
+  status                NewsStatus  @default(DRAFT)
+
+  // Office affiliation (security boundary)
+  officeId              String
+  office                Office      @relation(fields: [officeId], references: [id], onDelete: Restrict)
+
+  // Authorship tracking
+  createdById           String
+  createdBy             User        @relation("NewsArticlesCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedById           String?
+  updatedBy             User?       @relation("NewsArticlesUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  // Featured Image metadata (Cloudinary)
+  featuredImagePublicId String?
+  featuredImageUrl      String?
+  featuredImageAlt      String?
+  featuredImageWidth    Int?
+  featuredImageHeight   Int?
+  featuredImageFormat   String?
+  featuredImageBytes    Int?
+
+  // Publication & archive lifecycle timestamps
+  publishedAt           DateTime?
+  archivedAt            DateTime?
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@index([status])
+  @@index([officeId])
+  @@index([publishedAt])
+  @@index([status, publishedAt])
+  @@index([status, officeId])
+  @@map("news_articles")
 }
 

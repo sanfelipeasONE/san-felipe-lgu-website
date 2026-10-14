@@ -1,10 +1,13 @@
-"use client";
-
 import * as React from "react";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import {
+  DataTablePagination,
+  DataTablePaginationSkeleton,
+  type DataTablePaginationProps,
+} from "@/components/admin/data-table-pagination";
+import { DataTableSearch } from "@/components/admin/data-table-search";
 import { cn } from "@/lib/utils";
 
 export interface DataTableColumn {
@@ -15,23 +18,17 @@ export interface DataTableColumn {
   className?: string;
 }
 
-export interface DataTablePaginationProps {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  pageSize: number;
-  onPageChange?: (page: number) => void;
-}
+export type { DataTablePaginationProps };
 
 export interface DataTableProps<T> {
   columns: DataTableColumn[];
-  data: T[];
-  renderRow: (item: T, index: number) => React.ReactNode;
+  data?: T[];
+  renderRow?: (item: T, index: number) => React.ReactNode;
+  children?: React.ReactNode;
   keyExtractor?: (item: T, index: number) => string;
   title?: string;
   searchPlaceholder?: string;
   searchValue?: string;
-  onSearchChange?: (value: string) => void;
   filters?: React.ReactNode;
   headerActions?: React.ReactNode;
   pagination?: DataTablePaginationProps;
@@ -42,13 +39,13 @@ export interface DataTableProps<T> {
 
 export function DataTable<T>({
   columns,
-  data,
+  data = [],
   renderRow,
+  children,
   keyExtractor = (_, index) => String(index),
   title,
-  searchPlaceholder = "Search records...",
+  searchPlaceholder,
   searchValue,
-  onSearchChange,
   filters,
   headerActions,
   pagination,
@@ -56,18 +53,9 @@ export function DataTable<T>({
   isLoading = false,
   className,
 }: DataTableProps<T>) {
-  const [internalSearch, setInternalSearch] = React.useState("");
-  const activeSearch = searchValue !== undefined ? searchValue : internalSearch;
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (searchValue === undefined) {
-      setInternalSearch(val);
-    }
-    onSearchChange?.(val);
-  };
-
-  const hasControls = Boolean(onSearchChange || searchPlaceholder || filters || headerActions || title);
+  const hasControls = Boolean(
+    searchPlaceholder || searchValue || filters || headerActions || title
+  );
 
   return (
     <div
@@ -85,20 +73,29 @@ export function DataTable<T>({
                 {title}
               </h3>
             )}
-            {onSearchChange && (
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400"
-                  aria-hidden="true"
-                />
-                <Input
-                  type="search"
-                  value={activeSearch}
-                  onChange={handleSearch}
+            {searchPlaceholder && (
+              <React.Suspense
+                fallback={
+                  <div className="relative flex-1 min-w-[200px] max-w-sm">
+                    <Search
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      type="search"
+                      defaultValue={searchValue}
+                      placeholder={searchPlaceholder}
+                      className="pl-8 h-8 text-xs bg-slate-50 border-gray-300"
+                      disabled
+                    />
+                  </div>
+                }
+              >
+                <DataTableSearch
                   placeholder={searchPlaceholder}
-                  className="pl-8 h-8 text-xs bg-slate-50 border-gray-300 focus:bg-white"
+                  defaultValue={searchValue}
                 />
-              </div>
+              </React.Suspense>
             )}
             {filters}
           </div>
@@ -151,6 +148,8 @@ export function DataTable<T>({
                   Loading records...
                 </td>
               </tr>
+            ) : children ? (
+              children
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="p-6">
@@ -162,72 +161,37 @@ export function DataTable<T>({
                   )}
                 </td>
               </tr>
-            ) : (
+            ) : renderRow ? (
               data.map((item, index) => (
                 <React.Fragment key={keyExtractor(item, index)}>
                   {renderRow(item, index)}
                 </React.Fragment>
               ))
-            )}
+            ) : null}
           </tbody>
         </table>
       </div>
 
       {/* Pagination Bar */}
       {pagination && (
-        <div className="px-4 py-3 border-t border-gray-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gov-muted">
-          <div>
-            Showing{" "}
-            <span className="font-semibold text-gov-charcoal">
-              {Math.min(
-                (pagination.currentPage - 1) * pagination.pageSize + 1,
-                pagination.totalItems
-              )}
-            </span>{" "}
-            to{" "}
-            <span className="font-semibold text-gov-charcoal">
-              {Math.min(
-                pagination.currentPage * pagination.pageSize,
-                pagination.totalItems
-              )}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-gov-charcoal">
-              {pagination.totalItems}
-            </span>{" "}
-            records
-          </div>
-
-          <div className="flex items-center gap-1.5 self-end sm:self-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pagination.currentPage <= 1}
-              onClick={() =>
-                pagination.onPageChange?.(pagination.currentPage - 1)
-              }
-              className="h-7 px-2 text-xs border-gray-300"
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </Button>
-            <span className="px-2 font-medium text-gov-charcoal text-[11px]">
-              Page {pagination.currentPage} of {pagination.totalPages || 1}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pagination.currentPage >= pagination.totalPages}
-              onClick={() =>
-                pagination.onPageChange?.(pagination.currentPage + 1)
-              }
-              className="h-7 px-2 text-xs border-gray-300"
-              aria-label="Next page"
-            >
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
+        <React.Suspense
+          fallback={
+            <DataTablePaginationSkeleton
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalItems}
+              pageSize={pagination.pageSize}
+            />
+          }
+        >
+          <DataTablePagination
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            pageParamName={pagination.pageParamName}
+          />
+        </React.Suspense>
       )}
     </div>
   );

@@ -10,31 +10,29 @@ import { ArticleAttachments } from "@/components/news/article-attachments";
 import { PublishingOfficeCard } from "@/components/news/publishing-office-card";
 import { OtherNewsSidebar } from "@/components/news/other-news-sidebar";
 import {
-  getAllPublishedArticles,
-  getArticleBySlug,
-  getOtherArticles,
-} from "@/config/news-data";
+  getPublicPublishedNewsBySlug,
+  getPublicOtherNews,
+} from "@/server/news/service";
+import { mapDbArticleToPublicArticle } from "@/server/news/mapper";
 import { ASSETS } from "@/config/assets";
+
+export const instant = false;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  return getAllPublishedArticles().map((article) => ({
-    slug: article.slug,
-  }));
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getPublicPublishedNewsBySlug(slug);
 
   if (!article) {
     return {
       title: "Notice Not Found",
     };
   }
+
+  const publishedDate = article.publishedAt || article.createdAt;
 
   return {
     title: article.title,
@@ -43,13 +41,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: article.title,
       description: article.excerpt,
       type: "article",
-      publishedTime: article.publishedAt,
+      publishedTime: publishedDate.toISOString(),
       images: [
         {
-          url: article.featuredImage?.src || ASSETS.news.placeholder.src,
-          width: 800,
-          height: 450,
-          alt: article.title,
+          url: article.featuredImageUrl || ASSETS.news.placeholder.src,
+          width: article.featuredImageWidth || 800,
+          height: article.featuredImageHeight || 450,
+          alt: article.featuredImageAlt || article.title,
         },
       ],
     },
@@ -58,13 +56,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function NewsArticlePage({ params }: PageProps) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const rawArticle = await getPublicPublishedNewsBySlug(slug);
 
-  if (!article) {
+  if (!rawArticle) {
     notFound();
   }
 
-  const otherArticles = getOtherArticles(article.slug, 4);
+  const article = mapDbArticleToPublicArticle(rawArticle);
+  const otherDbArticles = await getPublicOtherNews(rawArticle.slug, 4);
+  const otherArticles = otherDbArticles.map(mapDbArticleToPublicArticle);
+
   const imageSrc = article.featuredImage?.src || ASSETS.news.placeholder.src;
   const imageAlt = article.featuredImage?.alt || article.title;
 
@@ -123,8 +124,8 @@ export default async function NewsArticlePage({ params }: PageProps) {
                 {article.excerpt}
               </p>
 
-              {/* Structured Body Blocks */}
-              <ArticleBody blocks={article.body} />
+              {/* Structured Body Blocks / Sanitized HTML */}
+              <ArticleBody html={article.htmlBody} />
 
               {/* Downloadable Attachments (if applicable) */}
               <ArticleAttachments attachments={article.attachments} />
@@ -154,3 +155,4 @@ export default async function NewsArticlePage({ params }: PageProps) {
     </div>
   );
 }
+

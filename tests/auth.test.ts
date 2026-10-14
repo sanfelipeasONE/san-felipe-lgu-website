@@ -10,6 +10,25 @@ require.cache[serverOnlyPath] = {
 } as unknown as NodeJS.Module;
 
 async function runAuthTests() {
+  const fs = await import("fs");
+  const path = await import("path");
+
+  // Load .env dynamically if present without hardcoding secrets in test files
+  try {
+    const envPath = path.resolve(process.cwd(), ".env");
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, "utf-8");
+      for (const line of envContent.split("\n")) {
+        const match = line.match(/^\s*([A-Za-z0-9_]+)=(.*)$/);
+        if (match && !process.env[match[1]]) {
+          process.env[match[1]] = match[2].trim().replace(/^['"]|['"]$/g, "");
+        }
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
   const { prisma } = await import("../src/server/db/client");
   const { verifyPassword } = await import("../src/server/auth/password");
   const { hashSessionToken, generateSessionToken } = await import("../src/server/auth/session");
@@ -34,8 +53,8 @@ async function runAuthTests() {
   console.log("MUNICIPALITY OF SAN FELIPE - PHASE 10 AUTH TEST SUITE");
   console.log("=======================================================\n");
 
-  const testEmail = "admin@sanfelipe.gov.ph";
-  const validPassword = "ChangeMeDevPass2026!";
+  const testEmail = process.env.SEED_SUPERADMIN_EMAIL || "admin@sanfelipe.gov.ph";
+  const validPassword = process.env.SEED_SUPERADMIN_PASSWORD || "TestDevPassword2026!";
   const wrongPassword = "WrongPassword999!";
   const nonExistentEmail = "ghost.official@sanfelipe.gov.ph";
 
@@ -75,10 +94,11 @@ async function runAuthTests() {
   const malformedInput = loginSchema.safeParse({ email: "invalid-email-format", password: "" });
   assert(!malformedInput.success, "Rejects malformed email and empty password");
 
-  const validParsed = loginSchema.safeParse({ email: "  ADMIN@SanFelipe.gov.ph  ", password: validPassword });
+  const rawTestEmail = `  ${testEmail.toUpperCase()}  `;
+  const validParsed = loginSchema.safeParse({ email: rawTestEmail, password: validPassword });
   assert(validParsed.success, "Accepts valid credentials with whitespace");
   if (validParsed.success) {
-    assert(validParsed.data.email.trim().toLowerCase() === testEmail, "Correctly normalizes email identifier");
+    assert(validParsed.data.email.trim().toLowerCase() === testEmail.toLowerCase(), "Correctly normalizes email identifier");
   }
 
   // -------------------------------------------------------------

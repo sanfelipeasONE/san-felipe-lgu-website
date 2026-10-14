@@ -3,10 +3,17 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { NewsCard } from "@/components/home/news-card";
-import { NEWS_DATA } from "@/config/homepage-data";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import { getPublicLatestNews } from "@/server/news/service";
+import { mapDbArticleToHomepageItem } from "@/server/news/mapper";
 
-export function LatestNews() {
+export async function LatestNews() {
+  const dbArticles = await getPublicLatestNews(4);
+  const newsItems = dbArticles.map(mapDbArticleToHomepageItem);
+
+  const featuredItem = newsItems[0];
+  const secondaryItems = newsItems.slice(1);
+
   return (
     <section className="py-14 sm:py-18 bg-slate-50/60 border-b border-gray-200">
       <Container>
@@ -35,25 +42,39 @@ export function LatestNews() {
           </div>
         </ScrollReveal>
 
-        {/* 2-Column Asymmetric News Grid with 50ms stagger */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Featured Large Card (7 cols, 0ms delay) */}
-          <div className="lg:col-span-7">
-            <ScrollReveal staggerIndex={0} className="h-full">
-              <NewsCard news={NEWS_DATA.featured} featured={true} />
-            </ScrollReveal>
+        {newsItems.length === 0 ? (
+          <div className="py-12 text-center bg-white border border-gray-200 rounded-xs shadow-2xs p-8">
+            <p className="text-sm font-medium text-slate-500">
+              No public news or announcements have been published at this time.
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Official advisories and press releases from the Municipal Government of San Felipe will appear here once released.
+            </p>
           </div>
-
-          {/* Secondary 3 Stacked Cards (5 cols, staggered 50ms, 100ms, 150ms) */}
-          <div className="lg:col-span-5 flex flex-col justify-between gap-4">
-            {NEWS_DATA.secondary.map((item, index) => (
-              <ScrollReveal key={item.id} staggerIndex={index + 1}>
-                <NewsCard news={item} />
+        ) : (
+          /* 2-Column Asymmetric News Grid with 50ms stagger */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Featured Large Card (7 cols or full width if no secondary) */}
+            <div className={secondaryItems.length > 0 ? "lg:col-span-7" : "lg:col-span-12"}>
+              <ScrollReveal staggerIndex={0} className="h-full">
+                <NewsCard news={featuredItem} featured={true} />
               </ScrollReveal>
-            ))}
+            </div>
+
+            {/* Secondary Stacked Cards (5 cols, staggered 50ms, 100ms, 150ms) */}
+            {secondaryItems.length > 0 && (
+              <div className="lg:col-span-5 flex flex-col justify-between gap-4">
+                {secondaryItems.map((item, index) => (
+                  <ScrollReveal key={item.id} staggerIndex={index + 1}>
+                    <NewsCard news={item} />
+                  </ScrollReveal>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </Container>
     </section>
   );
 }
+
