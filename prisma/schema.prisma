@@ -62,6 +62,10 @@ model User {
   roleId       String
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
+  // Sessions and audit trail
+  sessions     Session[]
+  auditLogs    AuditLog[]
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -120,3 +124,44 @@ model RolePermission {
   @@index([permissionId])
   @@map("role_permissions")
 }
+
+/// Server-side session record for authenticated municipal staff.
+model Session {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  ipAddress  String?
+  userAgent  String?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// Security and administrative audit trail.
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  officeId  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+

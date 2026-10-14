@@ -1,4 +1,22 @@
 import "server-only";
+import crypto from "node:crypto";
+import { cookies } from "next/headers";
+import { prisma } from "@/server/db/client";
+import { AUTH_CONFIG } from "@/server/auth/config";
+
+export interface SessionOffice {
+  id: string;
+  name: string;
+  shortName: string | null;
+  slug: string;
+}
+
+export interface SessionRole {
+  id: string;
+  name: string;
+  slug: string;
+  isSystemScope: boolean;
+}
 
 export interface SessionUser {
   id: string;
@@ -6,16 +24,187 @@ export interface SessionUser {
   email: string;
   status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
   officeId: string | null;
+  office: SessionOffice | null;
   roleId: string;
+  role: SessionRole;
   isSystemScope: boolean;
   permissions: string[];
+  sessionId: string;
+}
+
+/**
+ * Computes a SHA-256 hash of the bearer token for database storage and lookup.
+ * This ensures the raw bearer token is never persisted at rest in the database.
+ */
+export function hashSessionToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+/**
+ * Generates a cryptographically secure random session bearer token.
+ * 32 random bytes encoded in base64url provide 256 bits of entropy.
+ */
+export function generateSessionToken(): string {
+  return crypto.randomBytes(32).toString("base64url");
+}
+
+/**
+ * Creates a new persistent server session in PostgreSQL and sets the HttpOnly session cookie.
+ */
+export async function createSession(
+  userId: string,
+  metadata?: {
+    ipAddress?: string | null;
+    userAgent?: string | null;
+  }
+): Promise<{ token: string; sessionId: string }> {
+  const token = generateSessionToken();
+  const tokenHash = hashSessionToken(token);
+  const expiresAt = new Date(Date.now() + AUTH_CONFIG.sessionTtlMs);
+
+  const session = await prisma.session.create({
+    data: {
+      userId,
+      tokenHash,
+      expiresAt,
+      ipAddress: metadata?.ipAddress ?? null,
+      userAgent: metadata?.userAgent ?? null,
+    },
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(AUTH_CONFIG.cookieName, token, {
+    ...AUTH_CONFIG.cookieOptions,
+    maxAge: AUTH_CONFIG.sessionTtlSeconds,
+    expires: expiresAt,
+  });
+
+  return { token, sessionId: session.id };
 }
 
 /**
  * Retrieves the currently authenticated municipal staff member session.
- * Phase 1 stub returns null; Phase 2 will resolve this via HttpOnly session cookies/tokens.
+ * Reads the HttpOnly cookie, verifies against PostgreSQL, and loads:
+ * User + Office + Role + Permissions.
  */
 export async function getCurrentUser(): Promise<SessionUser | null> {
-  // Phase 1: Authentication session implementation deferred to Phase 2.
-  return null;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(AUTH_CONFIG.cookieName);
+
+  if (!sessionCookie?.value) {
+    return null;
+  }
+
+  const tokenHash = hashSessionToken(sessionCookie.value);
+
+  const session = await prisma.session.findUnique({
+    where: { tokenHash },
+    include: {
+      user: {
+        include: {
+          office: true,
+          role: {
+            include: {
+              permissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Verify session validity and revocation state
+  if (!session) {
+    return null;
+  }
+
+  const now = new Date();
+  if (session.revokedAt !== null || session.expiresAt <= now) {
+    return null;
+  }
+
+  const user = session.user;
+  if (!user) {
+    return null;
+  }
+
+  // Update lastUsedAt if older than 5 minutes (sliding tracking without database churn)
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+  if (!session.lastUsedAt || session.lastUsedAt < fiveMinutesAgo) {
+    // Fire and forget update
+    prisma.session
+      .update({
+        where: { id: session.id },
+        data: { lastUsedAt: now },
+      })
+      .catch((err) => {
+        console.error("[SESSION] Failed to update lastUsedAt:", err);
+      });
+  }
+
+  // Extract flat list of granular permission codes
+  const permissions: string[] = user.role.permissions.map(
+    (rp) => rp.permission.code
+  );
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    status: user.status,
+    officeId: user.officeId,
+    office: user.office
+      ? {
+          id: user.office.id,
+          name: user.office.name,
+          shortName: user.office.shortName,
+          slug: user.office.slug,
+        }
+      : null,
+    roleId: user.roleId,
+    role: {
+      id: user.role.id,
+      name: user.role.name,
+      slug: user.role.slug,
+      isSystemScope: user.role.isSystemScope,
+    },
+    isSystemScope: user.role.isSystemScope,
+    permissions,
+    sessionId: session.id,
+  };
+}
+
+/**
+ * Revokes the current server-side session and clears the browser cookie.
+ */
+export async function revokeCurrentSession(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(AUTH_CONFIG.cookieName);
+
+  let userId: string | null = null;
+
+  if (sessionCookie?.value) {
+    const tokenHash = hashSessionToken(sessionCookie.value);
+    const existing = await prisma.session.findUnique({
+      where: { tokenHash },
+      select: { id: true, userId: true },
+    });
+
+    if (existing) {
+      userId = existing.userId;
+      await prisma.session.update({
+        where: { id: existing.id },
+        data: { revokedAt: new Date() },
+      });
+    }
+  }
+
+  // Clear cookie from the browser
+  cookieStore.delete(AUTH_CONFIG.cookieName);
+
+  return userId;
 }

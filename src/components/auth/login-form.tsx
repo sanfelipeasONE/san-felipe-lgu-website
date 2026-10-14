@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Lock, AlertCircle, Loader2 } from "lucide-react";
@@ -10,9 +10,9 @@ import { authenticateStaff } from "@/app/(auth)/staff/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export function LoginForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = React.useState(false);
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [isPending, setIsPending] = React.useState(false);
@@ -26,7 +26,6 @@ export function LoginForm() {
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
     },
   });
 
@@ -37,11 +36,14 @@ export function LoginForm() {
     try {
       const response = await authenticateStaff(values);
       if (!response.success) {
-        setServerError(response.message || "Unable to sign in with those credentials.");
+        setServerError(response.message || "Invalid credentials.");
+        setIsPending(false);
+      } else {
+        router.push(response.redirectTo || "/admin");
+        router.refresh();
       }
     } catch {
       setServerError("An unexpected error occurred while communicating with the server.");
-    } finally {
       setIsPending(false);
     }
   };
@@ -67,7 +69,7 @@ export function LoginForm() {
         <Input
           id="email"
           type="email"
-          autoComplete="email"
+          autoComplete="username"
           placeholder="employee@sanfelipe.gov.ph"
           error={!!errors.email}
           aria-invalid={!!errors.email}
@@ -87,12 +89,9 @@ export function LoginForm() {
           <Label htmlFor="password" required>
             Password
           </Label>
-          <Link
-            href="/staff/forgot-password"
-            className="text-xs text-burgundy-700 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-burgundy-700 rounded-xs"
-          >
-            Forgot password?
-          </Link>
+          <span className="text-[11px] text-gov-muted" title="Password assistance must be coordinated directly with the ICT Office">
+            Contact ICTO for resets
+          </span>
         </div>
 
         <div className="relative">
@@ -127,22 +126,13 @@ export function LoginForm() {
         )}
       </div>
 
-      {/* Remember Me */}
-      <div className="flex items-center justify-between pt-1">
-        <Checkbox
-          id="rememberMe"
-          label="Keep me signed in on this device"
-          {...register("rememberMe")}
-        />
-      </div>
-
       {/* Submit Button */}
       <Button
         type="submit"
         variant="primary"
         size="lg"
         disabled={isPending}
-        className="w-full font-semibold shadow-xs"
+        className="w-full font-semibold shadow-xs mt-2"
       >
         {isPending ? (
           <>

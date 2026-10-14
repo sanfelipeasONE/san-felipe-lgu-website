@@ -2,9 +2,13 @@ import * as React from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { LoginForm } from "@/components/auth/login-form";
 import { ASSETS } from "@/config/assets";
+import { getCurrentUser } from "@/server/auth/session";
+
+export const instant = false;
 
 export const metadata: Metadata = {
   title: "Staff CMS Login | Municipality of San Felipe",
@@ -12,7 +16,12 @@ export const metadata: Metadata = {
     "Secure administrative login portal for authorized personnel of the Municipal Government of San Felipe, Zambales.",
 };
 
-export default function StaffLoginPage() {
+export default async function StaffLoginPage() {
+  const user = await getCurrentUser();
+  if (user && user.status === "ACTIVE") {
+    redirect("/admin");
+  }
+
   return (
     <div className="min-h-screen bg-gov-surface flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Return to Public Website */}
