@@ -27,13 +27,14 @@ const BASELINE_PERMISSIONS = [
   { code: "posts.publish", name: "Publish Posts", module: "posts", description: "Publish approved posts to the public website" },
   { code: "posts.archive", name: "Archive Posts", module: "posts", description: "Archive municipal posts and news items" },
 
-  // Documents & Transparency
+  // Documents & Transparency (Phase 14)
   { code: "documents.view", name: "View Documents", module: "documents", description: "View uploaded documents and full disclosure records" },
   { code: "documents.create", name: "Create Documents", module: "documents", description: "Upload new municipal documents" },
   { code: "documents.update", name: "Update Documents", module: "documents", description: "Edit document metadata and records" },
   { code: "documents.delete", name: "Delete Documents", module: "documents", description: "Remove documents" },
   { code: "documents.approve", name: "Approve Documents", module: "documents", description: "Approve documents for publication" },
   { code: "documents.publish", name: "Publish Documents", module: "documents", description: "Publish documents to the transparency portal" },
+  { code: "documents.archive", name: "Archive Documents", module: "documents", description: "Archive municipal documents and downloadable forms" },
 
   // Municipal Events
   { code: "events.create", name: "Create Events", module: "events", description: "Create calendar events" },
@@ -175,7 +176,7 @@ async function main() {
   const staffRoleId = roleMap.get("staff")!;
   const staffPermCodes = [
     "posts.view", "posts.create", "posts.update", "posts.publish",
-    "documents.view", "documents.create", "documents.update",
+    "documents.view", "documents.create", "documents.update", "documents.publish", "documents.archive",
     "events.create", "events.update",
     "services.view", "services.update", "services.publish",
   ];
@@ -196,7 +197,7 @@ async function main() {
   const approverRoleId = roleMap.get("approver")!;
   const approverPermCodes = [
     "posts.view", "posts.approve", "posts.publish",
-    "documents.view", "documents.approve", "documents.publish",
+    "documents.view", "documents.approve", "documents.publish", "documents.archive",
     "events.publish",
     "services.view", "services.publish",
   ];
@@ -218,7 +219,7 @@ async function main() {
   const officeAdminPermCodes = [
     "users.view", "offices.view", "offices.update",
     "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.archive",
-    "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve",
+    "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish", "documents.archive",
     "events.create", "events.update", "events.publish",
     "services.view", "services.update", "services.publish",
   ];
@@ -241,7 +242,7 @@ async function main() {
     "users.view", "users.create", "users.update", "users.disable",
     "offices.view", "offices.update",
     "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.publish", "posts.archive",
-    "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish",
+    "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish", "documents.archive",
     "events.create", "events.update", "events.publish",
     "audit.view", "settings.manage",
     "services.view", "services.update", "services.publish",

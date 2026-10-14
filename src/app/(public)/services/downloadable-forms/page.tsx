@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/layout/page-header";
 import { DownloadableFormsView } from "@/components/services/downloadable-forms-view";
 import { PublishedServiceSections } from "@/components/services/published-service-sections";
-import { getDownloadableForms } from "@/config/services-data";
 import { getPublishedServicePage } from "@/server/services/service";
+import { getPublishedDocuments } from "@/server/documents/service";
+import type { DownloadableForm, FormCategory, FormFileType } from "@/config/services-data";
 
 export const instant = false;
 
@@ -18,14 +19,30 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function DownloadableFormsPage() {
-  const [publishedPage, forms] = await Promise.all([
+  const [publishedPage, publishedDocs] = await Promise.all([
     getPublishedServicePage("downloadable-forms"),
-    Promise.resolve(getDownloadableForms()),
+    getPublishedDocuments(),
   ]);
 
   const hasPublishedContent = Boolean(
     publishedPage && publishedPage.sections.length > 0
   );
+
+  // Map database published documents to public view model
+  const forms: DownloadableForm[] = publishedDocs.map((doc) => ({
+    id: doc.id,
+    slug: doc.id,
+    title: doc.title,
+    description: doc.description || "",
+    officeId: doc.office.id,
+    officeName: doc.office.name,
+    category: (doc.category as FormCategory) || "General Administration",
+    fileType: (doc.format as FormFileType) || "PDF",
+    fileSize: doc.fileSizeFormatted,
+    fileUrl: doc.downloadUrl,
+    publishedAt: doc.publishedAt ? doc.publishedAt.toISOString() : undefined,
+    isAvailable: true,
+  }));
 
   return (
     <main>
@@ -49,7 +66,7 @@ export default async function DownloadableFormsPage() {
         />
       )}
 
-      {/* Phase 14 Boundary: Downloadable Forms Repository remains in safe empty state */}
+      {/* Database-backed municipal downloadable forms repository */}
       <DownloadableFormsView forms={forms} />
     </main>
   );

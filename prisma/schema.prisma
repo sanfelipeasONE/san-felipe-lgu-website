@@ -42,6 +42,7 @@ model Office {
   users       User[]
   newsArticles NewsArticle[]
   servicePages ServicePage[]
+  documents   Document[]
 
   @@index([status])
   @@map("offices")
@@ -75,6 +76,10 @@ model User {
   // Services Content authorship
   servicePagesCreated ServicePage[] @relation("ServicePagesCreated")
   servicePagesUpdated ServicePage[] @relation("ServicePagesUpdated")
+
+  // Documents & Downloadable Forms authorship (Phase 14)
+  documentsCreated Document[] @relation("DocumentsCreated")
+  documentsUpdated Document[] @relation("DocumentsUpdated")
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -278,5 +283,53 @@ model ServiceSection {
   @@index([servicePageId])
   @@index([servicePageId, sortOrder])
   @@map("service_sections")
+}
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Official downloadable municipal documents and application form templates (Phase 14).
+model Document {
+  id               String         @id @default(cuid())
+  title            String
+  description      String?        @db.Text
+  category         String?        // e.g. "Business & Licensing", "Civil Registry", "Building & Engineering", "Taxation & Revenue", "Social Services", "General Administration"
+  status           DocumentStatus @default(DRAFT)
+
+  // Office ownership: every document must belong to a municipal office
+  officeId         String
+  office           Office         @relation(fields: [officeId], references: [id], onDelete: Restrict)
+
+  // File metadata (Cloudinary raw storage)
+  originalFilename String
+  storagePublicId  String
+  storageUrl       String
+  resourceType     String         @default("raw")
+  format           String         // "pdf" | "doc" | "docx" | "xls" | "xlsx"
+  mimeType         String         // e.g. "application/pdf"
+  bytes            Int            // file size in bytes
+
+  // Authorship & audit tracking
+  createdById      String
+  createdBy        User           @relation("DocumentsCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedById      String?
+  updatedBy        User?          @relation("DocumentsUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  // Lifecycle timestamps
+  publishedAt      DateTime?
+  archivedAt       DateTime?
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status])
+  @@index([officeId])
+  @@index([category])
+  @@index([status, publishedAt])
+  @@index([status, officeId])
+  @@map("documents")
 }
 

@@ -242,14 +242,15 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 3,
-    "Exactly 3 routes are marked isImplemented: true in Phase 13 (/admin, /admin/news, and /admin/services)"
+    implementedItems.length === 4,
+    "Exactly 4 routes are marked isImplemented: true in Phase 14 (/admin, /admin/news, /admin/services, and /admin/documents)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
       implementedItems.some((i) => i.href === "/admin/news") &&
-      implementedItems.some((i) => i.href === "/admin/services"),
-    "The active implemented routes are /admin, /admin/news, and /admin/services"
+      implementedItems.some((i) => i.href === "/admin/services") &&
+      implementedItems.some((i) => i.href === "/admin/documents"),
+    "The active implemented routes are /admin, /admin/news, /admin/services, and /admin/documents"
   );
 
   const newsItem = allConfigItems.find((i) => i.id === "news");
@@ -257,6 +258,9 @@ async function runCMSFoundationTests() {
 
   const servicesItem = allConfigItems.find((i) => i.id === "services");
   assert(servicesItem?.isImplemented === true, "Services item is activated with isImplemented: true in Phase 13");
+
+  const downloadableFormsItem = allConfigItems.find((i) => i.id === "downloadable-forms");
+  assert(downloadableFormsItem?.isImplemented === true, "Downloadable Forms item is activated with isImplemented: true in Phase 14");
 
   const usersItem = allConfigItems.find((i) => i.id === "users");
   assert(usersItem?.isImplemented === false, "Users item is marked isImplemented: false (scheduled for Phase 17)");

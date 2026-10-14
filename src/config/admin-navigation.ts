@@ -101,13 +101,12 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
       {
         id: "downloadable-forms",
         label: "Downloadable Forms",
-        href: "/admin/services/downloadable-forms",
+        href: "/admin/documents",
         icon: FileText,
         section: "content",
         description: "Official municipal application forms and templates",
         requiredPermission: "documents.view",
-        isImplemented: false,
-        phaseLabel: "Upcoming",
+        isImplemented: true,
       },
       {
         id: "job-opportunities",

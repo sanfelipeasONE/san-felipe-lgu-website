@@ -31,6 +31,7 @@ export const PERMISSIONS = {
   DOCUMENTS_DELETE: "documents.delete",
   DOCUMENTS_APPROVE: "documents.approve",
   DOCUMENTS_PUBLISH: "documents.publish",
+  DOCUMENTS_ARCHIVE: "documents.archive",
 
   // Municipal Events & Advisories
   EVENTS_CREATE: "events.create",
