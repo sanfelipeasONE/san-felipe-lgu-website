@@ -86,3 +86,15 @@ export async function requireOfficeAccess(
 
   return user;
 }
+
+/**
+ * Validates both permission possession and office boundary for office-scoped content.
+ * Rejects if user lacks the permission OR belongs to a different office (unless system-scoped).
+ */
+export async function requireOfficeContentAccess(
+  contentOfficeId: string,
+  requiredPermission: PermissionCode
+): Promise<SessionUser> {
+  await requirePermission(requiredPermission);
+  return requireOfficeAccess(contentOfficeId);
+}
