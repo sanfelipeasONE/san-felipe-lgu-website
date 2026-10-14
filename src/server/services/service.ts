@@ -231,14 +231,17 @@ export async function updateServicePage(
     }
   }
 
-  // Validate target office exists if set
+  // Validate target office exists and is active if set
   if (targetOfficeId) {
     const officeExists = await prisma.office.findUnique({
       where: { id: targetOfficeId },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!officeExists) {
       throw new ServiceError("The specified municipal office does not exist.", 400);
+    }
+    if (officeExists.status !== "ACTIVE") {
+      throw new ServiceError("The specified municipal office is inactive.", 400);
     }
   }
 

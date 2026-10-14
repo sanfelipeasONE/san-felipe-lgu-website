@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Edit, Eye, ExternalLink, Building2, Calendar, FileText } from "lucide-react";
 import { getCurrentUser } from "@/server/auth/session";
-import { hasPermission } from "@/lib/authz/scope";
+import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { getAdminServicesList } from "@/server/services/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -66,6 +66,10 @@ export default async function AdminServicesListPage() {
         }
         renderRow={(page) => {
           const publicUrl = `/services/${page.serviceKey}`;
+          const isSystem = isSystemScoped(user);
+          const canEditThisPage =
+            canUpdate &&
+            (isSystem || (Boolean(user.officeId) && page.officeId === user.officeId));
 
           return (
             <tr
@@ -79,12 +83,18 @@ export default async function AdminServicesListPage() {
                     <FileText className="h-4 w-4" aria-hidden="true" />
                   </div>
                   <div className="min-w-0">
-                    <Link
-                      href={`/admin/services/${page.serviceKey}/edit`}
-                      className="font-bold text-xs sm:text-sm text-gov-charcoal hover:text-burgundy-800 transition-colors line-clamp-1"
-                    >
-                      {page.title}
-                    </Link>
+                    {canEditThisPage ? (
+                      <Link
+                        href={`/admin/services/${page.serviceKey}/edit`}
+                        className="font-bold text-xs sm:text-sm text-gov-charcoal hover:text-burgundy-800 transition-colors line-clamp-1"
+                      >
+                        {page.title}
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-xs sm:text-sm text-gov-charcoal line-clamp-1">
+                        {page.title}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gov-muted">
                       <span className="font-mono bg-slate-100 px-1.5 py-0.2 rounded-xs text-[10px]">
                         /{page.serviceKey}
@@ -143,7 +153,7 @@ export default async function AdminServicesListPage() {
               <td className="py-3.5 px-4 text-right whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1.5">
                   {/* Edit Link */}
-                  {canUpdate && (
+                  {canEditThisPage && (
                     <Link
                       href={`/admin/services/${page.serviceKey}/edit`}
                       className="inline-flex items-center h-8 px-2.5 rounded-xs text-xs font-semibold text-burgundy-800 hover:text-burgundy-900 hover:bg-burgundy-50 transition-colors"

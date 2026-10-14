@@ -78,6 +78,17 @@ async function runServiceContentTestSuite() {
       },
     });
 
+    const inactiveOffice = await prisma.office.upsert({
+      where: { slug: "test-inactive-phase13" },
+      update: {},
+      create: {
+        name: "Inactive Test Department",
+        shortName: "ITD",
+        slug: "test-inactive-phase13",
+        status: "INACTIVE",
+      },
+    });
+
     const superAdminUser: SessionUser = {
       id: "test-superadmin-p13",
       email: "superadmin.p13@sanfelipe.gov.ph",
@@ -183,6 +194,34 @@ async function runServiceContentTestSuite() {
       ],
     };
 
+    const mhoApproverUser: SessionUser = {
+      id: "test-mho-approver-p13",
+      email: "mho.approver.p13@sanfelipe.gov.ph",
+      name: "MHO Department Approver",
+      status: "ACTIVE",
+      officeId: mhoOffice.id,
+      office: {
+        id: mhoOffice.id,
+        name: mhoOffice.name,
+        shortName: mhoOffice.shortName,
+        slug: mhoOffice.slug,
+      },
+      roleId: "role-mho-approver-p13",
+      isSystemScope: false,
+      sessionId: "session-test-mho-approver",
+      role: {
+        id: "role-mho-approver-p13",
+        name: "Approver",
+        slug: "approver",
+        isSystemScope: false,
+      },
+      permissions: [
+        PERMISSIONS.SERVICES_VIEW,
+        PERMISSIONS.SERVICES_UPDATE,
+        PERMISSIONS.SERVICES_PUBLISH,
+      ],
+    };
+
     const unauthorizedUser: SessionUser = {
       id: "test-unauth-p13",
       email: "unauth.p13@sanfelipe.gov.ph",
@@ -213,6 +252,7 @@ async function runServiceContentTestSuite() {
       { id: bploStaffUser.id, name: bploStaffUser.name, email: bploStaffUser.email, roleSlug: "office-editor", officeId: bploOffice.id },
       { id: bploApproverUser.id, name: bploApproverUser.name, email: bploApproverUser.email, roleSlug: "approver", officeId: bploOffice.id },
       { id: mhoStaffUser.id, name: mhoStaffUser.name, email: mhoStaffUser.email, roleSlug: "office-editor", officeId: mhoOffice.id },
+      { id: mhoApproverUser.id, name: mhoApproverUser.name, email: mhoApproverUser.email, roleSlug: "approver", officeId: mhoOffice.id },
       { id: unauthorizedUser.id, name: unauthorizedUser.name, email: unauthorizedUser.email, roleSlug: "office-editor", officeId: mhoOffice.id },
     ];
 
@@ -243,6 +283,25 @@ async function runServiceContentTestSuite() {
       CANONICAL_SERVICE_KEYS.length === 4,
       "Canonical service keys contain exactly 4 entries"
     );
+
+    // =========================================================================
+    // 0. CANONICAL SEED & PROVENANCE (OFFICE ID DEFAULTS TO NULL)
+    // =========================================================================
+    console.log("0. Canonical Seed & Office Provenance");
+    const canonicalDbPages = await prisma.servicePage.findMany({
+      where: { serviceKey: { in: [...CANONICAL_SERVICE_KEYS] } },
+    });
+    assert(canonicalDbPages.length === 4, "All 4 canonical service pages exist in database");
+    for (const page of canonicalDbPages) {
+      assert(
+        page.officeId === null,
+        `Canonical page ${page.serviceKey} defaults officeId to null (zero unverified assumptions)`
+      );
+      assert(
+        page.status === "DRAFT",
+        `Canonical page ${page.serviceKey} is initialized in DRAFT status`
+      );
+    }
 
     // =========================================================================
     // 1. AUTHENTICATION & PERMISSION GUARDS
@@ -339,7 +398,7 @@ async function runServiceContentTestSuite() {
 
     assert(assignedToBplo?.officeId === bploOffice.id, "System admin successfully assigned business-permits to BPLO");
 
-    // Invalid office rejected
+    // Invalid non-existent office rejected
     try {
       await updateServicePage(superAdminUser, "business-permits", {
         title: "Business Permits",
@@ -349,6 +408,21 @@ async function runServiceContentTestSuite() {
       assert(false, "Invalid office ID should be rejected");
     } catch (e: unknown) {
       assert(e instanceof ServiceError && e.statusCode === 400, "Rejects assignment of non-existent office ID");
+    }
+
+    // Inactive office assignment rejected
+    try {
+      await updateServicePage(superAdminUser, "business-permits", {
+        title: "Business Permits",
+        officeId: inactiveOffice.id,
+        sections: [],
+      });
+      assert(false, "Inactive office assignment should be rejected");
+    } catch (e: unknown) {
+      assert(
+        e instanceof ServiceError && e.statusCode === 400 && e.message.includes("inactive"),
+        "Rejects assignment of inactive municipal office"
+      );
     }
 
     // =========================================================================
@@ -406,7 +480,7 @@ async function runServiceContentTestSuite() {
       }
     }
 
-    // Office staff cannot forge officeId
+    // Office staff cannot forge officeId on assigned page
     const forgedAttempt = await updateServicePage(bploStaffUser, "business-permits", {
       title: "Forged Office Attempt",
       officeId: mhoOffice.id, // Trying to switch officeId to MHO
@@ -419,7 +493,35 @@ async function runServiceContentTestSuite() {
     });
     assert(
       forgedAttempt?.officeId === bploOffice.id,
-      "Office-scoped staff cannot forge or reassign officeId (input ignored for office users)"
+      "Office-scoped staff cannot forge or reassign officeId on assigned page"
+    );
+
+    // Office staff cannot forge officeId to claim unassigned page
+    try {
+      await updateServicePage(bploStaffUser, "downloadable-forms", {
+        title: "Attempt to Claim Unassigned Page",
+        officeId: bploOffice.id,
+        sections: [
+          {
+            title: "Illicit Claim",
+            content: "<p>Claiming page</p>",
+            sortOrder: 0,
+          },
+        ],
+      });
+      assert(false, "Office staff should be denied from claiming unassigned page");
+    } catch (e: unknown) {
+      assert(
+        e instanceof ServiceError && e.statusCode === 403,
+        "Office staff denied from claiming unassigned service page by forging officeId"
+      );
+    }
+    const claimCheck = await prisma.servicePage.findUnique({
+      where: { serviceKey: "downloadable-forms" },
+    });
+    assert(
+      claimCheck?.officeId === null,
+      "Unassigned service page remains unassigned with officeId: null after forged attempt"
     );
 
     // =========================================================================
@@ -463,7 +565,29 @@ async function runServiceContentTestSuite() {
       "Validation catches missing content sections"
     );
 
-    // BPLO approver publishes business-permits
+    // OFFICE user cannot publish an unassigned service page
+    try {
+      await publishServicePage(bploApproverUser, "citizens-charter");
+      assert(false, "Office approver should be denied from publishing unassigned service page");
+    } catch (e: unknown) {
+      assert(
+        e instanceof ServiceError && e.statusCode === 403,
+        "Office approver denied from publishing unassigned service page"
+      );
+    }
+
+    // Another office approver cannot publish business-permits
+    try {
+      await publishServicePage(mhoApproverUser, "business-permits");
+      assert(false, "MHO approver should be denied from publishing BPLO service page");
+    } catch (e: unknown) {
+      assert(
+        e instanceof ServiceError && e.statusCode === 403,
+        "Cross-office publishing denied to unauthorized office approver"
+      );
+    }
+
+    // BPLO approver publishes business-permits (authorized)
     const published = await publishServicePage(bploApproverUser, "business-permits");
     assert(published.status === "PUBLISHED", "Service page transitioned to PUBLISHED status");
     assert(published.publishedAt !== null, "publishedAt timestamp is recorded upon publication");
@@ -483,6 +607,17 @@ async function runServiceContentTestSuite() {
       publicPublishedQuery?.office?.name === bploOffice.name,
       "Public query includes responsible office attribution"
     );
+
+    // Another office approver cannot unpublish business-permits
+    try {
+      await unpublishServicePage(mhoApproverUser, "business-permits");
+      assert(false, "MHO approver should be denied from unpublishing BPLO service page");
+    } catch (e: unknown) {
+      assert(
+        e instanceof ServiceError && e.statusCode === 403,
+        "Cross-office unpublishing denied to unauthorized office approver"
+      );
+    }
 
     // Unpublish strictly requires services.publish (update-only user rejected)
     const updateOnlyUser: SessionUser = {
@@ -664,6 +799,7 @@ async function runServiceContentTestSuite() {
             "test-bplo-staff-p13",
             "test-bplo-approver-p13",
             "test-mho-staff-p13",
+            "test-mho-approver-p13",
             "test-unauth-p13",
           ],
         },
@@ -673,8 +809,24 @@ async function runServiceContentTestSuite() {
     await prisma.office.deleteMany({
       where: {
         slug: {
-          in: ["test-bplo-phase13", "test-mho-phase13"],
+          in: [
+            "test-bplo-phase13",
+            "test-mho-phase13",
+            "test-inactive-phase13",
+          ],
         },
+      },
+    });
+
+    // Reset all 4 canonical pages to safe unassigned draft baseline
+    await prisma.servicePage.updateMany({
+      where: {
+        serviceKey: { in: [...CANONICAL_SERVICE_KEYS] },
+      },
+      data: {
+        description: null,
+        status: "DRAFT",
+        officeId: null,
       },
     });
 
