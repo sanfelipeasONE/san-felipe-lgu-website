@@ -48,6 +48,7 @@ async function runCMSFoundationTests() {
       "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish",
       "events.create", "events.update", "events.publish",
       "audit.view", "settings.manage",
+      "services.view", "services.update", "services.publish",
     ],
   };
 
@@ -63,6 +64,7 @@ async function runCMSFoundationTests() {
       "offices.view",
       "posts.view", "posts.create", "posts.update", "posts.approve", "posts.publish",
       "documents.view", "documents.create", "documents.update",
+      "services.view", "services.update", "services.publish",
     ],
   };
 
@@ -178,6 +180,7 @@ async function runCMSFoundationTests() {
 
   assert(superItemIds.includes("dashboard"), "Super Admin has Dashboard item");
   assert(superItemIds.includes("news"), "Super Admin has News item");
+  assert(superItemIds.includes("services"), "Super Admin has Services item");
   assert(superItemIds.includes("citizens-charter"), "Super Admin has Citizen's Charter item");
   assert(superItemIds.includes("business-permits"), "Super Admin has Business Permits item");
   assert(superItemIds.includes("downloadable-forms"), "Super Admin has Downloadable Forms item");
@@ -200,6 +203,7 @@ async function runCMSFoundationTests() {
 
   assert(officeAdminItemIds.includes("dashboard"), "Office Admin has Dashboard item");
   assert(officeAdminItemIds.includes("news"), "Office Admin has News item (posts.view)");
+  assert(officeAdminItemIds.includes("services"), "Office Admin has Services item (services.view)");
   assert(officeAdminItemIds.includes("users"), "Office Admin has Staff Accounts item (users.view)");
   assert(!officeAdminItemIds.includes("offices"), "Office Admin does NOT have Offices item (system-only)");
   assert(!officeAdminItemIds.includes("roles"), "Office Admin does NOT have Roles item (system-only)");
@@ -238,17 +242,21 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 2,
-    "Exactly 2 routes are marked isImplemented: true in Phase 12 (/admin and /admin/news)"
+    implementedItems.length === 3,
+    "Exactly 3 routes are marked isImplemented: true in Phase 13 (/admin, /admin/news, and /admin/services)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
-      implementedItems.some((i) => i.href === "/admin/news"),
-    "The active implemented routes are /admin and /admin/news"
+      implementedItems.some((i) => i.href === "/admin/news") &&
+      implementedItems.some((i) => i.href === "/admin/services"),
+    "The active implemented routes are /admin, /admin/news, and /admin/services"
   );
 
   const newsItem = allConfigItems.find((i) => i.id === "news");
   assert(newsItem?.isImplemented === true, "News item is activated with isImplemented: true in Phase 12");
+
+  const servicesItem = allConfigItems.find((i) => i.id === "services");
+  assert(servicesItem?.isImplemented === true, "Services item is activated with isImplemented: true in Phase 13");
 
   const usersItem = allConfigItems.find((i) => i.id === "users");
   assert(usersItem?.isImplemented === false, "Users item is marked isImplemented: false (scheduled for Phase 17)");

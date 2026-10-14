@@ -41,6 +41,7 @@ model Office {
 
   users       User[]
   newsArticles NewsArticle[]
+  servicePages ServicePage[]
 
   @@index([status])
   @@map("offices")
@@ -70,6 +71,10 @@ model User {
   // News & Content authorship
   newsCreated  NewsArticle[] @relation("NewsArticlesCreated")
   newsUpdated  NewsArticle[] @relation("NewsArticlesUpdated")
+
+  // Services Content authorship
+  servicePagesCreated ServicePage[] @relation("ServicePagesCreated")
+  servicePagesUpdated ServicePage[] @relation("ServicePagesUpdated")
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -219,5 +224,59 @@ model NewsArticle {
   @@index([status, publishedAt])
   @@index([status, officeId])
   @@map("news_articles")
+}
+
+enum ServiceStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Canonical municipal service pages managed via CMS.
+model ServicePage {
+  id          String        @id @default(cuid())
+  serviceKey  String        @unique // "citizens-charter" | "business-permits" | "downloadable-forms" | "job-opportunities"
+  title       String
+  description String?       @db.Text
+  status      ServiceStatus @default(DRAFT)
+
+  // Office affiliation (optional: null indicates municipal-wide / system-level service)
+  officeId    String?
+  office      Office?       @relation(fields: [officeId], references: [id], onDelete: SetNull)
+
+  // Authorship & audit tracking
+  createdById String
+  createdBy   User          @relation("ServicePagesCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedById String?
+  updatedBy   User?         @relation("ServicePagesUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  publishedAt DateTime?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  sections    ServiceSection[]
+
+  @@index([status])
+  @@index([officeId])
+  @@index([serviceKey])
+  @@map("service_pages")
+}
+
+/// Ordered content section for a municipal service page.
+model ServiceSection {
+  id            String      @id @default(cuid())
+  servicePageId String
+  servicePage   ServicePage @relation(fields: [servicePageId], references: [id], onDelete: Cascade)
+
+  title         String
+  content       String      @db.Text // Sanitized HTML content from rich-text editor
+  sortOrder     Int         @default(0)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([servicePageId])
+  @@index([servicePageId, sortOrder])
+  @@map("service_sections")
 }
 

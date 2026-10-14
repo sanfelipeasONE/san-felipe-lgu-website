@@ -42,6 +42,11 @@ export const PERMISSIONS = {
 
   // Portal Settings
   SETTINGS_MANAGE: "settings.manage",
+
+  // Municipal Services (Phase 13)
+  SERVICES_VIEW: "services.view",
+  SERVICES_UPDATE: "services.update",
+  SERVICES_PUBLISH: "services.publish",
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

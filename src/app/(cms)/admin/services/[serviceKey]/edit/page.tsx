@@ -1,0 +1,96 @@
+import * as React from "react";
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentUser } from "@/server/auth/session";
+import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
+import { PERMISSIONS } from "@/server/authz/permissions";
+import { getAdminServicePage } from "@/server/services/service";
+import { prisma } from "@/server/db/client";
+import { isCanonicalServiceKey } from "@/config/services-canonical";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminContent } from "@/components/admin/admin-content";
+import { ServicePageForm } from "@/components/admin/service-page-form";
+
+export const metadata: Metadata = {
+  title: "Edit Service Page | San Felipe LGU CMS",
+  description: "Edit canonical municipal service page guidelines and structured content sections",
+};
+
+interface EditServicePageProps {
+  params: Promise<{
+    serviceKey: string;
+  }>;
+}
+
+export default async function AdminEditServicePage({ params }: EditServicePageProps) {
+  const user = await getCurrentUser();
+
+  if (!user || user.status !== "ACTIVE") {
+    redirect("/staff/login");
+  }
+
+  if (!hasPermission(user, PERMISSIONS.SERVICES_VIEW)) {
+    redirect("/admin");
+  }
+
+  if (!hasPermission(user, PERMISSIONS.SERVICES_UPDATE)) {
+    redirect("/admin/services");
+  }
+
+  const { serviceKey } = await params;
+
+  if (!isCanonicalServiceKey(serviceKey)) {
+    notFound();
+  }
+
+  let servicePage;
+  try {
+    servicePage = await getAdminServicePage(user, serviceKey);
+  } catch {
+    notFound();
+  }
+
+  // Office scope security check: office-scoped users cannot access other offices' pages
+  if (!isSystemScoped(user)) {
+    if (!user.officeId || (servicePage.officeId && servicePage.officeId !== user.officeId)) {
+      redirect("/admin/services");
+    }
+    if (!servicePage.officeId) {
+      // Unassigned canonical service page requires system scope
+      redirect("/admin/services");
+    }
+  }
+
+  // Load municipal offices for system-scoped administrators
+  let officesList: Array<{ id: string; name: string; shortName: string | null }> = [];
+  if (isSystemScoped(user)) {
+    officesList = await prisma.office.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, name: true, shortName: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  const canPublish = hasPermission(user, PERMISSIONS.SERVICES_PUBLISH);
+
+  return (
+    <AdminContent>
+      <AdminPageHeader
+        title={`Edit: ${servicePage.title}`}
+        description={`Manage published procedures, guidelines, and ordered content sections for /services/${servicePage.serviceKey}.`}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Municipal Services", href: "/admin/services" },
+          { label: servicePage.title },
+        ]}
+      />
+
+      <ServicePageForm
+        servicePage={servicePage}
+        offices={officesList}
+        isSystemScoped={isSystemScoped(user)}
+        canPublish={canPublish}
+      />
+    </AdminContent>
+  );
+}

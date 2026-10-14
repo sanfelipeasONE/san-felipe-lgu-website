@@ -10,6 +10,7 @@ import {
   Users,
   ShieldCheck,
   History,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
@@ -63,6 +64,16 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "content",
         description: "Press releases, public advisories, and municipal news",
         requiredPermission: "posts.view",
+        isImplemented: true,
+      },
+      {
+        id: "services",
+        label: "Municipal Services",
+        href: "/admin/services",
+        icon: Layers,
+        section: "content",
+        description: "Official municipal frontline service guidelines and content",
+        requiredPermission: "services.view",
         isImplemented: true,
       },
       {

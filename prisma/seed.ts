@@ -45,6 +45,11 @@ const BASELINE_PERMISSIONS = [
 
   // Portal Settings
   { code: "settings.manage", name: "Manage Settings", module: "settings", description: "Manage portal configuration and settings" },
+
+  // Municipal Services Management (Phase 13)
+  { code: "services.view", name: "View Services", module: "services", description: "View municipal service pages and drafts" },
+  { code: "services.update", name: "Update Services", module: "services", description: "Edit municipal service page content and sections" },
+  { code: "services.publish", name: "Publish Services", module: "services", description: "Publish municipal service content to the public portal" },
 ];
 
 const BASELINE_ROLES = [
@@ -76,6 +81,12 @@ const BASELINE_ROLES = [
     name: "Office Editor",
     slug: "office-editor",
     description: "Creates and edits drafts for an assigned municipal office",
+    isSystemScope: false,
+  },
+  {
+    name: "Staff",
+    slug: "staff",
+    description: "Office content personnel authorized to create, edit, and publish content for their assigned office",
     isSystemScope: false,
   },
 ];
@@ -142,9 +153,10 @@ async function main() {
   // Office Editor permissions
   const editorRoleId = roleMap.get("office-editor")!;
   const editorPermCodes = [
-    "posts.view", "posts.create", "posts.update", "posts.submit",
+    "posts.view", "posts.create", "posts.update", "posts.submit", "posts.publish",
     "documents.view", "documents.create", "documents.update",
     "events.create", "events.update",
+    "services.view", "services.update", "services.publish",
   ];
   for (const code of editorPermCodes) {
     const permId = permissionMap.get(code);
@@ -159,12 +171,34 @@ async function main() {
     }
   }
 
+  // Staff permissions (canonical content user)
+  const staffRoleId = roleMap.get("staff")!;
+  const staffPermCodes = [
+    "posts.view", "posts.create", "posts.update", "posts.publish",
+    "documents.view", "documents.create", "documents.update",
+    "events.create", "events.update",
+    "services.view", "services.update", "services.publish",
+  ];
+  for (const code of staffPermCodes) {
+    const permId = permissionMap.get(code);
+    if (permId) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: { roleId: staffRoleId, permissionId: permId },
+        },
+        update: {},
+        create: { roleId: staffRoleId, permissionId: permId },
+      });
+    }
+  }
+
   // Approver permissions
   const approverRoleId = roleMap.get("approver")!;
   const approverPermCodes = [
     "posts.view", "posts.approve", "posts.publish",
     "documents.view", "documents.approve", "documents.publish",
     "events.publish",
+    "services.view", "services.publish",
   ];
   for (const code of approverPermCodes) {
     const permId = permissionMap.get(code);
@@ -186,6 +220,7 @@ async function main() {
     "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.archive",
     "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve",
     "events.create", "events.update", "events.publish",
+    "services.view", "services.update", "services.publish",
   ];
   for (const code of officeAdminPermCodes) {
     const permId = permissionMap.get(code);
@@ -209,6 +244,7 @@ async function main() {
     "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish",
     "events.create", "events.update", "events.publish",
     "audit.view", "settings.manage",
+    "services.view", "services.update", "services.publish",
   ];
   for (const code of siteAdminPermCodes) {
     const permId = permissionMap.get(code);
@@ -290,6 +326,58 @@ async function main() {
     }
   } else {
     console.log("ℹ️  SEED_SUPERADMIN_EMAIL or SEED_SUPERADMIN_PASSWORD not set. Skipping initial admin user creation.");
+  }
+
+  // 6. Seed canonical Service Pages (Phase 13)
+  console.log("⚙️  Upserting canonical Service Pages (DRAFT baseline)...");
+  const CANONICAL_SERVICES = [
+    {
+      serviceKey: "citizens-charter",
+      title: "Citizen's Charter",
+      description: null,
+    },
+    {
+      serviceKey: "business-permits",
+      title: "Business Permits",
+      description: null,
+    },
+    {
+      serviceKey: "downloadable-forms",
+      title: "Downloadable Forms",
+      description: null,
+    },
+    {
+      serviceKey: "job-opportunities",
+      title: "Job Opportunities",
+      description: null,
+    },
+  ];
+
+  const seedAuthor = await prisma.user.findFirst({
+    where: { role: { isSystemScope: true } },
+    select: { id: true },
+  });
+
+  if (seedAuthor) {
+    for (const svc of CANONICAL_SERVICES) {
+      await prisma.servicePage.upsert({
+        where: { serviceKey: svc.serviceKey },
+        update: {
+          title: svc.title,
+          description: svc.description,
+        },
+        create: {
+          serviceKey: svc.serviceKey,
+          title: svc.title,
+          description: svc.description,
+          status: "DRAFT",
+          createdById: seedAuthor.id,
+        },
+      });
+    }
+    console.log("   ✓ Canonical service pages registered in DRAFT status.");
+  } else {
+    console.log("ℹ️  No system administrator user found. Skipping canonical service page seed.");
   }
 
   console.log("✅ Database seed completed successfully.");
