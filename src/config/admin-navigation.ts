@@ -145,8 +145,7 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         description: "Department profiles, office heads, and operational directory",
         requiredPermission: "offices.view",
         requiredScope: "system",
-        isImplemented: false,
-        phaseLabel: "Upcoming",
+        isImplemented: true,
       },
       {
         id: "users",
@@ -156,9 +155,8 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "administration",
         description: "Municipal staff accounts and office assignments",
         requiredPermission: "users.view",
-        // Notice: Available to Super Admin (all offices) AND Office Admin (own office)
-        isImplemented: false,
-        phaseLabel: "Phase 17",
+        // Available to Super Admin (all offices) AND Office Admin (own office)
+        isImplemented: true,
       },
       {
         id: "roles",
@@ -169,8 +167,7 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         description: "System role definitions and granular authority assignments",
         requiredPermission: "settings.manage",
         requiredScope: "system",
-        isImplemented: false,
-        phaseLabel: "Upcoming",
+        isImplemented: true,
       },
     ],
   },

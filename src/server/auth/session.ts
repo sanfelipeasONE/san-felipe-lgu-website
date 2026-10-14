@@ -132,6 +132,16 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     return null;
   }
 
+  // Reject inactive or suspended user accounts
+  if (user.status !== "ACTIVE") {
+    return null;
+  }
+
+  // Reject office-scoped users assigned to an inactive municipal office
+  if (!user.role.isSystemScope && user.office?.status === "INACTIVE") {
+    return null;
+  }
+
   // Update lastUsedAt if older than 5 minutes (sliding tracking without database churn)
   const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
   if (!session.lastUsedAt || session.lastUsedAt < fiveMinutesAgo) {
@@ -208,3 +218,56 @@ export async function revokeCurrentSession(): Promise<string | null> {
 
   return userId;
 }
+
+/**
+ * Revokes all active server-side sessions for a specific user.
+ * Used when accounts are disabled, roles are modified, offices are changed,
+ * or credentials are reset.
+ */
+export async function revokeAllUserSessions(userId: string): Promise<number> {
+  const result = await prisma.session.updateMany({
+    where: {
+      userId,
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+  return result.count;
+}
+
+/**
+ * Revokes all active sessions for all users assigned to a specific role.
+ * Used when role permissions are modified.
+ */
+export async function revokeRoleSessions(roleId: string): Promise<number> {
+  const result = await prisma.session.updateMany({
+    where: {
+      user: { roleId },
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+  return result.count;
+}
+
+/**
+ * Revokes all active sessions for all users belonging to a specific municipal office.
+ * Used when an office is deactivated.
+ */
+export async function revokeOfficeSessions(officeId: string): Promise<number> {
+  const result = await prisma.session.updateMany({
+    where: {
+      user: { officeId },
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
+  return result.count;
+}
+

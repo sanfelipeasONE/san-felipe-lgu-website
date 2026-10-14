@@ -95,6 +95,13 @@ model User {
   @@map("users")
 }
 
+enum RoleTier {
+  SYSTEM_ADMIN
+  OFFICE_ADMIN
+  STAFF
+  CUSTOM
+}
+
 /// Role entity for defining system and office authority levels.
 model Role {
   id            String           @id @default(cuid())
@@ -102,6 +109,8 @@ model Role {
   slug          String           @unique // e.g. "super-admin"
   description   String?
   isSystemScope Boolean          @default(false) // If true, role operates across all municipal offices
+  tier          RoleTier         @default(CUSTOM)
+  isBuiltIn     Boolean          @default(false) // Immutable built-in system role
 
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -109,6 +118,8 @@ model Role {
   users         User[]
   permissions   RolePermission[]
 
+  @@index([tier])
+  @@index([isBuiltIn])
   @@map("roles")
 }
 

@@ -17,7 +17,10 @@
     "test:services": "tsx tests/service-content.test.ts",
     "test:documents": "tsx tests/document-management.test.ts",
     "test:jobs": "tsx tests/job-opportunities.test.ts",
-    "test:publishing": "tsx tests/publishing-consistency.test.ts"
+    "test:publishing": "tsx tests/publishing-consistency.test.ts",
+    "test:users": "tsx tests/user-administration.test.ts",
+    "test:offices": "tsx tests/office-administration.test.ts",
+    "test:roles": "tsx tests/role-administration.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

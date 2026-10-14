@@ -1,5 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, RoleTier } from "@prisma/client";
 import { hash } from "@node-rs/argon2";
+import { VERIFIED_MUNICIPAL_OFFICES } from "../src/config/offices-data";
 
 // 2 corresponds to Argon2id in @node-rs/argon2
 const ARGON2ID_ALGORITHM = 2;
@@ -66,36 +67,48 @@ const BASELINE_ROLES = [
     slug: "super-admin",
     description: "Unrestricted municipal system authority across all offices and modules",
     isSystemScope: true,
+    tier: RoleTier.SYSTEM_ADMIN,
+    isBuiltIn: true,
   },
   {
     name: "Site Administrator",
     slug: "site-admin",
     description: "System-wide administrative authority for municipal public content and staff oversight",
     isSystemScope: true,
+    tier: RoleTier.CUSTOM,
+    isBuiltIn: true,
   },
   {
     name: "Office Administrator",
     slug: "office-admin",
     description: "Administrative authority scoped to an assigned municipal office",
     isSystemScope: false,
+    tier: RoleTier.OFFICE_ADMIN,
+    isBuiltIn: true,
   },
   {
     name: "Approver",
     slug: "approver",
     description: "Reviews and publishes content and documents for an assigned municipal office",
     isSystemScope: false,
+    tier: RoleTier.CUSTOM,
+    isBuiltIn: true,
   },
   {
     name: "Office Editor",
     slug: "office-editor",
     description: "Creates and edits drafts for an assigned municipal office",
     isSystemScope: false,
+    tier: RoleTier.CUSTOM,
+    isBuiltIn: true,
   },
   {
     name: "Staff",
     slug: "staff",
     description: "Office content personnel authorized to create, edit, and publish content for their assigned office",
     isSystemScope: false,
+    tier: RoleTier.STAFF,
+    isBuiltIn: true,
   },
 ];
 
@@ -129,6 +142,8 @@ async function main() {
         name: r.name,
         description: r.description,
         isSystemScope: r.isSystemScope,
+        tier: r.tier,
+        isBuiltIn: r.isBuiltIn,
       },
       create: r,
     });
@@ -273,33 +288,37 @@ async function main() {
   }
   console.log("   ✓ Role-permission assignments configured.");
 
-  // 4. Seed ICT Office
-  console.log("⚙️  Upserting ICT Office...");
-  const ictOffice = await prisma.office.upsert({
-    where: { slug: "icto" },
-    update: {
-      name: "Information and Communications Technology Office",
-      shortName: "ICTO",
-      description: "Manages municipal network infrastructure, digital portal operations, and systems security.",
-      mandate: "To deliver reliable, secure, and transparent digital government services to the citizens and departments of San Felipe.",
-      location: "2nd Floor, Municipal Hall, San Felipe, Zambales",
-      officeHours: "Monday - Friday: 8:00 AM - 5:00 PM",
-      status: "ACTIVE",
-    },
-    create: {
-      name: "Information and Communications Technology Office",
-      shortName: "ICTO",
-      slug: "icto",
-      description: "Manages municipal network infrastructure, digital portal operations, and systems security.",
-      mandate: "To deliver reliable, secure, and transparent digital government services to the citizens and departments of San Felipe.",
-      location: "2nd Floor, Municipal Hall, San Felipe, Zambales",
-      officeHours: "Monday - Friday: 8:00 AM - 5:00 PM",
-      status: "ACTIVE",
-    },
-  });
-  console.log(`   ✓ ICT Office ready (ID: ${ictOffice.id}).`);
+  // 4. Seed Canonical Municipal Offices (Exact 18 verified departments)
+  console.log("⚙️  Upserting canonical municipal offices...");
+  const VERIFIED_OFFICE_ACRONYMS: Record<string, string> = {
+    "municipal-planning-and-development-office": "MPDO",
+    "municipal-health-office": "MHO",
+    "municipal-budget-office": "MBO",
+    "municipal-disaster-risk-reduction-and-management-office": "MDRRMO",
+    "local-youth-development-office": "LYDO",
+    "human-resource-management-office": "HRMO",
+    "public-employment-service-office": "PESO",
+  };
 
-  // 5. Seed Super Admin User (Environment-driven only)
+  for (const off of VERIFIED_MUNICIPAL_OFFICES) {
+    const verifiedAcronym = VERIFIED_OFFICE_ACRONYMS[off.slug] ?? null;
+    await prisma.office.upsert({
+      where: { slug: off.slug },
+      update: {
+        name: off.name,
+        shortName: verifiedAcronym,
+      },
+      create: {
+        name: off.name,
+        shortName: verifiedAcronym,
+        slug: off.slug,
+        status: "ACTIVE",
+      },
+    });
+  }
+  console.log(`   ✓ ${VERIFIED_MUNICIPAL_OFFICES.length} verified municipal offices registered.`);
+
+  // 5. Seed Super Admin User (Environment-driven only; password-safe on rerun)
   const adminEmail = process.env.SEED_SUPERADMIN_EMAIL?.trim();
   const adminPassword = process.env.SEED_SUPERADMIN_PASSWORD?.trim();
   const adminName = process.env.SEED_SUPERADMIN_NAME?.trim() || "LGU System Administrator";
@@ -308,34 +327,43 @@ async function main() {
     if (adminPassword.length < 12) {
       console.warn("⚠️  SEED_SUPERADMIN_PASSWORD is shorter than 12 characters. Skipping user creation for security.");
     } else {
-      console.log(`⚙️  Upserting Super Admin user (${adminEmail})...`);
-      const passwordHash = await hash(adminPassword, {
-        algorithm: ARGON2ID_ALGORITHM,
-        memoryCost: 19456,
-        timeCost: 2,
-        parallelism: 1,
-      });
-
-      const adminUser = await prisma.user.upsert({
+      const existingAdmin = await prisma.user.findUnique({
         where: { email: adminEmail },
-        update: {
-          name: adminName,
-          passwordHash,
-          roleId: superAdminRoleId,
-          officeId: ictOffice.id,
-          status: "ACTIVE",
-        },
-        create: {
-          name: adminName,
-          email: adminEmail,
-          passwordHash,
-          roleId: superAdminRoleId,
-          officeId: ictOffice.id,
-          status: "ACTIVE",
-        },
       });
 
-      console.log(`   ✓ Super Admin user configured (ID: ${adminUser.id}, Email: ${adminUser.email}).`);
+      if (existingAdmin) {
+        // Protect existing production-like users: preserve existing password on rerun
+        await prisma.user.update({
+          where: { email: adminEmail },
+          data: {
+            name: adminName,
+            roleId: superAdminRoleId,
+            officeId: null,
+            status: "ACTIVE",
+          },
+        });
+        console.log(`   ✓ Super Admin user verified (ID: ${existingAdmin.id}, Email: ${existingAdmin.email}, password preserved).`);
+      } else {
+        console.log(`⚙️  Upserting Super Admin user (${adminEmail})...`);
+        const passwordHash = await hash(adminPassword, {
+          algorithm: ARGON2ID_ALGORITHM,
+          memoryCost: 19456,
+          timeCost: 2,
+          parallelism: 1,
+        });
+
+        const adminUser = await prisma.user.create({
+          data: {
+            name: adminName,
+            email: adminEmail,
+            passwordHash,
+            roleId: superAdminRoleId,
+            officeId: null,
+            status: "ACTIVE",
+          },
+        });
+        console.log(`   ✓ Super Admin user configured (ID: ${adminUser.id}, Email: ${adminUser.email}).`);
+      }
     }
   } else {
     console.log("ℹ️  SEED_SUPERADMIN_EMAIL or SEED_SUPERADMIN_PASSWORD not set. Skipping initial admin user creation.");

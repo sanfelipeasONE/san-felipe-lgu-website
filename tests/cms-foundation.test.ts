@@ -243,16 +243,19 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 5,
-    "Exactly 5 routes are marked isImplemented: true in Phase 15 (/admin, /admin/news, /admin/services, /admin/documents, and /admin/jobs)"
+    implementedItems.length === 8,
+    "Exactly 8 routes are marked isImplemented: true in Phase 17 (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/offices, /admin/users, /admin/roles)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
       implementedItems.some((i) => i.href === "/admin/news") &&
       implementedItems.some((i) => i.href === "/admin/services") &&
       implementedItems.some((i) => i.href === "/admin/documents") &&
-      implementedItems.some((i) => i.href === "/admin/jobs"),
-    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, and /admin/jobs"
+      implementedItems.some((i) => i.href === "/admin/jobs") &&
+      implementedItems.some((i) => i.href === "/admin/users") &&
+      implementedItems.some((i) => i.href === "/admin/offices") &&
+      implementedItems.some((i) => i.href === "/admin/roles"),
+    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/users, /admin/offices, and /admin/roles"
   );
 
   const newsItem = allConfigItems.find((i) => i.id === "news");
@@ -268,8 +271,13 @@ async function runCMSFoundationTests() {
   assert(jobOpportunitiesItem?.isImplemented === true, "Job Opportunities item is activated with isImplemented: true in Phase 15");
 
   const usersItem = allConfigItems.find((i) => i.id === "users");
-  assert(usersItem?.isImplemented === false, "Users item is marked isImplemented: false (scheduled for Phase 17)");
-  assert(usersItem?.phaseLabel === "Phase 17", "Users item displays Phase 17 badge");
+  assert(usersItem?.isImplemented === true, "Users item is activated with isImplemented: true in Phase 17");
+
+  const officesItem = allConfigItems.find((i) => i.id === "offices");
+  assert(officesItem?.isImplemented === true, "Offices item is activated with isImplemented: true in Phase 17");
+
+  const rolesItem = allConfigItems.find((i) => i.id === "roles");
+  assert(rolesItem?.isImplemented === true, "Roles item is activated with isImplemented: true in Phase 17");
 
   assert(
     upcomingItems.every((item) => Boolean(item.phaseLabel)),

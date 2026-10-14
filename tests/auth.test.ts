@@ -1,3 +1,5 @@
+export {};
+
 // Standalone test mock for server-only marker package
 const serverOnlyPath = require.resolve("server-only");
 require.cache[serverOnlyPath] = {
@@ -161,7 +163,7 @@ async function runAuthTests() {
 
   assert(Boolean(loadedSession), "Session found via tokenHash lookup");
   assert(loadedSession?.user.email === testEmail, "Resolves correct authenticated User");
-  assert(Boolean(loadedSession?.user.office), "Loads associated Municipal Office");
+  assert(loadedSession?.user.office !== undefined, "Loads associated Municipal Office relation (null for system-wide admin)");
   assert(loadedSession?.user.role.slug === "super-admin", "Loads Role entity");
 
   const permissions = loadedSession?.user.role.permissions.map((rp) => rp.permission.code) || [];

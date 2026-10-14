@@ -195,6 +195,29 @@ export async function authenticateStaff(
     };
   }
 
+  // 7.1 Verify Operational Status of Assigned Municipal Office
+  if (!user.role.isSystemScope && user.office?.status === "INACTIVE") {
+    authRateLimiter.recordFailure(ipKey);
+    authRateLimiter.recordFailure(idKey);
+
+    await recordAuditEvent({
+      action: AUDIT_ACTIONS.AUTH_LOGIN_FAILED,
+      userId: user.id,
+      officeId: user.officeId,
+      details: {
+        attemptIdentifier: normalizedEmail,
+        reason: "Assigned municipal office is currently inactive",
+      },
+      ipAddress,
+      userAgent,
+    });
+
+    return {
+      success: false,
+      message: "Your assigned municipal office is currently inactive. Please contact the system administrator.",
+    };
+  }
+
   // 8. Successful Authentication: Reset Rate Limiting
   authRateLimiter.reset(ipKey);
   authRateLimiter.reset(idKey);
