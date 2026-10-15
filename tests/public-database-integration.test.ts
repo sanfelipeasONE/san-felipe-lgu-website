@@ -50,7 +50,8 @@ async function runPublicDatabaseIntegrationTestSuite() {
   } = await import("../src/config/services-data");
   const { MUNICIPAL_OFFICIALS_DATA } = await import("../src/config/officials-data");
   const { ABOUT_DATA } = await import("../src/config/about-data");
-  const { EMERGENCY_DATA } = await import("../src/config/homepage-data");
+  const homepageData = await import("../src/config/homepage-data");
+  const { EMERGENCY_DATA } = homepageData;
 
   const ts = Date.now();
   let testOfficeActive: Office | null = null;
@@ -593,6 +594,47 @@ async function runPublicDatabaseIntegrationTestSuite() {
     assert(
       !("emergencyHotline" in prisma),
       "Zero unnecessary Prisma models created for EmergencyHotlines (remains verified static)"
+    );
+
+    // 7. Phase 19.1 Homepage Advisory Provenance Correction & Dead Code Cleanup
+    console.log("\n7. Phase 19.1 Homepage Advisory Provenance Correction & Dead Code Cleanup");
+
+    // Verify obsolete prototype datasets and advisory constants completely removed from homepage-data.ts
+    assert(!("ADVISORIES_DATA" in homepageData), "ADVISORIES_DATA constant completely removed from homepage-data.ts");
+    assert(!("ADVISORY_DATA" in homepageData), "ADVISORY_DATA constant completely removed from homepage-data.ts");
+    assert(!("NEWS_DATA" in homepageData), "NEWS_DATA prototype dataset completely removed from homepage-data.ts");
+
+    // Verify unused latest-advisory.tsx component file is completely removed from codebase
+    const fs = await import("fs");
+    const path = await import("path");
+    const latestAdvisoryExists = fs.existsSync(
+      path.resolve(__dirname, "../src/components/home/latest-advisory.tsx")
+    );
+    assert(!latestAdvisoryExists, "Unused latest-advisory.tsx component file completely removed from codebase");
+
+    // Verify public HomePage source code does not include LatestAdvisory
+    const homepageSource = fs.readFileSync(
+      path.resolve(__dirname, "../src/app/(public)/page.tsx"),
+      "utf-8"
+    );
+    assert(
+      !homepageSource.includes("<LatestAdvisory"),
+      "Public homepage page.tsx does not render <LatestAdvisory />"
+    );
+    assert(
+      !homepageSource.includes("latest-advisory"),
+      "Public homepage page.tsx does not reference latest-advisory"
+    );
+
+    // Verify no Advisory or Announcement Prisma models were introduced
+    assert(!("advisory" in prisma), "Zero unnecessary Prisma models created for Advisory");
+    assert(!("announcement" in prisma), "Zero unnecessary Prisma models created for Announcement");
+
+    // Verify Latest News remains database-backed and unaffected
+    const publicLatestNews = await getPublicLatestNews(4);
+    assert(
+      Array.isArray(publicLatestNews),
+      "Latest News remains database-backed and unaffected by advisory removal"
     );
 
     console.log("\n===============================================================");

@@ -1,6 +1,5 @@
 import * as React from "react";
 import { HeroSection } from "@/components/home/hero-section";
-import { LatestAdvisory } from "@/components/home/latest-advisory";
 import { GovernmentServices } from "@/components/home/government-services";
 import { MunicipalOfficialsPreview } from "@/components/home/municipal-officials-preview";
 import { MunicipalOfficesPreview } from "@/components/home/municipal-offices-preview";
@@ -14,27 +13,24 @@ export default function HomePage() {
       {/* 1. Hero Section */}
       <HeroSection />
 
-      {/* 2. Latest Advisory Strip */}
-      <LatestAdvisory />
-
-      {/* 3. Government Services */}
+      {/* 2. Government Services */}
       <GovernmentServices />
 
-      {/* 4. Municipal Officials Leadership Preview */}
+      {/* 3. Municipal Officials Leadership Preview */}
       <MunicipalOfficialsPreview />
 
-      {/* 5. Municipal Offices Preview */}
+      {/* 4. Municipal Offices Preview */}
       <MunicipalOfficesPreview />
 
-      {/* 6. Latest News & Announcements */}
+      {/* 5. Latest News & Announcements */}
       <React.Suspense fallback={<div className="py-14 bg-slate-50/60" />}>
         <LatestNews />
       </React.Suspense>
 
-      {/* 7. Emergency Hotlines (Prominent Burgundy Section) */}
+      {/* 6. Emergency Hotlines (Prominent Burgundy Section) */}
       <EmergencyHotlines />
 
-      {/* 9. Visit the Municipal Government (Contact & Map) */}
+      {/* 7. Visit the Municipal Government (Contact & Map) */}
       <MunicipalContactSection />
     </div>
   );

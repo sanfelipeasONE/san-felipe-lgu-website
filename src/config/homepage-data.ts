@@ -6,29 +6,6 @@
  * client data or CMS database records are integrated in future phases.
  */
 
-export interface AdvisoryItem {
-  badge: string;
-  title: string;
-  date: string;
-  href: string;
-}
-
-export const ADVISORIES_DATA: AdvisoryItem[] = [
-  {
-    badge: "LATEST ADVISORY",
-    title: "SCHEDULE: ADVISORY ON THE CONDUCT OF ROAD CLEARING AND TREE TRIMMING OPERATIONS ALONG NATIONAL HIGHWAY",
-    date: "October 31, 2024",
-    href: "/news/road-clearing-tree-trimming-operations-national-highway",
-  },
-  {
-    badge: "PUBLIC NOTICE",
-    title: "SCHEDULE: BUSINESS PERMIT & LICENSING RENEWAL PERIOD FOR CALENDAR YEAR 2026",
-    date: "January 5, 2026",
-    href: "/news/schedule-business-permit-licensing-renewal-2026",
-  },
-];
-
-export const ADVISORY_DATA = ADVISORIES_DATA[0];
 
 export interface ServiceItem {
   id: string;
@@ -198,47 +175,6 @@ export interface NewsItem {
   imageAlt?: string;
 }
 
-
-export const NEWS_DATA = {
-  featured: {
-    id: "road-clearing-tree-trimming-operations-national-highway",
-    title: "Advisory on Road Clearing and Preventive Tree Trimming Operations Along National Highway",
-    category: "PUBLIC SAFETY & INFRASTRUCTURE",
-    publishingOffice: "MDRRMO",
-    date: "October 31, 2025",
-    excerpt: "The Municipal Disaster Risk Reduction and Management Office announces scheduled preventive roadside clearing and vegetation management along the San Felipe national highway corridor.",
-    href: "/news/road-clearing-tree-trimming-operations-national-highway",
-  },
-  secondary: [
-    {
-      id: "schedule-business-permit-licensing-renewal-2026",
-      title: "Schedule and Guidelines for Business Permit Licensing and Annual Renewal FY 2026",
-      category: "COMMERCE & LICENSING",
-      publishingOffice: "BPLO",
-      date: "October 28, 2025",
-      excerpt: "The Business Permits and Licensing Office issues step-by-step procedures, documentary requirements, and electronic assessment guidelines for the upcoming municipal business registration cycle.",
-      href: "/news/schedule-business-permit-licensing-renewal-2026",
-    },
-    {
-      id: "annual-municipal-coastal-cleanup-mangrove-planting",
-      title: "Annual Municipal Coastal Cleanup and Mangrove Restoration Initiative Along San Felipe Coast",
-      category: "ENVIRONMENT & NATURAL RESOURCES",
-      publishingOffice: "MENRO",
-      date: "October 20, 2025",
-      excerpt: "Volunteer organizations, student groups, and municipal staff unite across coastal barangays to conduct environmental monitoring, beach cleanup, and mangrove seedling propagation.",
-      href: "/news/annual-municipal-coastal-cleanup-mangrove-planting",
-    },
-    {
-      id: "mobile-healthcare-screening-immunization-mission-barangays",
-      title: "Mobile Primary Healthcare Screening and Immunization Drive Across Barangays",
-      category: "HEALTH & WELLNESS",
-      publishingOffice: "Municipal Health Office",
-      date: "October 15, 2025",
-      excerpt: "The Municipal Health Office deploys mobile clinical teams providing primary consultations, vital signs checks, and routine pediatric immunizations.",
-      href: "/news/mobile-healthcare-screening-immunization-mission-barangays",
-    },
-  ],
-};
 
 export interface TransparencyItem {
   title: string;
