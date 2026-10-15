@@ -12,6 +12,8 @@ import { AdminContent } from "@/components/admin/admin-content";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { DataTable, type DataTableColumn } from "@/components/admin/data-table";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Municipal Offices Administration | San Felipe LGU CMS",
   description: "Official municipal department profiles, mandates, and operational directory",

@@ -11,6 +11,8 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { UserForm, type RoleOption, type OfficeOption } from "@/components/admin/user-form";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Edit Staff Account | San Felipe LGU CMS",
   description: "Update municipal staff account details and operational status",

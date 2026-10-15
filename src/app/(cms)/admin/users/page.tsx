@@ -14,6 +14,8 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { DataTable, type DataTableColumn } from "@/components/admin/data-table";
 import type { UserStatus } from "@prisma/client";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Staff Accounts | San Felipe LGU CMS",
   description: "Municipal staff accounts and office assignments management",

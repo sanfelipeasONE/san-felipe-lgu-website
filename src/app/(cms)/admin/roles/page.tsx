@@ -11,6 +11,8 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { DataTable, type DataTableColumn } from "@/components/admin/data-table";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Roles & Permissions Management | San Felipe LGU CMS",
   description: "System role definitions and granular authority assignments",

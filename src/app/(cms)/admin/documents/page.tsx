@@ -15,6 +15,8 @@ import { DataTable, type DataTableColumn } from "@/components/admin/data-table";
 import { DOCUMENT_CATEGORIES } from "@/lib/validation/documents";
 import type { DocumentStatus } from "@prisma/client";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Document Management | San Felipe LGU CMS",
   description: "Official municipal application forms, civic documents, and guidelines management",

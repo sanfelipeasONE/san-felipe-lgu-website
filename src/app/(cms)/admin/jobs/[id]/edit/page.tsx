@@ -10,6 +10,8 @@ import { prisma } from "@/server/db/client";
 import { AdminContent } from "@/components/admin/admin-content";
 import { JobForm, type OfficeOption, type DocumentOption } from "@/components/admin/job-form";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Edit Job Vacancy | San Felipe LGU CMS",
   description: "Edit vacancy announcement details, qualification standards, and publication status",

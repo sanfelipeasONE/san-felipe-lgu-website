@@ -15,6 +15,8 @@ import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { DataTable, type DataTableColumn } from "@/components/admin/data-table";
 import { ALLOWED_EMPLOYMENT_TYPES } from "@/lib/validation/jobs";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Job Opportunities Management | San Felipe LGU CMS",
   description: "Official municipal job opportunities, career vacancies, and recruitment notices management",

@@ -9,6 +9,8 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { RolePermissionForm } from "@/components/admin/role-permission-form";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Configure Role Permissions | San Felipe LGU CMS",
   description: "Assign and tune granular permissions for system roles",

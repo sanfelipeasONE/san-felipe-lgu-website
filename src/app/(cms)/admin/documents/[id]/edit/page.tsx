@@ -11,6 +11,8 @@ import { AdminContent } from "@/components/admin/admin-content";
 import { DocumentForm } from "@/components/admin/document-form";
 import type { DocumentPurpose } from "@/lib/validation/documents";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Edit Document | San Felipe LGU CMS",
   description: "Update municipal document metadata, replace file asset, or manage lifecycle status",

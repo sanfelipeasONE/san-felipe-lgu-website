@@ -9,6 +9,8 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { OfficeForm } from "@/components/admin/office-form";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Edit Municipal Office | San Felipe LGU CMS",
   description: "Update official municipal department profile and operational details",
