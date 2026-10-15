@@ -115,12 +115,66 @@ export default async function AdminEditServicePage({ params }: EditServicePagePr
     }));
   }
 
+  // Load available attachment documents if managing business-permits
+  let attachmentDocuments: Array<{
+    id: string;
+    title: string;
+    originalFilename: string;
+    status: string;
+    purpose: string;
+    bytes: number;
+    storageUrl: string;
+    downloadUrl: string;
+  }> = [];
+
+  if (serviceKey === "business-permits") {
+    const rawDocs = await prisma.document.findMany({
+      where: {
+        purpose: { in: ["DOWNLOADABLE_FORM", "OTHER_PUBLIC_DOCUMENT"] },
+        status: "PUBLISHED",
+        ...(isSystemScoped(user) ? {} : { officeId: user.officeId! }),
+      },
+      select: {
+        id: true,
+        title: true,
+        originalFilename: true,
+        status: true,
+        purpose: true,
+        bytes: true,
+        storageUrl: true,
+        storagePublicId: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    attachmentDocuments = rawDocs.map((d) => ({
+      id: d.id,
+      title: d.title,
+      originalFilename: d.originalFilename,
+      status: d.status,
+      purpose: d.purpose,
+      bytes: d.bytes,
+      storageUrl: d.storageUrl,
+      downloadUrl: getDocumentDownloadUrl(d.storagePublicId, d.originalFilename),
+    }));
+  }
+
   const charterDocumentWithDownload = servicePage.charterDocument
     ? {
         ...servicePage.charterDocument,
         downloadUrl: getDocumentDownloadUrl(
           servicePage.charterDocument.storagePublicId,
           servicePage.charterDocument.originalFilename
+        ),
+      }
+    : null;
+
+  const attachmentDocumentWithDownload = servicePage.attachmentDocument
+    ? {
+        ...servicePage.attachmentDocument,
+        downloadUrl: getDocumentDownloadUrl(
+          servicePage.attachmentDocument.storagePublicId,
+          servicePage.attachmentDocument.originalFilename
         ),
       }
     : null;
@@ -143,9 +197,11 @@ export default async function AdminEditServicePage({ params }: EditServicePagePr
         servicePage={{
           ...servicePage,
           charterDocument: charterDocumentWithDownload,
+          attachmentDocument: attachmentDocumentWithDownload,
         }}
         offices={officesList}
         charterDocuments={charterDocuments}
+        attachmentDocuments={attachmentDocuments}
         isSystemScoped={isSystemScoped(user)}
         canPublish={canPublish}
       />

@@ -113,6 +113,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
             roleId: targetUser.roleId,
             updatedAt: targetUser.updatedAt.toISOString(),
           }}
+          canDelete={hasPermission(user, PERMISSIONS.USERS_DELETE)}
         />
       </AdminContent>
     </div>

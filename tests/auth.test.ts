@@ -20,7 +20,7 @@ async function runAuthTests() {
     const envPath = path.resolve(process.cwd(), ".env");
     if (fs.existsSync(envPath)) {
       const envContent = fs.readFileSync(envPath, "utf-8");
-      for (const line of envContent.split("\n")) {
+      for (const line of envContent.split(/\r?\n/)) {
         const match = line.match(/^\s*([A-Za-z0-9_]+)=(.*)$/);
         if (match && !process.env[match[1]]) {
           process.env[match[1]] = match[2].trim().replace(/^['"]|['"]$/g, "");
@@ -59,23 +59,26 @@ async function runAuthTests() {
   const wrongPassword = "WrongPassword999!";
   const nonExistentEmail = "ghost.official@sanfelipe.gov.ph";
 
-  // Ensure initial test user exists (lookup super-admin role user first to support custom emails)
+  // Ensure initial test user exists (lookup super-admin role user deterministically)
   const user =
+    (process.env.SEED_SUPERADMIN_EMAIL
+      ? await prisma.user.findUnique({
+          where: { email: process.env.SEED_SUPERADMIN_EMAIL },
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: { permission: true },
+                },
+              },
+            },
+            office: true,
+          },
+        })
+      : null) ||
     (await prisma.user.findFirst({
       where: { role: { slug: "super-admin" } },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: { permission: true },
-            },
-          },
-        },
-        office: true,
-      },
-    })) ||
-    (await prisma.user.findUnique({
-      where: { email: process.env.SEED_SUPERADMIN_EMAIL || "admin@sanfelipe.gov.ph" },
+      orderBy: { createdAt: "asc" },
       include: {
         role: {
           include: {

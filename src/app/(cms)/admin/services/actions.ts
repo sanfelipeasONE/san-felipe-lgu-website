@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/server/authz/guard";
+import { hasPermission } from "@/lib/authz/scope";
+import { PERMISSIONS } from "@/server/authz/permissions";
 import {
   updateServicePage,
   publishServicePage,
@@ -9,8 +11,16 @@ import {
   uploadAndAttachCharterPdf,
   removeCharterDocumentAssociation,
   attachExistingCharterDocument,
+  removeServiceFeaturedImage,
+  uploadAndAttachServiceDocument,
+  attachExistingServiceDocument,
+  removeServiceAttachmentDocument,
   ServiceError,
 } from "@/server/services/service";
+import {
+  uploadServiceFeaturedImage,
+  validateImageFile,
+} from "@/server/media/cloudinary";
 import {
   servicePageDraftSchema,
   serviceKeySchema,
@@ -293,6 +303,214 @@ export async function linkExistingCharterDocumentAction(
     };
   } catch (err: unknown) {
     const message = err instanceof ServiceError ? err.message : "Failed to link existing document.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Uploads an image for a service page (e.g. Business Permits featured image).
+ */
+export async function uploadServiceImageAction(
+  formData: FormData
+): Promise<ActionResult<{
+  publicId: string;
+  url: string;
+  width: number;
+  height: number;
+  format: string;
+  bytes: number;
+}>> {
+  try {
+    const user = await requireUser();
+    const canUpload = hasPermission(user, PERMISSIONS.SERVICES_UPDATE);
+    if (!canUpload) {
+      return { success: false, error: "You do not have permission to upload service images." };
+    }
+
+    const file = formData.get("file") as File | null;
+    if (!file) {
+      return { success: false, error: "No file provided for upload." };
+    }
+
+    const validation = validateImageFile({
+      size: file.size,
+      type: file.type,
+    });
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const result = await uploadServiceFeaturedImage(buffer);
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (err: unknown) {
+    console.error("[SERVICE IMAGE UPLOAD ACTION ERROR]", err);
+    return {
+      success: false,
+      error: "Failed to upload service image.",
+    };
+  }
+}
+
+/**
+ * Server Action: Removes the featured image from a service page.
+ */
+export async function removeServiceImageAction(
+  serviceKey: string
+): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    await removeServiceFeaturedImage(user, serviceKey);
+
+    revalidatePath("/admin/services");
+    revalidatePath(`/admin/services/${serviceKey}/edit`);
+    revalidatePath(`/admin/services/${serviceKey}/preview`);
+    revalidatePath(`/services/${serviceKey}`);
+
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof ServiceError ? err.message : "Failed to remove image.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Directly uploads and attaches a service document (PDF).
+ */
+export async function uploadServiceAttachmentAction(
+  formData: FormData
+): Promise<
+  ActionResult<{
+    documentId: string;
+    title: string;
+    originalFilename: string;
+    storageUrl: string;
+    downloadUrl: string;
+    bytes: number;
+    purpose: string;
+    servicePageUpdatedAt?: string;
+  }>
+> {
+  try {
+    const user = await requireUser();
+
+    const serviceKey = formData.get("serviceKey")?.toString() || "business-permits";
+    const title = formData.get("title")?.toString() || undefined;
+    const purposeRaw = formData.get("purpose")?.toString();
+    const purpose =
+      purposeRaw === "OTHER_PUBLIC_DOCUMENT"
+        ? "OTHER_PUBLIC_DOCUMENT"
+        : "DOWNLOADABLE_FORM";
+    const file = formData.get("file") as File | null;
+
+    if (!file || file.size === 0) {
+      return { success: false, error: "A valid PDF file must be selected." };
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+
+    const doc = await uploadAndAttachServiceDocument(user, serviceKey, {
+      fileBuffer,
+      filename: file.name,
+      mimeType: file.type,
+      size: file.size,
+      title,
+      purpose,
+    });
+
+    revalidatePath("/admin/services");
+    revalidatePath(`/admin/services/${serviceKey}/edit`);
+    revalidatePath(`/admin/services/${serviceKey}/preview`);
+    revalidatePath(`/services/${serviceKey}`);
+    revalidatePath("/admin/documents");
+
+    return {
+      success: true,
+      data: {
+        documentId: doc.id,
+        title: doc.title,
+        originalFilename: doc.originalFilename,
+        storageUrl: doc.storageUrl,
+        downloadUrl: doc.downloadUrl,
+        bytes: doc.bytes,
+        purpose: doc.purpose,
+        servicePageUpdatedAt: doc.servicePageUpdatedAt,
+      },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof ServiceError ? err.message : "Failed to upload service document.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Links an existing PUBLISHED DOWNLOADABLE_FORM or OTHER_PUBLIC_DOCUMENT.
+ */
+export async function linkExistingServiceAttachmentAction(
+  serviceKey: string,
+  documentId: string
+): Promise<ActionResult<{ serviceKey: string; documentId: string; servicePageUpdatedAt: string }>> {
+  try {
+    const user = await requireUser();
+
+    if (!documentId || !documentId.trim()) {
+      return { success: false, error: "A valid document ID must be provided." };
+    }
+
+    const updated = await attachExistingServiceDocument(user, serviceKey, documentId.trim());
+
+    revalidatePath("/admin/services");
+    revalidatePath(`/admin/services/${serviceKey}/edit`);
+    revalidatePath(`/admin/services/${serviceKey}/preview`);
+    revalidatePath(`/services/${serviceKey}`);
+    revalidatePath("/admin/documents");
+
+    return {
+      success: true,
+      data: {
+        serviceKey,
+        documentId,
+        servicePageUpdatedAt: updated.updatedAt.toISOString(),
+      },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof ServiceError ? err.message : "Failed to link existing document.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Removes attachment association from a service page.
+ */
+export async function removeServiceAttachmentAction(
+  serviceKey: string
+): Promise<ActionResult<{ serviceKey: string; servicePageUpdatedAt: string }>> {
+  try {
+    const user = await requireUser();
+
+    const updated = await removeServiceAttachmentDocument(user, serviceKey);
+
+    revalidatePath("/admin/services");
+    revalidatePath(`/admin/services/${serviceKey}/edit`);
+    revalidatePath(`/admin/services/${serviceKey}/preview`);
+    revalidatePath(`/services/${serviceKey}`);
+    revalidatePath("/admin/documents");
+
+    return {
+      success: true,
+      data: {
+        serviceKey,
+        servicePageUpdatedAt: updated.updatedAt.toISOString(),
+      },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof ServiceError ? err.message : "Failed to remove attachment.";
     return { success: false, error: message };
   }
 }

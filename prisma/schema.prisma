@@ -283,10 +283,24 @@ model ServicePage {
   charterDocumentId String?
   charterDocument   Document?       @relation("ServiceCharterDocument", fields: [charterDocumentId], references: [id], onDelete: SetNull)
 
+  // Associated managed Document (e.g. Business Permits application form or guide)
+  attachmentDocumentId String?
+  attachmentDocument   Document?    @relation("ServiceAttachmentDocument", fields: [attachmentDocumentId], references: [id], onDelete: SetNull)
+
+  // Featured Image metadata (Cloudinary)
+  featuredImagePublicId String?
+  featuredImageUrl      String?
+  featuredImageAlt      String?
+  featuredImageWidth    Int?
+  featuredImageHeight   Int?
+  featuredImageFormat   String?
+  featuredImageBytes    Int?
+
   @@index([status])
   @@index([officeId])
   @@index([serviceKey])
   @@index([charterDocumentId])
+  @@index([attachmentDocumentId])
   @@map("service_pages")
 }
 
@@ -356,8 +370,9 @@ model Document {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  jobOpportunities    JobOpportunity[]
-  charterServicePages ServicePage[]    @relation("ServiceCharterDocument")
+  jobOpportunities       JobOpportunity[]
+  charterServicePages    ServicePage[]    @relation("ServiceCharterDocument")
+  attachmentServicePages ServicePage[]    @relation("ServiceAttachmentDocument")
 
   @@index([status])
   @@index([officeId])
@@ -400,6 +415,15 @@ model JobOpportunity {
   // Optional attachment reference to an existing Phase 14 official municipal Document
   attachmentDocumentId    String?
   attachmentDocument      Document?            @relation(fields: [attachmentDocumentId], references: [id], onDelete: SetNull)
+
+  // Featured Image metadata (Cloudinary)
+  featuredImagePublicId   String?
+  featuredImageUrl        String?
+  featuredImageAlt        String?
+  featuredImageWidth      Int?
+  featuredImageHeight     Int?
+  featuredImageFormat     String?
+  featuredImageBytes      Int?
 
   // Authorship & audit tracking
   createdById             String

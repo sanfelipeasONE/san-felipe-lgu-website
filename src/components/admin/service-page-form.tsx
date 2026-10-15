@@ -16,18 +16,19 @@ import {
   CheckCircle2,
   Loader2,
   FileText,
-  RotateCcw,
   ExternalLink,
   Upload,
   Download,
   RefreshCw,
   FileUp,
   X,
+  FileCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { ConfirmationDialog } from "@/components/admin/confirmation-dialog";
+import { FeaturedImageUploader } from "@/components/admin/featured-image-uploader";
 import {
   saveServiceDraftAction,
   publishServiceAction,
@@ -35,6 +36,10 @@ import {
   uploadCharterPdfAction,
   removeCharterAssociationAction,
   linkExistingCharterDocumentAction,
+  uploadServiceImageAction,
+  uploadServiceAttachmentAction,
+  linkExistingServiceAttachmentAction,
+  removeServiceAttachmentAction,
 } from "@/app/(cms)/admin/services/actions";
 import { formatBytes } from "@/lib/validation/documents";
 import type { ServiceSectionInput } from "@/lib/validation/services";
@@ -49,6 +54,13 @@ export interface ServicePageFormProps {
     officeId: string | null;
     publishedAt: Date | string | null;
     updatedAt: Date | string;
+    featuredImageUrl?: string | null;
+    featuredImageAlt?: string | null;
+    featuredImagePublicId?: string | null;
+    featuredImageWidth?: number | null;
+    featuredImageHeight?: number | null;
+    featuredImageFormat?: string | null;
+    featuredImageBytes?: number | null;
     office?: { id: string; name: string; shortName: string | null } | null;
     sections: Array<{
       id: string;
@@ -70,6 +82,21 @@ export interface ServicePageFormProps {
       status: string;
       publishedAt?: Date | string | null;
     } | null;
+    attachmentDocumentId?: string | null;
+    attachmentDocument?: {
+      id: string;
+      title: string;
+      originalFilename: string;
+      storagePublicId: string;
+      storageUrl: string;
+      downloadUrl?: string;
+      format: string;
+      mimeType: string;
+      bytes: number;
+      status: string;
+      purpose: string;
+      publishedAt?: Date | string | null;
+    } | null;
   };
   offices: Array<{ id: string; name: string; shortName: string | null }>;
   charterDocuments?: Array<{
@@ -77,6 +104,16 @@ export interface ServicePageFormProps {
     title: string;
     originalFilename: string;
     status: string;
+    bytes?: number;
+    storageUrl?: string;
+    downloadUrl?: string;
+  }>;
+  attachmentDocuments?: Array<{
+    id: string;
+    title: string;
+    originalFilename: string;
+    status: string;
+    purpose: string;
     bytes?: number;
     storageUrl?: string;
     downloadUrl?: string;
@@ -89,10 +126,14 @@ export function ServicePageForm({
   servicePage,
   offices,
   charterDocuments = [],
+  attachmentDocuments = [],
   isSystemScoped,
   canPublish,
 }: ServicePageFormProps) {
   const router = useRouter();
+
+  const isCitizensCharter = servicePage.serviceKey === "citizens-charter";
+  const isBusinessPermits = servicePage.serviceKey === "business-permits";
 
   // Form states
   const [title, setTitle] = React.useState(servicePage.title);
@@ -108,6 +149,38 @@ export function ServicePageForm({
     }))
   );
 
+  // Business Permits single-body state (defensively preserves and consolidates multi-section legacy data if present)
+  const [body, setBody] = React.useState<string>(() => {
+    if (!servicePage.sections || servicePage.sections.length === 0) return "";
+    if (servicePage.sections.length === 1) return servicePage.sections[0].content;
+    return servicePage.sections
+      .map((s) => (s.title && s.title !== servicePage.title ? `<h2>${s.title}</h2>${s.content}` : s.content))
+      .join("");
+  });
+
+  // Business Permits featured image state
+  const [featuredImage, setFeaturedImage] = React.useState<{
+    url?: string | null;
+    alt?: string | null;
+    publicId?: string | null;
+    width?: number | null;
+    height?: number | null;
+    format?: string | null;
+    bytes?: number | null;
+  } | null>(
+    servicePage.featuredImageUrl
+      ? {
+          url: servicePage.featuredImageUrl,
+          alt: servicePage.featuredImageAlt,
+          publicId: servicePage.featuredImagePublicId,
+          width: servicePage.featuredImageWidth,
+          height: servicePage.featuredImageHeight,
+          format: servicePage.featuredImageFormat,
+          bytes: servicePage.featuredImageBytes,
+        }
+      : null
+  );
+
   // Official Citizen's Charter PDF workflow states
   const [activeCharterDoc, setActiveCharterDoc] = React.useState(
     servicePage.charterDocument || null
@@ -121,6 +194,22 @@ export function ServicePageForm({
   const [showRemoveCharterDialog, setShowRemoveCharterDialog] = React.useState(false);
   const [isRemovingCharter, setIsRemovingCharter] = React.useState(false);
   const [isLinkingExisting, setIsLinkingExisting] = React.useState(false);
+
+  // Business Permits Attachment Document states
+  const [activeAttachmentDoc, setActiveAttachmentDoc] = React.useState(
+    servicePage.attachmentDocument || null
+  );
+  const [isUploadingAttachment, setIsUploadingAttachment] = React.useState(false);
+  const [attachmentUploadError, setAttachmentUploadError] = React.useState<string | null>(null);
+  const [attachmentUploadSuccess, setAttachmentUploadSuccess] = React.useState<string | null>(null);
+  const [selectedAttachmentFile, setSelectedAttachmentFile] = React.useState<File | null>(null);
+  const [attachmentTitle, setAttachmentTitle] = React.useState("");
+  const [attachmentPurpose, setAttachmentPurpose] = React.useState<"DOWNLOADABLE_FORM" | "OTHER_PUBLIC_DOCUMENT">("DOWNLOADABLE_FORM");
+  const [isReplacingAttachment, setIsReplacingAttachment] = React.useState(false);
+  const [showRemoveAttachmentDialog, setShowRemoveAttachmentDialog] = React.useState(false);
+  const [isRemovingAttachment, setIsRemovingAttachment] = React.useState(false);
+  const [selectedExistingAttachmentId, setSelectedExistingAttachmentId] = React.useState("");
+  const [isLinkingExistingAttachment, setIsLinkingExistingAttachment] = React.useState(false);
 
   // Status & Concurrency
   const [status, setStatus] = React.useState(servicePage.status);
@@ -272,7 +361,134 @@ export function ServicePageForm({
   };
 
   // ---------------------------------------------------------------------------
-  // SECTION REORDERING & MANIPULATION
+  // BUSINESS PERMITS ATTACHMENT ACTIONS
+  // ---------------------------------------------------------------------------
+  const handleDirectAttachmentUpload = async () => {
+    if (!selectedAttachmentFile) return;
+
+    if (!selectedAttachmentFile.name.toLowerCase().endsWith(".pdf")) {
+      setAttachmentUploadError("Only PDF files (.pdf) are permitted for official attachments.");
+      return;
+    }
+
+    if (selectedAttachmentFile.size > 15 * 1024 * 1024) {
+      setAttachmentUploadError(
+        `File size exceeds 15 MB limit (received ${(selectedAttachmentFile.size / (1024 * 1024)).toFixed(1)} MB).`
+      );
+      return;
+    }
+
+    setIsUploadingAttachment(true);
+    setAttachmentUploadError(null);
+    setAttachmentUploadSuccess(null);
+
+    const formData = new FormData();
+    formData.append("serviceKey", servicePage.serviceKey);
+    formData.append("file", selectedAttachmentFile);
+    formData.append("purpose", attachmentPurpose);
+    if (attachmentTitle.trim()) {
+      formData.append("title", attachmentTitle.trim());
+    }
+
+    const res = await uploadServiceAttachmentAction(formData);
+    setIsUploadingAttachment(false);
+
+    if (!res.success || !res.data) {
+      setAttachmentUploadError(res.error || "Failed to upload service document.");
+      return;
+    }
+
+    if (res.data.servicePageUpdatedAt) {
+      setExpectedUpdatedAt(res.data.servicePageUpdatedAt);
+    }
+    setActiveAttachmentDoc({
+      id: res.data.documentId,
+      title: res.data.title,
+      originalFilename: res.data.originalFilename,
+      storagePublicId: "",
+      storageUrl: res.data.storageUrl,
+      downloadUrl: res.data.downloadUrl,
+      format: "pdf",
+      mimeType: "application/pdf",
+      bytes: res.data.bytes,
+      status: "PUBLISHED",
+      purpose: res.data.purpose,
+    });
+    setIsReplacingAttachment(false);
+    setSelectedAttachmentFile(null);
+    setAttachmentTitle("");
+    setAttachmentUploadSuccess("Official service document uploaded, published, and attached successfully.");
+    router.refresh();
+  };
+
+  const handleRemoveAttachmentAssociation = async () => {
+    setIsRemovingAttachment(true);
+    setAttachmentUploadError(null);
+    setAttachmentUploadSuccess(null);
+
+    const res = await removeServiceAttachmentAction(servicePage.serviceKey);
+    setIsRemovingAttachment(false);
+    setShowRemoveAttachmentDialog(false);
+
+    if (!res.success) {
+      setAttachmentUploadError(res.error || "Failed to remove attachment association.");
+      return;
+    }
+
+    if (res.data?.servicePageUpdatedAt) {
+      setExpectedUpdatedAt(res.data.servicePageUpdatedAt);
+    }
+    setActiveAttachmentDoc(null);
+    setAttachmentUploadSuccess(
+      "Service document attachment removed. The file remains preserved in Document Management."
+    );
+    router.refresh();
+  };
+
+  const handleLinkExistingAttachment = async () => {
+    if (!selectedExistingAttachmentId) return;
+
+    setIsLinkingExistingAttachment(true);
+    setAttachmentUploadError(null);
+    setAttachmentUploadSuccess(null);
+
+    const res = await linkExistingServiceAttachmentAction(
+      servicePage.serviceKey,
+      selectedExistingAttachmentId
+    );
+    setIsLinkingExistingAttachment(false);
+
+    if (!res.success) {
+      setAttachmentUploadError(res.error || "Failed to attach existing document.");
+      return;
+    }
+
+    if (res.data?.servicePageUpdatedAt) {
+      setExpectedUpdatedAt(res.data.servicePageUpdatedAt);
+    }
+    const found = attachmentDocuments.find((d) => d.id === selectedExistingAttachmentId);
+    if (found) {
+      setActiveAttachmentDoc({
+        id: found.id,
+        title: found.title,
+        originalFilename: found.originalFilename,
+        storagePublicId: "",
+        storageUrl: found.storageUrl || "",
+        downloadUrl: found.downloadUrl,
+        format: "pdf",
+        mimeType: "application/pdf",
+        bytes: found.bytes || 0,
+        status: found.status,
+        purpose: found.purpose,
+      });
+    }
+    setAttachmentUploadSuccess("Existing document attached successfully.");
+    setIsReplacingAttachment(false);
+    router.refresh();
+  };
+
+  // ---------------------------------------------------------------------------
+  // SECTION REORDERING & MANIPULATION (For Generic Services)
   // ---------------------------------------------------------------------------
   const handleAddSection = () => {
     markDirty();
@@ -308,7 +524,6 @@ export function ServicePageForm({
       next[index] = next[targetIndex];
       next[targetIndex] = temp;
 
-      // Update sortOrder
       return next.map((s, idx) => ({ ...s, sortOrder: idx }));
     });
   };
@@ -323,6 +538,31 @@ export function ServicePageForm({
     setDeleteIndex(null);
   };
 
+  // Helper to build draft payload
+  const buildPayload = () => {
+    return {
+      title,
+      description: description.trim() || null,
+      officeId: isSystemScoped ? (officeId || null) : servicePage.officeId,
+      charterDocumentId: isCitizensCharter ? (activeCharterDoc?.id || null) : undefined,
+      attachmentDocumentId: isBusinessPermits ? (activeAttachmentDoc?.id || null) : undefined,
+      featuredImageUrl: isBusinessPermits ? (featuredImage?.url || null) : undefined,
+      featuredImageAlt: isBusinessPermits ? (featuredImage?.alt || null) : undefined,
+      featuredImagePublicId: isBusinessPermits ? (featuredImage?.publicId || null) : undefined,
+      featuredImageWidth: isBusinessPermits ? (featuredImage?.width || null) : undefined,
+      featuredImageHeight: isBusinessPermits ? (featuredImage?.height || null) : undefined,
+      featuredImageFormat: isBusinessPermits ? (featuredImage?.format || null) : undefined,
+      featuredImageBytes: isBusinessPermits ? (featuredImage?.bytes || null) : undefined,
+      body: isBusinessPermits ? body : undefined,
+      sections: isBusinessPermits
+        ? [{ title: title || "Business Permit Guidelines", content: body, sortOrder: 0 }]
+        : isCitizensCharter
+        ? []
+        : sections,
+      expectedUpdatedAt,
+    };
+  };
+
   // ---------------------------------------------------------------------------
   // ACTIONS: SAVE DRAFT, PUBLISH, UNPUBLISH
   // ---------------------------------------------------------------------------
@@ -332,14 +572,7 @@ export function ServicePageForm({
     setSuccessMessage(null);
 
     try {
-      const result = await saveServiceDraftAction(servicePage.serviceKey, {
-        title,
-        description: description.trim() || null,
-        officeId: isSystemScoped ? (officeId || null) : servicePage.officeId,
-        charterDocumentId: servicePage.serviceKey === "citizens-charter" ? (charterDocumentId || null) : undefined,
-        sections,
-        expectedUpdatedAt,
-      });
+      const result = await saveServiceDraftAction(servicePage.serviceKey, buildPayload());
 
       if (!result.success) {
         setErrorMessage(result.error || "Failed to save draft changes.");
@@ -365,14 +598,7 @@ export function ServicePageForm({
     setSuccessMessage(null);
 
     try {
-      const result = await publishServiceAction(servicePage.serviceKey, {
-        title,
-        description: description.trim() || null,
-        officeId: isSystemScoped ? (officeId || null) : servicePage.officeId,
-        charterDocumentId: servicePage.serviceKey === "citizens-charter" ? (charterDocumentId || null) : undefined,
-        sections,
-        expectedUpdatedAt,
-      });
+      const result = await publishServiceAction(servicePage.serviceKey, buildPayload());
 
       if (!result.success) {
         setErrorMessage(result.error || "Failed to publish service page.");
@@ -401,7 +627,7 @@ export function ServicePageForm({
     setSuccessMessage(null);
 
     try {
-      const result = await unpublishServiceAction(servicePage.serviceKey);
+      const result = await unpublishServiceAction(servicePage.serviceKey, expectedUpdatedAt);
       if (!result.success) {
         setErrorMessage(result.error || "Failed to unpublish service page.");
       } else {
@@ -419,7 +645,6 @@ export function ServicePageForm({
     }
   };
 
-  const publicUrl = `/services/${servicePage.serviceKey}`;
   const previewUrl = `/admin/services/${servicePage.serviceKey}/preview`;
 
   return (
@@ -453,9 +678,9 @@ export function ServicePageForm({
 
       {/* Main Form Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Page Metadata & Ordered Sections (2 cols) */}
+        {/* Left Column: Main Authoring Area (2 cols) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Card 1: Page Details */}
+          {/* Card 1: Page Identity */}
           <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h2 className="text-sm font-bold text-gov-charcoal">Service Page Identity</h2>
@@ -511,148 +736,654 @@ export function ServicePageForm({
             </div>
           </div>
 
-          {/* Card 2: Ordered Content Sections */}
-          <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-5">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div>
-                <h2 className="text-sm font-bold text-gov-charcoal">
-                  Content Sections ({sections.length})
-                </h2>
-                <p className="text-[11px] text-gov-muted mt-0.5">
-                  Ordered semantic blocks for service standards, requirements, steps, and procedures.
-                </p>
+          {/* ========================================================================= */}
+          {/* BRANCH A: CITIZEN'S CHARTER DEDICATED DOCUMENT-CENTRIC AUTHORING          */}
+          {/* ========================================================================= */}
+          {isCitizensCharter && (
+            <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div>
+                  <h2 className="text-sm font-bold text-gov-charcoal flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-burgundy-700" aria-hidden="true" />
+                    <span>Official Citizen&apos;s Charter Handbook (PDF)</span>
+                  </h2>
+                  <p className="text-[11px] text-gov-muted mt-0.5">
+                    The Citizen&apos;s Charter is published as an authoritative frontline handbook. Manage the official PDF below.
+                  </p>
+                </div>
+                {activeCharterDoc && (
+                  <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-xs bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    Associated
+                  </span>
+                )}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddSection}
-                className="text-xs h-8 px-2.5 text-burgundy-800 border-burgundy-200 hover:bg-burgundy-50"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-                <span>Add Section</span>
-              </Button>
-            </div>
 
-            {sections.length === 0 ? (
-              <div className="py-8 text-center border-2 border-dashed border-gray-200 rounded-xs">
-                <FileText className="h-8 w-8 text-gov-muted/50 mx-auto mb-2" aria-hidden="true" />
-                <h3 className="text-xs font-bold text-gov-charcoal mb-1">
-                  No content sections added yet
-                </h3>
-                <p className="text-[11px] text-gov-muted max-w-sm mx-auto mb-3">
-                  Click &quot;Add Section&quot; to author structured guidance for this municipal service.
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAddSection}
-                  className="text-xs text-burgundy-800 border-burgundy-300 hover:bg-burgundy-50"
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-                  <span>Create First Section</span>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {sections.map((section, idx) => (
-                  <div
-                    key={section.id || `temp-section-${idx}`}
-                    className="border border-gray-200 rounded-xs p-4 bg-slate-50/50 space-y-3.5"
-                  >
-                    {/* Section Top Controls */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-burgundy-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                          {idx + 1}
-                        </span>
-                        <span className="text-xs font-bold text-gov-charcoal truncate">
-                          {section.title || `Untitled Section #${idx + 1}`}
-                        </span>
-                      </div>
+              {uploadSuccess && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  <span>{uploadSuccess}</span>
+                </div>
+              )}
 
-                      <div className="flex items-center gap-1 self-end sm:self-auto">
-                        {/* Reorder Up */}
+              {uploadError && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
+
+              {activeCharterDoc && !isReplacing ? (
+                /* Management Card when PDF is associated */
+                <div className="bg-slate-50 border border-gray-200 rounded-xs p-4 space-y-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-gov-charcoal">
+                      {activeCharterDoc.title}
+                    </h3>
+                    <p className="text-[11px] text-gov-muted mt-0.5">
+                      {activeCharterDoc.originalFilename} • PDF • {formatBytes(activeCharterDoc.bytes)}
+                    </p>
+                  </div>
+
+                  {/* Actions: View, Download, Replace, Remove */}
+                  <div className="pt-2 border-t border-gray-200 flex flex-wrap gap-2">
+                    <a
+                      href={activeCharterDoc.storageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>View PDF</span>
+                    </a>
+
+                    {activeCharterDoc.downloadUrl && (
+                      <a
+                        href={activeCharterDoc.downloadUrl}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
+                      >
+                        <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Download PDF</span>
+                      </a>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsReplacing(true);
+                        setUploadError(null);
+                        setUploadSuccess(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-burgundy-50 border border-burgundy-200 text-burgundy-800 hover:bg-burgundy-100 transition-colors shadow-2xs"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Replace PDF</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowRemoveCharterDialog(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>Remove Association</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Upload / Link Uploader Form */
+                <div className="space-y-4">
+                  <div className="border border-dashed border-gray-300 rounded-xs p-4 bg-slate-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gov-charcoal flex items-center gap-1.5">
+                        <FileUp className="h-4 w-4 text-burgundy-700" />
+                        <span>{isReplacing ? "Upload Replacement PDF" : "Upload New Citizen's Charter PDF"}</span>
+                      </span>
+                      {isReplacing && (
                         <button
                           type="button"
-                          disabled={idx === 0}
-                          onClick={() => handleMoveSection(idx, "up")}
-                          className="p-1 rounded-xs text-gov-muted hover:text-gov-charcoal hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:pointer-events-none"
-                          title="Move section up"
-                          aria-label={`Move section ${idx + 1} up`}
+                          onClick={() => {
+                            setIsReplacing(false);
+                            setSelectedFile(null);
+                            setPdfTitle("");
+                            setUploadError(null);
+                          }}
+                          className="text-[11px] font-semibold text-gov-muted hover:text-gov-charcoal flex items-center gap-1"
                         >
-                          <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                          <X className="h-3.5 w-3.5" />
+                          <span>Cancel</span>
                         </button>
-
-                        {/* Reorder Down */}
-                        <button
-                          type="button"
-                          disabled={idx === sections.length - 1}
-                          onClick={() => handleMoveSection(idx, "down")}
-                          className="p-1 rounded-xs text-gov-muted hover:text-gov-charcoal hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:pointer-events-none"
-                          title="Move section down"
-                          aria-label={`Move section ${idx + 1} down`}
-                        >
-                          <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
-                        </button>
-
-                        {/* Remove */}
-                        <button
-                          type="button"
-                          onClick={() => setDeleteIndex(idx)}
-                          className="p-1 rounded-xs text-gov-muted hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200"
-                          title="Remove section"
-                          aria-label={`Remove section ${idx + 1}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                        </button>
-                      </div>
+                      )}
                     </div>
 
-                    {/* Section Heading Input */}
                     <div>
-                      <label
-                        htmlFor={`sec-title-${idx}`}
-                        className="block text-[11px] font-bold text-gov-charcoal mb-1"
-                      >
-                        Section Heading <span className="text-rose-600">*</span>
+                      <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
+                        Select Handbook File <span className="text-rose-600">*</span>
                       </label>
                       <input
-                        id={`sec-title-${idx}`}
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setSelectedFile(file);
+                          setUploadError(null);
+                        }}
+                        disabled={isUploadingPdf}
+                        className="w-full text-xs text-gov-charcoal file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xs file:border-0 file:text-[11px] file:font-semibold file:bg-burgundy-50 file:text-burgundy-800 hover:file:bg-burgundy-100 cursor-pointer"
+                      />
+                      <span className="text-[10px] text-gov-muted mt-1 block">
+                        PDF format only. Maximum size: 15 MB. Authentic %PDF- header magic bytes verified.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
+                        Document Title (Optional)
+                      </label>
+                      <input
                         type="text"
-                        value={section.title}
-                        onChange={(e) =>
-                          handleUpdateSection(idx, "title", e.target.value)
-                        }
-                        placeholder="e.g. Documentary Requirements, Processing Steps, Fees..."
-                        className="w-full px-3 py-1.5 text-xs text-gov-charcoal bg-white border border-gray-200 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
-                        required
+                        value={pdfTitle}
+                        onChange={(e) => setPdfTitle(e.target.value)}
+                        placeholder="e.g. San Felipe Citizen's Charter 2026 Edition"
+                        disabled={isUploadingPdf}
+                        className="w-full px-3 py-1.5 text-xs text-gov-charcoal bg-white border border-gray-300 rounded-xs focus:outline-none focus:ring-1 focus:ring-burgundy-700"
                       />
                     </div>
 
-                    {/* Section Rich Text Body */}
-                    <div>
+                    <Button
+                      type="button"
+                      onClick={handleDirectPdfUpload}
+                      disabled={!selectedFile || isUploadingPdf}
+                      className="w-full text-xs h-9 font-bold justify-center bg-burgundy-800 hover:bg-burgundy-900 text-white"
+                    >
+                      {isUploadingPdf ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" aria-hidden="true" />
+                          <span>Uploading & Publishing PDF...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-3.5 w-3.5 mr-2" aria-hidden="true" />
+                          <span>{isReplacing ? "Upload & Replace Official PDF" : "Upload & Associate Official PDF"}</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Select Existing Published Charter Document */}
+                  {!isReplacing && charterDocuments.length > 0 && (
+                    <div className="pt-3 border-t border-gray-100 space-y-2">
                       <label
-                        id={`sec-body-label-${idx}`}
-                        className="block text-[11px] font-bold text-gov-charcoal mb-1"
+                        htmlFor="charter-doc-select"
+                        className="block text-[11px] font-bold text-gov-charcoal"
                       >
-                        Section Content <span className="text-rose-600">*</span>
+                        Or Select Existing Published Charter Document
                       </label>
-                      <TiptapEditor
-                        value={section.content}
-                        onChange={(html) =>
-                          handleUpdateSection(idx, "content", html)
-                        }
-                        placeholder="Write detailed guidelines, instructions, or bulleted requirements..."
-                        className="bg-white min-h-[140px]"
-                      />
+                      <div className="flex gap-2">
+                        <select
+                          id="charter-doc-select"
+                          value={charterDocumentId}
+                          onChange={(e) => setCharterDocumentId(e.target.value)}
+                          disabled={isLinkingExisting}
+                          className="flex-1 text-xs p-2 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer focus:outline-none focus:ring-1 focus:ring-burgundy-700"
+                        >
+                          <option value="">-- Choose Existing Document --</option>
+                          {charterDocuments.map((doc) => (
+                            <option key={doc.id} value={doc.id}>
+                              {doc.title} ({doc.originalFilename})
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={!charterDocumentId || isLinkingExisting}
+                          onClick={() => handleLinkExistingDocument(charterDocumentId)}
+                          className="text-xs h-9 font-semibold text-gov-charcoal border-gray-300 shrink-0"
+                        >
+                          {isLinkingExisting ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <span>Link Document</span>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* BRANCH B: BUSINESS PERMITS NEWS-LIKE AUTHORING UX                         */}
+          {/* ========================================================================= */}
+          {isBusinessPermits && (
+            <div className="space-y-6">
+              {/* Card 2: Featured Image */}
+              <FeaturedImageUploader
+                value={featuredImage || {}}
+                onChange={(val) => {
+                  setFeaturedImage(val);
+                  markDirty();
+                }}
+                onUploadAction={uploadServiceImageAction}
+                disabled={isSaving || isPublishing || isUnpublishing}
+                label="Business Permits Featured Image (Optional)"
+                description="Optional cover image for business licensing guidelines (JPEG, PNG, WebP up to 10 MB)"
+              />
+
+              {/* Card 3: Single Rich-Text Body Editor */}
+              <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-4">
+                <div>
+                  <h2 className="text-sm font-bold text-gov-charcoal">
+                    Guidelines & Requirements Body <span className="text-rose-600">*</span>
+                  </h2>
+                  <p className="text-[11px] text-gov-muted mt-0.5">
+                    Author comprehensive business permit guidelines, requirements, steps, and fee schedules in a single rich-text view.
+                  </p>
+                </div>
+
+                <TiptapEditor
+                  value={body}
+                  onChange={(html) => {
+                    setBody(html);
+                    markDirty();
+                  }}
+                  placeholder="Write detailed guidelines, instructions, or requirements for business permit applications..."
+                  className="bg-white min-h-[320px]"
+                />
+              </div>
+
+              {/* Card 4: Managed Document Attachment (0..1) */}
+              <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-gov-charcoal flex items-center gap-2">
+                      <FileCheck className="h-4 w-4 text-burgundy-700" aria-hidden="true" />
+                      <span>Official Document Attachment (Optional)</span>
+                    </h2>
+                    <p className="text-[11px] text-gov-muted mt-0.5">
+                      Attach an official downloadable form or public guide (PDF only, max 15 MB).
+                    </p>
+                  </div>
+                  {activeAttachmentDoc && (
+                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-xs bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Attached
+                    </span>
+                  )}
+                </div>
+
+                {attachmentUploadSuccess && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                    <span>{attachmentUploadSuccess}</span>
+                  </div>
+                )}
+
+                {attachmentUploadError && (
+                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
+                    <span>{attachmentUploadError}</span>
+                  </div>
+                )}
+
+                {activeAttachmentDoc && !isReplacingAttachment ? (
+                  /* Management Card when attachment exists */
+                  <div className="bg-slate-50 border border-gray-200 rounded-xs p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="text-xs font-bold text-gov-charcoal">
+                          {activeAttachmentDoc.title}
+                        </h3>
+                        <p className="text-[11px] text-gov-muted mt-0.5">
+                          {activeAttachmentDoc.originalFilename} • PDF • {formatBytes(activeAttachmentDoc.bytes)}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
+                        {activeAttachmentDoc.purpose === "OTHER_PUBLIC_DOCUMENT" ? "Other Document" : "Downloadable Form"}
+                      </span>
+                    </div>
+
+                    {/* Actions: View, Download, Replace, Remove */}
+                    <div className="pt-2 border-t border-gray-200 flex flex-wrap gap-2">
+                      <a
+                        href={activeAttachmentDoc.storageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>View PDF</span>
+                      </a>
+
+                      {activeAttachmentDoc.downloadUrl && (
+                        <a
+                          href={activeAttachmentDoc.downloadUrl}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
+                        >
+                          <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>Download PDF</span>
+                        </a>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsReplacingAttachment(true);
+                          setAttachmentUploadError(null);
+                          setAttachmentUploadSuccess(null);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-burgundy-50 border border-burgundy-200 text-burgundy-800 hover:bg-burgundy-100 transition-colors shadow-2xs"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Replace Document</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowRemoveAttachmentDialog(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Remove Attachment</span>
+                      </button>
                     </div>
                   </div>
-                ))}
+                ) : (
+                  /* Uploader / Link Existing Form */
+                  <div className="space-y-4">
+                    <div className="border border-dashed border-gray-300 rounded-xs p-4 bg-slate-50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gov-charcoal flex items-center gap-1.5">
+                          <FileUp className="h-4 w-4 text-burgundy-700" />
+                          <span>{isReplacingAttachment ? "Replace Attached Document" : "Upload New Attachment (PDF)"}</span>
+                        </span>
+                        {isReplacingAttachment && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsReplacingAttachment(false);
+                              setSelectedAttachmentFile(null);
+                              setAttachmentTitle("");
+                              setAttachmentUploadError(null);
+                            }}
+                            className="text-[11px] font-semibold text-gov-muted hover:text-gov-charcoal flex items-center gap-1"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            <span>Cancel</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
+                          Select Document (PDF only) <span className="text-rose-600">*</span>
+                        </label>
+                        <input
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            setSelectedAttachmentFile(file);
+                            setAttachmentUploadError(null);
+                          }}
+                          disabled={isUploadingAttachment}
+                          className="w-full text-xs text-gov-charcoal file:mr-2.5 file:py-1.5 file:px-3 file:rounded-xs file:border-0 file:text-[11px] file:font-semibold file:bg-burgundy-50 file:text-burgundy-800 hover:file:bg-burgundy-100 cursor-pointer"
+                        />
+                        <span className="text-[10px] text-gov-muted mt-1 block">
+                          PDF format only. Maximum size: 15 MB. Authentic %PDF- header magic bytes verified.
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
+                          Document Title (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={attachmentTitle}
+                          onChange={(e) => setAttachmentTitle(e.target.value)}
+                          placeholder="e.g. Unified Business Permit Application Form (Fillable)"
+                          disabled={isUploadingAttachment}
+                          className="w-full px-3 py-1.5 text-xs text-gov-charcoal bg-white border border-gray-300 rounded-xs focus:outline-none focus:ring-1 focus:ring-burgundy-700"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
+                          Semantic Document Purpose <span className="text-rose-600">*</span>
+                        </label>
+                        <select
+                          value={attachmentPurpose}
+                          onChange={(e) =>
+                            setAttachmentPurpose(
+                              e.target.value as "DOWNLOADABLE_FORM" | "OTHER_PUBLIC_DOCUMENT"
+                            )
+                          }
+                          disabled={isUploadingAttachment}
+                          className="w-full px-3 py-1.5 text-xs text-gov-charcoal bg-white border border-gray-300 rounded-xs focus:outline-none focus:ring-1 focus:ring-burgundy-700 cursor-pointer"
+                        >
+                          <option value="DOWNLOADABLE_FORM">
+                            Downloadable Form (Fillable application, permit template, official form)
+                          </option>
+                          <option value="OTHER_PUBLIC_DOCUMENT">
+                            Other Public Document (Supporting reference, guide, checklist, ordinance)
+                          </option>
+                        </select>
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={handleDirectAttachmentUpload}
+                        disabled={!selectedAttachmentFile || isUploadingAttachment}
+                        className="w-full text-xs h-9 font-bold justify-center bg-burgundy-800 hover:bg-burgundy-900 text-white"
+                      >
+                        {isUploadingAttachment ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" aria-hidden="true" />
+                            <span>Uploading & Attaching Document...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-3.5 w-3.5 mr-2" aria-hidden="true" />
+                            <span>{isReplacingAttachment ? "Upload & Replace Attachment" : "Upload & Attach Document"}</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Select Existing Published Document */}
+                    {!isReplacingAttachment && attachmentDocuments.length > 0 && (
+                      <div className="pt-3 border-t border-gray-100 space-y-2">
+                        <label
+                          htmlFor="existing-doc-select"
+                          className="block text-[11px] font-bold text-gov-charcoal"
+                        >
+                          Or Select Existing Published Document
+                        </label>
+                        <div className="flex gap-2">
+                          <select
+                            id="existing-doc-select"
+                            value={selectedExistingAttachmentId}
+                            onChange={(e) => setSelectedExistingAttachmentId(e.target.value)}
+                            disabled={isLinkingExistingAttachment}
+                            className="flex-1 text-xs p-2 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer focus:outline-none focus:ring-1 focus:ring-burgundy-700"
+                          >
+                            <option value="">-- Choose Existing Document --</option>
+                            {attachmentDocuments.map((doc) => (
+                              <option key={doc.id} value={doc.id}>
+                                {doc.title} ({doc.originalFilename}) • {doc.purpose === "DOWNLOADABLE_FORM" ? "Form" : "Document"}
+                              </option>
+                            ))}
+                          </select>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={!selectedExistingAttachmentId || isLinkingExistingAttachment}
+                            onClick={handleLinkExistingAttachment}
+                            className="text-xs h-9 font-semibold text-gov-charcoal border-gray-300 shrink-0"
+                          >
+                            {isLinkingExistingAttachment ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <span>Attach Document</span>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* BRANCH C: GENERIC ORDERED CONTENT SECTIONS (For other services)           */}
+          {/* ========================================================================= */}
+          {!isCitizensCharter && !isBusinessPermits && (
+            <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-5">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div>
+                  <h2 className="text-sm font-bold text-gov-charcoal">
+                    Content Sections ({sections.length})
+                  </h2>
+                  <p className="text-[11px] text-gov-muted mt-0.5">
+                    Ordered semantic blocks for service standards, requirements, steps, and procedures.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddSection}
+                  className="text-xs h-8 px-2.5 text-burgundy-800 border-burgundy-200 hover:bg-burgundy-50"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+                  <span>Add Section</span>
+                </Button>
+              </div>
+
+              {sections.length === 0 ? (
+                <div className="py-8 text-center border-2 border-dashed border-gray-200 rounded-xs">
+                  <FileText className="h-8 w-8 text-gov-muted/50 mx-auto mb-2" aria-hidden="true" />
+                  <h3 className="text-xs font-bold text-gov-charcoal mb-1">
+                    No content sections added yet
+                  </h3>
+                  <p className="text-[11px] text-gov-muted max-w-sm mx-auto mb-3">
+                    Click &quot;Add Section&quot; to author structured guidance for this municipal service.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddSection}
+                    className="text-xs text-burgundy-800 border-burgundy-300 hover:bg-burgundy-50"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+                    <span>Create First Section</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {sections.map((section, idx) => (
+                    <div
+                      key={section.id || `temp-section-${idx}`}
+                      className="border border-gray-200 rounded-xs p-4 bg-slate-50/50 space-y-3.5"
+                    >
+                      {/* Section Top Controls */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-burgundy-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="text-xs font-bold text-gov-charcoal truncate">
+                            {section.title || `Untitled Section #${idx + 1}`}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1 self-end sm:self-auto">
+                          {/* Reorder Up */}
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveSection(idx, "up")}
+                            className="p-1 rounded-xs text-gov-muted hover:text-gov-charcoal hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:pointer-events-none"
+                            title="Move section up"
+                            aria-label={`Move section ${idx + 1} up`}
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+
+                          {/* Reorder Down */}
+                          <button
+                            type="button"
+                            disabled={idx === sections.length - 1}
+                            onClick={() => handleMoveSection(idx, "down")}
+                            className="p-1 rounded-xs text-gov-muted hover:text-gov-charcoal hover:bg-white border border-transparent hover:border-gray-200 disabled:opacity-30 disabled:pointer-events-none"
+                            title="Move section down"
+                            aria-label={`Move section ${idx + 1} down`}
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+
+                          {/* Remove */}
+                          <button
+                            type="button"
+                            onClick={() => setDeleteIndex(idx)}
+                            className="p-1 rounded-xs text-gov-muted hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200"
+                            title="Remove section"
+                            aria-label={`Remove section ${idx + 1}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Section Heading Input */}
+                      <div>
+                        <label
+                          htmlFor={`sec-title-${idx}`}
+                          className="block text-[11px] font-bold text-gov-charcoal mb-1"
+                        >
+                          Section Heading <span className="text-rose-600">*</span>
+                        </label>
+                        <input
+                          id={`sec-title-${idx}`}
+                          type="text"
+                          value={section.title}
+                          onChange={(e) =>
+                            handleUpdateSection(idx, "title", e.target.value)
+                          }
+                          placeholder="e.g. Documentary Requirements, Processing Steps, Fees..."
+                          className="w-full px-3 py-1.5 text-xs text-gov-charcoal bg-white border border-gray-200 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
+                          required
+                        />
+                      </div>
+
+                      {/* Section Rich Text Body */}
+                      <div>
+                        <label
+                          id={`sec-body-label-${idx}`}
+                          className="block text-[11px] font-bold text-gov-charcoal mb-1"
+                        >
+                          Section Content <span className="text-rose-600">*</span>
+                        </label>
+                        <TiptapEditor
+                          value={section.content}
+                          onChange={(html) =>
+                            handleUpdateSection(idx, "content", html)
+                          }
+                          placeholder="Write detailed guidelines, instructions, or bulleted requirements..."
+                          className="bg-white min-h-[140px]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Column: Publishing Controls & Attribution (1 col) */}
@@ -755,37 +1486,28 @@ export function ServicePageForm({
               {canPublish && status === "PUBLISHED" && (
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => setShowUnpublishDialog(true)}
                   disabled={isSaving || isPublishing || isUnpublishing}
-                  className="w-full text-xs h-8 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                  className="w-full text-xs h-9 font-semibold justify-center text-rose-700 border-rose-200 hover:bg-rose-50"
                 >
-                  <RotateCcw className="h-3 w-3 mr-1.5" aria-hidden="true" />
-                  <span>Unpublish to Draft</span>
+                  {isUnpublishing ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" aria-hidden="true" />
+                      <span>Unpublishing...</span>
+                    </>
+                  ) : (
+                    <span>Unpublish to Draft</span>
+                  )}
                 </Button>
               )}
             </div>
-
-            {/* Public Link */}
-            {status === "PUBLISHED" && (
-              <div className="border-t border-gray-100 pt-3">
-                <Link
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-semibold text-burgundy-800 hover:underline flex items-center justify-between group"
-                >
-                  <span>View Public Page</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-gov-muted group-hover:text-burgundy-800" aria-hidden="true" />
-                </Link>
-              </div>
-            )}
           </div>
 
-          {/* Card: Responsible Office Attribution */}
+          {/* Card: Municipal Office Assignment */}
           <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-gov-muted border-b border-gray-100 pb-2">
-              Responsible Office
+              Department Assignment
             </h3>
 
             {isSystemScoped ? (
@@ -794,7 +1516,7 @@ export function ServicePageForm({
                   htmlFor="office-select"
                   className="block text-[11px] font-bold text-gov-charcoal mb-1"
                 >
-                  Assigning Office
+                  Assigning Municipal Office
                 </label>
                 <select
                   id="office-select"
@@ -825,239 +1547,6 @@ export function ServicePageForm({
               </div>
             )}
           </div>
-
-          {/* Card: Official Citizen's Charter PDF (citizens-charter route only) */}
-          {servicePage.serviceKey === "citizens-charter" && (
-            <div className="space-y-4">
-              {activeCharterDoc && !isReplacing ? (
-                /* Management Card when PDF is already associated */
-                <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-3.5">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gov-charcoal flex items-center gap-1.5">
-                      <FileText className="h-4 w-4 text-burgundy-700" aria-hidden="true" />
-                      <span>Official Charter PDF</span>
-                    </h3>
-                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-xs bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      Published
-                    </span>
-                  </div>
-
-                  {uploadSuccess && (
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                      <span>{uploadSuccess}</span>
-                    </div>
-                  )}
-
-                  {uploadError && (
-                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
-                      <span>{uploadError}</span>
-                    </div>
-                  )}
-
-                  <div className="bg-slate-50 border border-gray-200 rounded-xs p-3.5 space-y-2.5">
-                    <div>
-                      <h4 className="text-xs font-bold text-gov-charcoal">
-                        {activeCharterDoc.title}
-                      </h4>
-                      <p className="text-[11px] text-gov-muted mt-0.5">
-                        {activeCharterDoc.originalFilename} • PDF • {formatBytes(activeCharterDoc.bytes)}
-                      </p>
-                    </div>
-
-                    {/* Action Buttons: View PDF, Download PDF, Replace PDF, Remove Association */}
-                    <div className="pt-2 border-t border-gray-200/80 flex flex-wrap gap-2">
-                      <a
-                        href={activeCharterDoc.storageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
-                      >
-                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                        <span>View PDF</span>
-                      </a>
-
-                      {activeCharterDoc.downloadUrl && (
-                        <a
-                          href={activeCharterDoc.downloadUrl}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
-                        >
-                          <Download className="h-3 w-3" aria-hidden="true" />
-                          <span>Download PDF</span>
-                        </a>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsReplacing(true);
-                          setUploadError(null);
-                          setUploadSuccess(null);
-                        }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-burgundy-50 border border-burgundy-200 text-burgundy-800 hover:bg-burgundy-100 transition-colors shadow-2xs"
-                      >
-                        <RefreshCw className="h-3 w-3" aria-hidden="true" />
-                        <span>Replace PDF</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowRemoveCharterDialog(true)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
-                      >
-                        <Trash2 className="h-3 w-3" aria-hidden="true" />
-                        <span>Remove Association</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] text-emerald-700 font-medium bg-emerald-50 p-2 rounded-xs border border-emerald-200">
-                    This official PDF is embedded in the public /services/citizens-charter page with Open and Download actions.
-                  </p>
-                </div>
-              ) : (
-                /* Upload / Replace Uploader Form */
-                <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-3.5">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gov-charcoal flex items-center gap-1.5">
-                      <FileUp className="h-4 w-4 text-burgundy-700" aria-hidden="true" />
-                      <span>{isReplacing ? "Replace Official Citizen's Charter PDF" : "Official Citizen's Charter PDF"}</span>
-                    </h3>
-                    {isReplacing && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsReplacing(false);
-                          setSelectedFile(null);
-                          setPdfTitle("");
-                          setUploadError(null);
-                        }}
-                        className="text-[11px] font-semibold text-gov-muted hover:text-gov-charcoal flex items-center gap-1"
-                      >
-                        <X className="h-3 w-3" aria-hidden="true" />
-                        <span>Cancel</span>
-                      </button>
-                    )}
-                  </div>
-
-                  <p className="text-[11px] text-gov-muted leading-relaxed">
-                    Upload the official Citizen&apos;s Charter handbook (.pdf only, max 15 MB). Uploading automatically creates and publishes a managed Document and links it to this service page.
-                  </p>
-
-                  {uploadSuccess && (
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                      <span>{uploadSuccess}</span>
-                    </div>
-                  )}
-
-                  {uploadError && (
-                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
-                      <span>{uploadError}</span>
-                    </div>
-                  )}
-
-                  <div className="border border-dashed border-gray-300 rounded-xs p-3.5 bg-slate-50 space-y-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
-                        Handbook PDF File
-                      </label>
-                      <input
-                        type="file"
-                        accept="application/pdf,.pdf"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          setSelectedFile(file);
-                          setUploadError(null);
-                        }}
-                        disabled={isUploadingPdf}
-                        className="w-full text-xs text-gov-charcoal file:mr-2.5 file:py-1 file:px-2.5 file:rounded-xs file:border-0 file:text-[11px] file:font-semibold file:bg-burgundy-50 file:text-burgundy-800 hover:file:bg-burgundy-100 cursor-pointer"
-                      />
-                      <span className="text-[10px] text-gov-muted mt-1 block">
-                        PDF format only. Maximum size: 15 MB. Authentic %PDF- header verified.
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
-                        Document Title (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={pdfTitle}
-                        onChange={(e) => setPdfTitle(e.target.value)}
-                        placeholder="e.g. San Felipe Citizen's Charter 2026 Edition"
-                        disabled={isUploadingPdf}
-                        className="w-full px-2.5 py-1.5 text-xs text-gov-charcoal bg-white border border-gray-300 rounded-xs focus:outline-none focus:ring-1 focus:ring-burgundy-700"
-                      />
-                    </div>
-
-                    <Button
-                      type="button"
-                      onClick={handleDirectPdfUpload}
-                      disabled={!selectedFile || isUploadingPdf}
-                      className="w-full text-xs h-8.5 font-bold justify-center bg-burgundy-800 hover:bg-burgundy-900 text-white"
-                    >
-                      {isUploadingPdf ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" aria-hidden="true" />
-                          <span>Uploading & Publishing PDF...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-3.5 w-3.5 mr-2" aria-hidden="true" />
-                          <span>{isReplacing ? "Upload & Replace Official PDF" : "Upload Official PDF"}</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  {/* Select Existing Document Option */}
-                  {!isReplacing && charterDocuments.length > 0 && (
-                    <div className="pt-2 border-t border-gray-100 space-y-2">
-                      <label
-                        htmlFor="charter-doc-select"
-                        className="block text-[11px] font-bold text-gov-charcoal"
-                      >
-                        Or Select Existing Published Charter Document
-                      </label>
-                      <div className="flex gap-2">
-                        <select
-                          id="charter-doc-select"
-                          value={charterDocumentId}
-                          onChange={(e) => setCharterDocumentId(e.target.value)}
-                          disabled={isLinkingExisting}
-                          className="flex-1 text-xs p-1.5 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer focus:outline-none focus:ring-1 focus:ring-burgundy-700"
-                        >
-                          <option value="">-- Choose Existing Document --</option>
-                          {charterDocuments.map((doc) => (
-                            <option key={doc.id} value={doc.id}>
-                              {doc.title} ({doc.originalFilename})
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={!charterDocumentId || isLinkingExisting}
-                          onClick={() => handleLinkExistingDocument(charterDocumentId)}
-                          className="text-xs h-8 font-semibold text-gov-charcoal border-gray-300 shrink-0"
-                        >
-                          {isLinkingExisting ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <span>Link</span>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -1110,6 +1599,19 @@ export function ServicePageForm({
         isLoading={isRemovingCharter}
         onConfirm={handleRemoveCharterAssociation}
         onCancel={() => setShowRemoveCharterDialog(false)}
+      />
+
+      {/* Confirmation Dialog: Remove Attachment Association */}
+      <ConfirmationDialog
+        isOpen={showRemoveAttachmentDialog}
+        title="Remove Service Document Attachment?"
+        description="This will disconnect the document from this service page. The document file itself will NOT be deleted and will remain safely preserved in Document Management."
+        confirmLabel="Remove Attachment"
+        cancelLabel="Cancel"
+        variant="danger"
+        isLoading={isRemovingAttachment}
+        onConfirm={handleRemoveAttachmentAssociation}
+        onCancel={() => setShowRemoveAttachmentDialog(false)}
       />
     </div>
   );

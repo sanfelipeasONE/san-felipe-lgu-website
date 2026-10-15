@@ -145,6 +145,8 @@ export interface JobOpportunity {
   competencyRequirements?: string[];
   applicationInstructions?: string[];
   officialAttachmentUrl?: string;
+  featuredImageUrl?: string;
+  featuredImageAlt?: string;
   status: JobStatus;
 }
 

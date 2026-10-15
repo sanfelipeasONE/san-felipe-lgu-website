@@ -16,9 +16,10 @@ export type AllowedEmploymentType = (typeof ALLOWED_EMPLOYMENT_TYPES)[number];
 /**
  * Strips HTML tags and excessive whitespace from plain-text input fields.
  */
-export function sanitizePlainText(input?: string | null): string | null {
-  if (!input) return null;
-  const stripped = input.replace(/<[^>]*>/g, "").trim();
+export function sanitizePlainText(input?: string | number | null): string | null {
+  if (input === null || input === undefined) return null;
+  const str = typeof input === "string" ? input : String(input);
+  const stripped = str.replace(/<[^>]*>/g, "").trim();
   return stripped.length > 0 ? stripped : null;
 }
 
@@ -134,6 +135,13 @@ export const jobOpportunityInputSchema = z
     postingDate: z.string().nullish(),
     closingDate: z.string().nullish(),
     attachmentDocumentId: z.string().nullish(),
+    featuredImagePublicId: z.string().nullish(),
+    featuredImageUrl: z.string().nullish(),
+    featuredImageAlt: z.string().max(300).nullish(),
+    featuredImageWidth: z.number().int().positive().nullish(),
+    featuredImageHeight: z.number().int().positive().nullish(),
+    featuredImageFormat: z.string().max(20).nullish(),
+    featuredImageBytes: z.number().int().positive().nullish(),
     expectedUpdatedAt: z.string().nullish(),
   })
   .superRefine((data, ctx) => {

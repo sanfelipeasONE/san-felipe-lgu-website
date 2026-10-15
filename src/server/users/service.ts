@@ -853,3 +853,141 @@ export async function resetUserCredential(
 
   return { success: true };
 }
+
+/**
+ * Permanently deletes an eligible municipal user account.
+ * Enforces:
+ * 1. Authority: caller must hold users.delete permission.
+ * 2. Self-deletion: caller CANNOT delete their own account.
+ * 3. System Admin Safeguard: cannot delete the last effective active Super Admin.
+ * 4. Office Scope:
+ *    - Super Admin may delete eligible accounts system-wide.
+ *    - Office Admin may ONLY delete canonical ordinary Staff accounts (tier === STAFF, isSystemScope === false)
+ *      strictly within caller.officeId. Forbidden from deleting Super Admin, Office Admin, or cross-office staff.
+ * 5. Protected Content Safeguard (CRITICAL ARCHITECTURAL POLICY):
+ *    - A user with protected authored municipal content is NOT eligible for permanent deletion.
+ *    - Checks NewsArticle.createdById, Document.createdById, ServicePage.createdById, JobOpportunity.createdById.
+ *    - If any count > 0, BLOCK permanent deletion and return an actionable domain error.
+ *    - Never reassigns createdById, never sets createdById to null, never modifies RESTRICT constraints.
+ * 6. Audit Logging: durable audit record with authenticated caller as actor, target metadata in details.
+ * 7. Session Invalidation: sessions cascaded / revoked immediately.
+ */
+export async function deleteUser(
+  caller: SessionUser,
+  targetId: string,
+  expectedUpdatedAt?: string,
+  clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
+): Promise<{ success: boolean; id: string; email: string }> {
+  if (!hasPermission(caller, PERMISSIONS.USERS_DELETE)) {
+    throw new UserError("Access restricted: missing required permission 'users.delete'.", 403);
+  }
+
+  if (caller.id === targetId) {
+    throw new UserError("You cannot delete your own account.", 400);
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: targetId },
+    include: {
+      role: {
+        select: {
+          id: true,
+          slug: true,
+          tier: true,
+          isSystemScope: true,
+          permissions: {
+            select: { permission: { select: { code: true } } },
+          },
+        },
+      },
+      office: { select: { id: true, name: true, slug: true } },
+    },
+  });
+
+  if (!target) {
+    throw new UserError("User account not found.", 404);
+  }
+
+  // Optimistic concurrency check
+  if (
+    expectedUpdatedAt &&
+    target.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new UserError(
+      "This user account was modified by another administrator. Please refresh and review before deleting.",
+      409
+    );
+  }
+
+  // Role and Office scope eligibility check
+  if (!caller.isSystemScope) {
+    // Office Admin caller
+    if (!caller.officeId || target.officeId !== caller.officeId) {
+      throw new UserError("Access restricted: you do not hold authority over this office's accounts.", 403);
+    }
+    if (target.role.tier !== RoleTier.STAFF || target.role.isSystemScope) {
+      throw new UserError("Access restricted: Office Administrators may only delete ordinary Staff accounts within their assigned office.", 403);
+    }
+  } else {
+    // Super Admin caller: safeguard last effective active system admin
+    if (isEffectiveActiveSystemAdmin(target)) {
+      const remainingAdmins = await countEffectiveActiveSystemAdmins(target.id);
+      if (remainingAdmins < 1) {
+        throw new UserError("Action blocked: cannot delete the last effective active System Administrator.", 400);
+      }
+    }
+  }
+
+  // Protected Authored Content Check (Phase 19.4 Authoritative Policy)
+  const [newsCount, docCount, serviceCount, jobCount] = await Promise.all([
+    prisma.newsArticle.count({ where: { createdById: target.id } }),
+    prisma.document.count({ where: { createdById: target.id } }),
+    prisma.servicePage.count({ where: { createdById: target.id } }),
+    prisma.jobOpportunity.count({ where: { createdById: target.id } }),
+  ]);
+
+  const totalAuthored = newsCount + docCount + serviceCount + jobCount;
+  if (totalAuthored > 0) {
+    const parts: string[] = [];
+    if (newsCount > 0) parts.push(`${newsCount} news article(s)`);
+    if (docCount > 0) parts.push(`${docCount} document(s)`);
+    if (serviceCount > 0) parts.push(`${serviceCount} service page(s)`);
+    if (jobCount > 0) parts.push(`${jobCount} job vacancy announcement(s)`);
+    throw new UserError(
+      `Cannot permanently delete user account: this user is the author of record for protected municipal content (${parts.join(", ")}). To remove their administrative access while preserving municipal history, deactivate or suspend the account instead.`,
+      400
+    );
+  }
+
+  const targetMetadata = {
+    targetUserId: target.id,
+    targetEmail: target.email,
+    targetName: target.name,
+    targetOfficeId: target.officeId,
+    targetRoleSlug: target.role.slug,
+    targetRoleTier: target.role.tier,
+  };
+
+  // Perform permanent deletion and audit logging in a single atomic transaction
+  await prisma.$transaction(async (tx) => {
+    // 1. Permanently delete the user record (Session.userId CASCADE safely purges active sessions automatically in PostgreSQL)
+    await tx.user.delete({
+      where: { id: target.id },
+    });
+
+    // 2. Persist durable audit trail entry within the same atomic transaction
+    await tx.auditLog.create({
+      data: {
+        action: AUDIT_ACTIONS.USER_DELETED,
+        userId: caller.id,
+        officeId: caller.officeId || target.officeId,
+        details: targetMetadata,
+        ipAddress: clientMeta?.ipAddress,
+        userAgent: clientMeta?.userAgent,
+      },
+    });
+  });
+
+  return { success: true, id: target.id, email: target.email };
+}
+

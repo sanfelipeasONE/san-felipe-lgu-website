@@ -39,8 +39,17 @@ export const servicePageDraftSchema = z.object({
     .trim()
     .optional()
     .nullable(),
-  sections: z.array(serviceSectionInputSchema).default([]),
+  sections: z.array(serviceSectionInputSchema).optional(),
   charterDocumentId: z.string().trim().optional().nullable(),
+  attachmentDocumentId: z.string().trim().optional().nullable(),
+  featuredImagePublicId: z.string().trim().optional().nullable(),
+  featuredImageUrl: z.string().trim().optional().nullable(),
+  featuredImageAlt: z.string().trim().max(300).optional().nullable(),
+  featuredImageWidth: z.number().int().positive().optional().nullable(),
+  featuredImageHeight: z.number().int().positive().optional().nullable(),
+  featuredImageFormat: z.string().trim().max(20).optional().nullable(),
+  featuredImageBytes: z.number().int().positive().optional().nullable(),
+  body: z.string().max(50000).optional().nullable(),
   expectedUpdatedAt: z.string().optional(),
 });
 
@@ -53,11 +62,17 @@ export interface ServicePublishValidationResult {
 
 /**
  * Validates whether a service page is structurally ready for public publication.
+ * Service-aware:
+ * - "citizens-charter": Document-centric; does not require generic sections.
+ * - "business-permits": Requires title and either canonical body section or content sections.
+ * - Other services: Require at least one content section.
  */
 export function validateServicePageForPublish(input: {
   title: string;
   description?: string | null;
   sections: Array<{ title: string; content: string }>;
+  serviceKey?: string;
+  charterDocumentId?: string | null;
 }): ServicePublishValidationResult {
   const errors: string[] = [];
 
@@ -65,17 +80,21 @@ export function validateServicePageForPublish(input: {
     errors.push("Service title must be at least 3 characters long.");
   }
 
-  if (!input.sections || input.sections.length === 0) {
-    errors.push("A published service page must contain at least one content section.");
-  } else {
-    input.sections.forEach((s, idx) => {
-      if (!s.title || s.title.trim().length === 0) {
-        errors.push(`Section #${idx + 1} is missing a heading.`);
-      }
-      if (!s.content || s.content.trim().length === 0 || s.content.trim() === "<p></p>") {
-        errors.push(`Section #${idx + 1} ("${s.title || "Untitled"}") has empty content.`);
-      }
-    });
+  const isCharter = input.serviceKey === "citizens-charter";
+
+  if (!isCharter) {
+    if (!input.sections || input.sections.length === 0) {
+      errors.push("A published service page must contain at least one content section.");
+    } else {
+      input.sections.forEach((s, idx) => {
+        if (!s.title || s.title.trim().length === 0) {
+          errors.push(`Section #${idx + 1} is missing a heading.`);
+        }
+        if (!s.content || s.content.trim().length === 0 || s.content.trim() === "<p></p>") {
+          errors.push(`Section #${idx + 1} ("${s.title || "Untitled"}") has empty content.`);
+        }
+      });
+    }
   }
 
   return {

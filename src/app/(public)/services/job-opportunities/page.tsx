@@ -49,6 +49,8 @@ export default async function JobOpportunitiesPage() {
     competencyRequirements: job.competencyRequirements,
     applicationInstructions: job.applicationInstructions,
     officialAttachmentUrl: job.officialAttachmentUrl,
+    featuredImageUrl: job.featuredImageUrl,
+    featuredImageAlt: job.featuredImageAlt,
     status: job.status,
   }));
 

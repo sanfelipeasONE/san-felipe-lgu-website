@@ -61,12 +61,35 @@ export function validateImageFile(file: {
 
 export { validateImageFile as validateNewsImageUpload };
 
+export type AllowedFeaturedImageModule = "news" | "business-permits" | "jobs";
+
+/**
+ * Derives the server-controlled Cloudinary destination folder for a closed category/type.
+ * - News: san-felipe-lgu/news/<year>
+ * - Business Permits: san-felipe-lgu/services/business-permits/<year>
+ * - Jobs: san-felipe-lgu/jobs/<year>
+ */
+export function getMunicipalCloudinaryFolder(
+  module: AllowedFeaturedImageModule,
+  year: string | number = new Date().getFullYear()
+): string {
+  switch (module) {
+    case "news":
+      return `san-felipe-lgu/news/${year}`;
+    case "business-permits":
+      return `san-felipe-lgu/services/business-permits/${year}`;
+    case "jobs":
+      return `san-felipe-lgu/jobs/${year}`;
+  }
+}
+
 /**
  * Generates server-authorized upload parameters and signature for Cloudinary.
  * CRITICAL: The API secret is strictly used server-side to sign the request parameters
- * and is never returned in the payload.
+ * and is never returned in the payload. The folder is derived from the closed module enum.
  */
 export function generateCloudinaryUploadSignature(options?: {
+  module?: AllowedFeaturedImageModule;
   folder?: string;
   timestamp?: number;
 }): {
@@ -77,7 +100,9 @@ export function generateCloudinaryUploadSignature(options?: {
   folder: string;
 } {
   const timestamp = options?.timestamp || Math.round(new Date().getTime() / 1000);
-  const folder = options?.folder || `san-felipe-lgu/news/${new Date().getFullYear()}`;
+  const folder = options?.module
+    ? getMunicipalCloudinaryFolder(options.module)
+    : options?.folder || getMunicipalCloudinaryFolder("news");
 
   const paramsToSign = {
     folder,
@@ -98,21 +123,19 @@ export function generateCloudinaryUploadSignature(options?: {
   };
 }
 
-
-
 /**
  * Uploads an image buffer to Cloudinary under the official municipal asset hierarchy.
- * Asset path: san-felipe-lgu/news/<year>/...
+ * Controlled server-side destination folder: san-felipe-lgu/<module>/<year>/...
  */
-export async function uploadNewsFeaturedImage(
+export async function uploadFeaturedImage(
   buffer: Buffer,
+  module: AllowedFeaturedImageModule,
   options?: {
     year?: string | number;
     filename?: string;
   }
 ): Promise<UploadedImageResult> {
-  const year = options?.year || new Date().getFullYear();
-  const folder = `san-felipe-lgu/news/${year}`;
+  const folder = getMunicipalCloudinaryFolder(module, options?.year);
 
   return new Promise<UploadedImageResult>((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -144,6 +167,45 @@ export async function uploadNewsFeaturedImage(
 
     uploadStream.end(buffer);
   });
+}
+
+/**
+ * Uploads a news featured image.
+ */
+export async function uploadNewsFeaturedImage(
+  buffer: Buffer,
+  options?: {
+    year?: string | number;
+    filename?: string;
+  }
+): Promise<UploadedImageResult> {
+  return uploadFeaturedImage(buffer, "news", options);
+}
+
+/**
+ * Uploads a service (e.g. Business Permits) featured image.
+ */
+export async function uploadServiceFeaturedImage(
+  buffer: Buffer,
+  options?: {
+    year?: string | number;
+    filename?: string;
+  }
+): Promise<UploadedImageResult> {
+  return uploadFeaturedImage(buffer, "business-permits", options);
+}
+
+/**
+ * Uploads a job opportunity featured image.
+ */
+export async function uploadJobFeaturedImage(
+  buffer: Buffer,
+  options?: {
+    year?: string | number;
+    filename?: string;
+  }
+): Promise<UploadedImageResult> {
+  return uploadFeaturedImage(buffer, "jobs", options);
 }
 
 /**

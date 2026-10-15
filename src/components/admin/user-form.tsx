@@ -16,6 +16,7 @@ import {
   updateUserAction,
   setUserStatusAction,
   resetUserPasswordAction,
+  deleteUserAction,
 } from "@/app/(cms)/admin/users/actions";
 import {
   Save,
@@ -25,9 +26,11 @@ import {
   AlertTriangle,
   CheckCircle2,
   Lock,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
 import type { UserStatus } from "@prisma/client";
 import { z } from "zod";
 
@@ -60,6 +63,7 @@ interface UserFormProps {
     roleId: string;
     updatedAt: string;
   };
+  canDelete?: boolean;
 }
 
 interface UserFormData {
@@ -79,11 +83,34 @@ export function UserForm({
   roles = [],
   offices = [],
   initialData,
+  canDelete = false,
 }: UserFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Deletion state
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
+
+  const handleDeleteUser = async () => {
+    if (!initialData) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await deleteUserAction(initialData.id, initialData.updatedAt);
+      if (!res.success) {
+        setDeleteError(res.error || "Failed to delete user account.");
+      } else {
+        router.push("/admin/users");
+      }
+    } catch {
+      setDeleteError("An unexpected error occurred while deleting the user.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Password reset section state
   const [resetPasswordOpen, setResetPasswordOpen] = React.useState(false);
@@ -589,6 +616,40 @@ export function UserForm({
               )}
             </div>
           </div>
+
+          {/* Danger Zone: Permanent Account Deletion */}
+          {canDelete && initialData && (
+            <div className="bg-white rounded-xl border border-rose-200 shadow-2xs overflow-hidden">
+              <div className="px-6 py-4 border-b border-rose-100 bg-rose-50/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4 text-rose-700" />
+                  <h4 className="font-semibold text-rose-900 text-sm">Danger Zone</h4>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-xs text-slate-600">
+                  Permanently delete this staff account. Accounts with protected authored municipal content cannot be deleted and must be deactivated instead.
+                </p>
+
+                {deleteError && (
+                  <div className="p-3 rounded-lg border border-rose-200 bg-rose-50 text-rose-800 text-xs">
+                    {deleteError}
+                  </div>
+                )}
+
+                <DestructiveConfirmDialog
+                  title="Permanently Delete Staff Account?"
+                  description={`Are you sure you want to permanently delete the account for "${initialData.name}" (${initialData.email})? This action cannot be undone.`}
+                  warningText="If this user has authored any municipal articles, documents, service pages, or job opportunities, deletion will be strictly blocked to preserve public records."
+                  confirmLabel="Permanently Delete Account"
+                  triggerLabel="Delete Staff Account"
+                  isPending={isDeleting}
+                  onConfirm={handleDeleteUser}
+                  triggerClassName="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

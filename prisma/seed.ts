@@ -13,6 +13,7 @@ const BASELINE_PERMISSIONS = [
   { code: "users.create", name: "Create Users", module: "users", description: "Create staff user accounts" },
   { code: "users.update", name: "Update Users", module: "users", description: "Update staff user account details" },
   { code: "users.disable", name: "Disable Users", module: "users", description: "Suspend or deactivate user accounts" },
+  { code: "users.delete", name: "Delete Users", module: "users", description: "Permanently delete eligible staff user accounts" },
 
   // Office Management
   { code: "offices.view", name: "View Offices", module: "offices", description: "View municipal office records" },
@@ -243,7 +244,7 @@ async function main() {
   // Office Admin permissions
   const officeAdminRoleId = roleMap.get("office-admin")!;
   const officeAdminPermCodes = [
-    "users.view", "users.create", "users.update", "users.disable", "offices.view", "offices.update",
+    "users.view", "users.create", "users.update", "users.disable", "users.delete", "offices.view", "offices.update",
     "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.archive",
     "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish", "documents.archive",
     "events.create", "events.update", "events.publish",

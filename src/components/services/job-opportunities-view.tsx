@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import {
   Briefcase,
   Search,
@@ -184,8 +185,19 @@ export function JobOpportunitiesView({ opportunities }: JobOpportunitiesViewProp
 
                     {isExpanded && (
                       <div className="p-5 pt-0 border-t border-gray-100 text-xs text-gov-charcoal space-y-4">
+                        {job.featuredImageUrl && (
+                          <div className="relative aspect-video sm:aspect-21/9 w-full rounded-xs overflow-hidden border border-gray-200 shadow-2xs mt-4">
+                            <Image
+                              src={job.featuredImageUrl}
+                              alt={job.featuredImageAlt || job.positionTitle}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 768px) 100vw, 700px"
+                            />
+                          </div>
+                        )}
                         {job.description && (
-                          <div className="pt-3">
+                          <div className="pt-2">
                             <span className="font-bold text-gov-charcoal uppercase block mb-1.5">
                               Job Overview / Detailed Duties
                             </span>

@@ -7,6 +7,7 @@ import {
   updateUser,
   setUserStatus,
   resetUserCredential,
+  deleteUser,
   UserError,
 } from "@/server/users/service";
 import {
@@ -145,3 +146,29 @@ export async function resetUserPasswordAction(
     return { success: false, error: message, statusCode: 500 };
   }
 }
+
+/**
+ * Server Action: Permanently deletes an eligible municipal user account.
+ */
+export async function deleteUserAction(
+  id: string,
+  expectedUpdatedAt?: string
+): Promise<ActionResult<{ id: string; email: string }>> {
+  try {
+    const caller = await requireUser();
+    const result = await deleteUser(caller, id, expectedUpdatedAt);
+
+    revalidatePath("/admin/users");
+    return {
+      success: true,
+      data: { id: result.id, email: result.email },
+    };
+  } catch (error) {
+    if (error instanceof UserError) {
+      return { success: false, error: error.message, statusCode: error.statusCode };
+    }
+    const message = error instanceof Error ? error.message : "Failed to delete user account.";
+    return { success: false, error: message, statusCode: 500 };
+  }
+}
+

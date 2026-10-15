@@ -8,8 +8,15 @@ import {
   publishJobOpportunity,
   archiveJobOpportunity,
   deleteJobOpportunity,
+  removeJobFeaturedImage,
   JobError,
 } from "@/server/jobs/service";
+import {
+  uploadJobFeaturedImage,
+  validateImageFile,
+} from "@/server/media/cloudinary";
+import { hasPermission } from "@/lib/authz/scope";
+import { PERMISSIONS } from "@/server/authz/permissions";
 import { jobOpportunityInputSchema } from "@/lib/validation/jobs";
 
 export interface ActionResult<T = unknown> {
@@ -44,6 +51,14 @@ export async function createJobAction(
     const closingDate = formData.get("closingDate")?.toString() || undefined;
     const attachmentDocumentId = formData.get("attachmentDocumentId")?.toString() || undefined;
 
+    const featuredImagePublicId = formData.get("featuredImagePublicId")?.toString() || undefined;
+    const featuredImageUrl = formData.get("featuredImageUrl")?.toString() || undefined;
+    const featuredImageAlt = formData.get("featuredImageAlt")?.toString() || undefined;
+    const featuredImageWidth = formData.get("featuredImageWidth") ? Number(formData.get("featuredImageWidth")) : undefined;
+    const featuredImageHeight = formData.get("featuredImageHeight") ? Number(formData.get("featuredImageHeight")) : undefined;
+    const featuredImageFormat = formData.get("featuredImageFormat")?.toString() || undefined;
+    const featuredImageBytes = formData.get("featuredImageBytes") ? Number(formData.get("featuredImageBytes")) : undefined;
+
     const parsed = jobOpportunityInputSchema.safeParse({
       title,
       itemNumber,
@@ -61,6 +76,13 @@ export async function createJobAction(
       postingDate,
       closingDate,
       attachmentDocumentId,
+      featuredImagePublicId,
+      featuredImageUrl,
+      featuredImageAlt,
+      featuredImageWidth,
+      featuredImageHeight,
+      featuredImageFormat,
+      featuredImageBytes,
     });
 
     if (!parsed.success) {
@@ -113,6 +135,14 @@ export async function updateJobAction(
     const attachmentDocumentId = formData.get("attachmentDocumentId")?.toString() || undefined;
     const expectedUpdatedAt = formData.get("expectedUpdatedAt")?.toString() || undefined;
 
+    const featuredImagePublicId = formData.get("featuredImagePublicId")?.toString() || undefined;
+    const featuredImageUrl = formData.get("featuredImageUrl")?.toString() || undefined;
+    const featuredImageAlt = formData.get("featuredImageAlt")?.toString() || undefined;
+    const featuredImageWidth = formData.get("featuredImageWidth") ? Number(formData.get("featuredImageWidth")) : undefined;
+    const featuredImageHeight = formData.get("featuredImageHeight") ? Number(formData.get("featuredImageHeight")) : undefined;
+    const featuredImageFormat = formData.get("featuredImageFormat")?.toString() || undefined;
+    const featuredImageBytes = formData.get("featuredImageBytes") ? Number(formData.get("featuredImageBytes")) : undefined;
+
     const parsed = jobOpportunityInputSchema.safeParse({
       title,
       itemNumber,
@@ -130,6 +160,13 @@ export async function updateJobAction(
       postingDate,
       closingDate,
       attachmentDocumentId,
+      featuredImagePublicId,
+      featuredImageUrl,
+      featuredImageAlt,
+      featuredImageWidth,
+      featuredImageHeight,
+      featuredImageFormat,
+      featuredImageBytes,
       expectedUpdatedAt,
     });
 
@@ -229,3 +266,80 @@ export async function deleteJobAction(
     return { success: false, error: message };
   }
 }
+
+/**
+ * Server Action: Uploads an image asset for a job opportunity.
+ */
+export async function uploadJobImageAction(
+  formData: FormData
+): Promise<ActionResult<{
+  publicId: string;
+  url: string;
+  width: number;
+  height: number;
+  format: string;
+  bytes: number;
+}>> {
+  try {
+    const user = await requireUser();
+    const canUpload =
+      hasPermission(user, PERMISSIONS.JOBS_CREATE) ||
+      hasPermission(user, PERMISSIONS.JOBS_UPDATE);
+
+    if (!canUpload) {
+      return {
+        success: false,
+        error: "You do not have permission to upload job images.",
+      };
+    }
+
+    const file = formData.get("file") as File | null;
+    if (!file) {
+      return { success: false, error: "No file provided for upload." };
+    }
+
+    const validation = validateImageFile({
+      size: file.size,
+      type: file.type,
+    });
+
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const result = await uploadJobFeaturedImage(buffer);
+
+    return {
+      success: true,
+      data: result,
+    };
+  } catch (err: unknown) {
+    console.error("[JOB UPLOAD ACTION ERROR]", err);
+    return {
+      success: false,
+      error: "Failed to upload image. Please try again or contact ICT Office.",
+    };
+  }
+}
+
+/**
+ * Server Action: Removes an attached featured image from a Job Opportunity record.
+ */
+export async function removeJobImageAction(id: string): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    await removeJobFeaturedImage(user, id);
+
+    revalidatePath(`/admin/jobs/${id}/edit`);
+    revalidatePath("/admin/jobs");
+    revalidatePath("/services/job-opportunities");
+
+    return { success: true };
+  } catch (err: unknown) {
+    const message = err instanceof JobError ? err.message : "Failed to remove image.";
+    return { success: false, error: message };
+  }
+}
+

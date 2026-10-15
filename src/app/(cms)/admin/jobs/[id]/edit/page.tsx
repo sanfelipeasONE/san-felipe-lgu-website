@@ -112,6 +112,13 @@ export default async function EditJobOpportunityPage({ params }: EditJobPageProp
             status: job.status,
             isClosed: job.isClosed,
             attachmentDocumentId: job.attachmentDocumentId,
+            featuredImagePublicId: job.featuredImagePublicId,
+            featuredImageUrl: job.featuredImageUrl,
+            featuredImageAlt: job.featuredImageAlt,
+            featuredImageWidth: job.featuredImageWidth,
+            featuredImageHeight: job.featuredImageHeight,
+            featuredImageFormat: job.featuredImageFormat,
+            featuredImageBytes: job.featuredImageBytes,
             updatedAt: job.updatedAt.toISOString(),
           }}
           isSystemScoped={isSystem}

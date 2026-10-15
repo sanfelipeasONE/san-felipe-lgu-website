@@ -19,10 +19,15 @@ import {
   publishJobAction,
   archiveJobAction,
   deleteJobAction,
+  uploadJobImageAction,
 } from "@/app/(cms)/admin/jobs/actions";
 import { ALLOWED_EMPLOYMENT_TYPES } from "@/lib/validation/jobs";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
+import {
+  FeaturedImageUploader,
+  type FeaturedImageData,
+} from "@/components/admin/featured-image-uploader";
 
 export interface OfficeOption {
   id: string;
@@ -58,6 +63,13 @@ export interface JobFormProps {
     status: string;
     isClosed?: boolean;
     attachmentDocumentId?: string | null;
+    featuredImagePublicId?: string | null;
+    featuredImageUrl?: string | null;
+    featuredImageAlt?: string | null;
+    featuredImageWidth?: number | null;
+    featuredImageHeight?: number | null;
+    featuredImageFormat?: string | null;
+    featuredImageBytes?: number | null;
     updatedAt: string;
   };
   isSystemScoped: boolean;
@@ -108,6 +120,16 @@ export function JobForm({
     initialData?.attachmentDocumentId || ""
   );
 
+  const [featuredImage, setFeaturedImage] = React.useState<FeaturedImageData>({
+    publicId: initialData?.featuredImagePublicId || null,
+    url: initialData?.featuredImageUrl || null,
+    alt: initialData?.featuredImageAlt || "",
+    width: initialData?.featuredImageWidth || null,
+    height: initialData?.featuredImageHeight || null,
+    format: initialData?.featuredImageFormat || null,
+    bytes: initialData?.featuredImageBytes || null,
+  });
+
   // Status & Feedback
   const [isPending, setIsPending] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -139,6 +161,18 @@ export function JobForm({
       if (postingDate) formData.set("postingDate", postingDate);
       if (closingDate) formData.set("closingDate", closingDate);
       if (attachmentDocumentId) formData.set("attachmentDocumentId", attachmentDocumentId);
+
+      if (featuredImage.publicId) {
+        formData.set("featuredImagePublicId", featuredImage.publicId);
+        formData.set("featuredImageUrl", featuredImage.url || "");
+        formData.set("featuredImageAlt", featuredImage.alt || "");
+        if (featuredImage.width) formData.set("featuredImageWidth", String(featuredImage.width));
+        if (featuredImage.height) formData.set("featuredImageHeight", String(featuredImage.height));
+        if (featuredImage.format) formData.set("featuredImageFormat", featuredImage.format);
+        if (featuredImage.bytes) formData.set("featuredImageBytes", String(featuredImage.bytes));
+      } else {
+        formData.set("featuredImagePublicId", "");
+      }
 
       if (mode === "create") {
         const result = await createJobAction(formData);
@@ -320,6 +354,18 @@ export function JobForm({
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Featured Cover Image */}
+            <div className="md:col-span-2 pb-4 border-b border-gray-100">
+              <FeaturedImageUploader
+                value={featuredImage}
+                onChange={setFeaturedImage}
+                onUploadAction={uploadJobImageAction}
+                disabled={isPending}
+                label="Job Vacancy Announcement Cover Image"
+                description="Optional featured image for the career recruitment announcement (JPEG, PNG, WebP up to 10 MB)"
+              />
+            </div>
+
             {/* Position Title */}
             <div className="md:col-span-2 space-y-1">
               <label htmlFor="job-title" className="block text-xs font-semibold text-gov-charcoal">

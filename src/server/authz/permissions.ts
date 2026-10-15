@@ -9,6 +9,7 @@ export const PERMISSIONS = {
   USERS_CREATE: "users.create",
   USERS_UPDATE: "users.update",
   USERS_DISABLE: "users.disable",
+  USERS_DELETE: "users.delete",
 
   // Office Management
   OFFICES_VIEW: "offices.view",

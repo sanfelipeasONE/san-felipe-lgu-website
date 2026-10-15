@@ -12,6 +12,7 @@ import {
 } from "@/lib/validation/jobs";
 import { sanitizeArticleHtml } from "@/server/news/sanitize";
 import { getDocumentDownloadUrl } from "@/server/media/cloudinary-documents";
+import { deleteCloudinaryAsset } from "@/server/media/cloudinary";
 import type { SessionUser } from "@/server/auth/session";
 import type { Prisma, JobOpportunityStatus } from "@prisma/client";
 
@@ -309,33 +310,50 @@ export async function createJobOpportunity(
     ? new Date(input.closingDate)
     : null;
 
-  const job = await prisma.jobOpportunity.create({
-    data: {
-      title: input.title.trim(),
-      slug,
-      itemNumber: sanitizePlainText(input.itemNumber),
-      officeId: targetOfficeId,
-      employmentType: sanitizePlainText(input.employmentType),
-      salaryGrade: sanitizePlainText(input.salaryGrade),
-      monthlySalary: sanitizePlainText(input.monthlySalary),
-      description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
-      education: sanitizePlainText(input.education),
-      training: sanitizePlainText(input.training),
-      experience: sanitizePlainText(input.experience),
-      eligibility: sanitizePlainText(input.eligibility),
-      competency: sanitizePlainText(input.competency),
-      applicationInstructions: sanitizePlainText(input.applicationInstructions),
-      postingDate,
-      closingDate,
-      status: "DRAFT",
-      attachmentDocumentId,
-      createdById: user.id,
-      updatedById: user.id,
-    },
-    include: {
-      office: { select: { id: true, name: true, slug: true } },
-    },
-  });
+  let job;
+  try {
+    job = await prisma.jobOpportunity.create({
+      data: {
+        title: input.title.trim(),
+        slug,
+        itemNumber: sanitizePlainText(input.itemNumber),
+        officeId: targetOfficeId,
+        employmentType: sanitizePlainText(input.employmentType),
+        salaryGrade: sanitizePlainText(input.salaryGrade),
+        monthlySalary: sanitizePlainText(input.monthlySalary),
+        description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
+        education: sanitizePlainText(input.education),
+        training: sanitizePlainText(input.training),
+        experience: sanitizePlainText(input.experience),
+        eligibility: sanitizePlainText(input.eligibility),
+        competency: sanitizePlainText(input.competency),
+        applicationInstructions: sanitizePlainText(input.applicationInstructions),
+        postingDate,
+        closingDate,
+        status: "DRAFT",
+        attachmentDocumentId,
+        featuredImagePublicId: input.featuredImagePublicId || null,
+        featuredImageUrl: input.featuredImageUrl || null,
+        featuredImageAlt: input.featuredImageAlt || null,
+        featuredImageWidth: input.featuredImageWidth || null,
+        featuredImageHeight: input.featuredImageHeight || null,
+        featuredImageFormat: input.featuredImageFormat || null,
+        featuredImageBytes: input.featuredImageBytes || null,
+        createdById: user.id,
+        updatedById: user.id,
+      },
+      include: {
+        office: { select: { id: true, name: true, slug: true } },
+      },
+    });
+  } catch (error) {
+    if (input.featuredImagePublicId) {
+      deleteCloudinaryAsset(input.featuredImagePublicId).catch((err) => {
+        console.error("[CLOUDINARY] Failed to clean up orphaned new asset after DB error:", err);
+      });
+    }
+    throw error;
+  }
 
   await logAuditEvent({
     action: AUDIT_ACTIONS.JOB_CREATED,
@@ -431,38 +449,69 @@ export async function updateJobOpportunity(
     : null;
 
   // Atomic conditional updateMany to prevent race conditions
-  const updateResult = await prisma.jobOpportunity.updateMany({
-    where: {
-      id,
-      updatedAt: existing.updatedAt,
-    },
-    data: {
-      title: input.title.trim(),
-      itemNumber: sanitizePlainText(input.itemNumber),
-      officeId: targetOfficeId,
-      employmentType: sanitizePlainText(input.employmentType),
-      salaryGrade: sanitizePlainText(input.salaryGrade),
-      monthlySalary: sanitizePlainText(input.monthlySalary),
-      description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
-      education: sanitizePlainText(input.education),
-      training: sanitizePlainText(input.training),
-      experience: sanitizePlainText(input.experience),
-      eligibility: sanitizePlainText(input.eligibility),
-      competency: sanitizePlainText(input.competency),
-      applicationInstructions: sanitizePlainText(input.applicationInstructions),
-      postingDate,
-      closingDate,
-      attachmentDocumentId,
-      updatedById: user.id,
-      // Note: status is strictly preserved. A PUBLISHED vacancy remains PUBLISHED.
-    },
-  });
+  try {
+    const updateResult = await prisma.jobOpportunity.updateMany({
+      where: {
+        id,
+        updatedAt: existing.updatedAt,
+      },
+      data: {
+        title: input.title.trim(),
+        itemNumber: sanitizePlainText(input.itemNumber),
+        officeId: targetOfficeId,
+        employmentType: sanitizePlainText(input.employmentType),
+        salaryGrade: sanitizePlainText(input.salaryGrade),
+        monthlySalary: sanitizePlainText(input.monthlySalary),
+        description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
+        education: sanitizePlainText(input.education),
+        training: sanitizePlainText(input.training),
+        experience: sanitizePlainText(input.experience),
+        eligibility: sanitizePlainText(input.eligibility),
+        competency: sanitizePlainText(input.competency),
+        applicationInstructions: sanitizePlainText(input.applicationInstructions),
+        postingDate,
+        closingDate,
+        attachmentDocumentId,
+        ...(input.featuredImagePublicId !== undefined && {
+          featuredImagePublicId: input.featuredImagePublicId || null,
+          featuredImageUrl: input.featuredImageUrl || null,
+          featuredImageAlt: input.featuredImageAlt || null,
+          featuredImageWidth: input.featuredImageWidth || null,
+          featuredImageHeight: input.featuredImageHeight || null,
+          featuredImageFormat: input.featuredImageFormat || null,
+          featuredImageBytes: input.featuredImageBytes || null,
+        }),
+        updatedById: user.id,
+        // Note: status is strictly preserved. A PUBLISHED vacancy remains PUBLISHED.
+      },
+    });
 
-  if (updateResult.count === 0) {
-    throw new JobError(
-      "This job opportunity was modified by another user. Please refresh to load the latest version before saving.",
-      409
-    );
+    if (updateResult.count === 0) {
+      throw new JobError(
+        "This job opportunity was modified by another user. Please refresh to load the latest version before saving.",
+        409
+      );
+    }
+  } catch (error) {
+    // CASE B: Failed persistence after new upload -> clean up new orphan asset, preserve old asset & DB metadata
+    if (
+      input.featuredImagePublicId &&
+      input.featuredImagePublicId !== existing.featuredImagePublicId
+    ) {
+      deleteCloudinaryAsset(input.featuredImagePublicId).catch((err) => {
+        console.error("[CLOUDINARY] Failed to clean up orphaned new asset after DB error:", err);
+      });
+    }
+    throw error;
+  }
+
+  // Safe asset replacement: if image was replaced, delete old asset from Cloudinary
+  if (
+    existing.featuredImagePublicId &&
+    input.featuredImagePublicId !== undefined &&
+    existing.featuredImagePublicId !== input.featuredImagePublicId
+  ) {
+    deleteCloudinaryAsset(existing.featuredImagePublicId).catch(() => {});
   }
 
   const updated = await prisma.jobOpportunity.findUniqueOrThrow({
@@ -762,6 +811,11 @@ export async function deleteJobOpportunity(
     where: { id },
   });
 
+  // Clean up Cloudinary featured image asset if present
+  if (existing.featuredImagePublicId) {
+    deleteCloudinaryAsset(existing.featuredImagePublicId).catch(() => {});
+  }
+
   await logAuditEvent({
     action: AUDIT_ACTIONS.JOB_DELETED,
     userId: user.id,
@@ -776,6 +830,47 @@ export async function deleteJobOpportunity(
   });
 
   return { success: true, id: existing.id };
+}
+
+/**
+ * Removes the featured image from a job opportunity and cleans up Cloudinary asset.
+ */
+export async function removeJobFeaturedImage(user: SessionUser, id: string) {
+  if (!hasPermission(user, PERMISSIONS.JOBS_UPDATE)) {
+    throw new JobError("You do not have permission to update job opportunities.", 403);
+  }
+
+  const existing = await prisma.jobOpportunity.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new JobError("Job opportunity not found.", 404);
+  }
+
+  if (!isSystemScoped(user) && existing.officeId !== user.officeId) {
+    throw new JobError("Access restricted: you do not hold authority for this office.", 403);
+  }
+
+  const updated = await prisma.jobOpportunity.update({
+    where: { id },
+    data: {
+      featuredImagePublicId: null,
+      featuredImageUrl: null,
+      featuredImageAlt: null,
+      featuredImageWidth: null,
+      featuredImageHeight: null,
+      featuredImageFormat: null,
+      featuredImageBytes: null,
+      updatedById: user.id,
+    },
+  });
+
+  if (existing.featuredImagePublicId) {
+    deleteCloudinaryAsset(existing.featuredImagePublicId).catch(() => {});
+  }
+
+  return updated;
 }
 
 /**
@@ -872,6 +967,8 @@ export async function getPublishedJobOpportunities(filters?: {
       job.attachmentDocument && job.attachmentDocument.status === "PUBLISHED"
         ? getDocumentDownloadUrl(job.attachmentDocument.storagePublicId, job.attachmentDocument.originalFilename)
         : undefined,
+    featuredImageUrl: job.featuredImageUrl ?? undefined,
+    featuredImageAlt: job.featuredImageAlt ?? undefined,
     status: (isJobClosed(job.closingDate) ? "closed" : "open") as "open" | "closed",
     isClosed: isJobClosed(job.closingDate),
     publishedAt: job.publishedAt,
