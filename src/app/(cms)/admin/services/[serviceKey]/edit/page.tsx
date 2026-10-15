@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { getAdminServicePage } from "@/server/services/service";
+import { getDocumentDownloadUrl } from "@/server/media/cloudinary-documents";
 import { prisma } from "@/server/db/client";
 import { isCanonicalServiceKey } from "@/config/services-canonical";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -72,9 +73,18 @@ export default async function AdminEditServicePage({ params }: EditServicePagePr
   }
 
   // Load available Citizen's Charter documents if managing citizens-charter
-  let charterDocuments: Array<{ id: string; title: string; originalFilename: string; status: string }> = [];
+  let charterDocuments: Array<{
+    id: string;
+    title: string;
+    originalFilename: string;
+    status: string;
+    bytes: number;
+    storageUrl: string;
+    downloadUrl: string;
+  }> = [];
+
   if (serviceKey === "citizens-charter") {
-    charterDocuments = await prisma.document.findMany({
+    const rawDocs = await prisma.document.findMany({
       where: {
         purpose: "CITIZENS_CHARTER",
         status: "PUBLISHED",
@@ -85,10 +95,33 @@ export default async function AdminEditServicePage({ params }: EditServicePagePr
         title: true,
         originalFilename: true,
         status: true,
+        bytes: true,
+        storageUrl: true,
+        storagePublicId: true,
       },
       orderBy: { createdAt: "desc" },
     });
+
+    charterDocuments = rawDocs.map((d) => ({
+      id: d.id,
+      title: d.title,
+      originalFilename: d.originalFilename,
+      status: d.status,
+      bytes: d.bytes,
+      storageUrl: d.storageUrl,
+      downloadUrl: getDocumentDownloadUrl(d.storagePublicId, d.originalFilename),
+    }));
   }
+
+  const charterDocumentWithDownload = servicePage.charterDocument
+    ? {
+        ...servicePage.charterDocument,
+        downloadUrl: getDocumentDownloadUrl(
+          servicePage.charterDocument.storagePublicId,
+          servicePage.charterDocument.originalFilename
+        ),
+      }
+    : null;
 
   const canPublish = hasPermission(user, PERMISSIONS.SERVICES_PUBLISH);
 
@@ -105,7 +138,10 @@ export default async function AdminEditServicePage({ params }: EditServicePagePr
       />
 
       <ServicePageForm
-        servicePage={servicePage}
+        servicePage={{
+          ...servicePage,
+          charterDocument: charterDocumentWithDownload,
+        }}
         offices={officesList}
         charterDocuments={charterDocuments}
         isSystemScoped={isSystemScoped(user)}

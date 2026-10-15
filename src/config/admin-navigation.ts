@@ -14,6 +14,15 @@ import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 
 export type NavSectionKey = "main" | "content" | "administration" | "system";
 
+export interface AdminNavChildItem {
+  id: string;
+  label: string;
+  href: string;
+  description?: string;
+  requiredPermission?: string;
+  requiredScope?: "system" | "office";
+}
+
 export interface AdminNavItem {
   id: string;
   label: string;
@@ -25,6 +34,7 @@ export interface AdminNavItem {
   requiredScope?: "system" | "office";
   isImplemented: boolean;
   phaseLabel?: string;
+  children?: AdminNavChildItem[];
 }
 
 export interface AdminNavSection {
@@ -72,6 +82,20 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         description: "Official municipal frontline service guidelines and content",
         requiredPermission: "services.view",
         isImplemented: true,
+        children: [
+          {
+            id: "services-citizens-charter",
+            label: "Citizen's Charter",
+            href: "/admin/services/citizens-charter/edit",
+            requiredPermission: "services.view",
+          },
+          {
+            id: "services-business-permits",
+            label: "Business Permits",
+            href: "/admin/services/business-permits/edit",
+            requiredPermission: "services.view",
+          },
+        ],
       },
       {
         id: "documents",
@@ -168,22 +192,44 @@ export function getVisibleNavSections(user: {
   isSystemScope: boolean;
 }): AdminNavSection[] {
   return ADMIN_NAV_CONFIG.map((section) => {
-    const visibleItems = section.items.filter((item) => {
-      // 1. Check required permission
-      if (item.requiredPermission && !hasPermission(user, item.requiredPermission)) {
-        return false;
-      }
+    const visibleItems = section.items
+      .filter((item) => {
+        // 1. Check required permission
+        if (item.requiredPermission && !hasPermission(user, item.requiredPermission)) {
+          return false;
+        }
 
-      // 2. Check required scope
-      if (item.requiredScope === "system" && !isSystemScoped(user)) {
-        return false;
-      }
-      if (item.requiredScope === "office" && isSystemScoped(user)) {
-        return false;
-      }
+        // 2. Check required scope
+        if (item.requiredScope === "system" && !isSystemScoped(user)) {
+          return false;
+        }
+        if (item.requiredScope === "office" && isSystemScoped(user)) {
+          return false;
+        }
 
-      return true;
-    });
+        return true;
+      })
+      .map((item) => {
+        if (!item.children || item.children.length === 0) {
+          return item;
+        }
+        const visibleChildren = item.children.filter((child) => {
+          if (child.requiredPermission && !hasPermission(user, child.requiredPermission)) {
+            return false;
+          }
+          if (child.requiredScope === "system" && !isSystemScoped(user)) {
+            return false;
+          }
+          if (child.requiredScope === "office" && isSystemScoped(user)) {
+            return false;
+          }
+          return true;
+        });
+        return {
+          ...item,
+          children: visibleChildren,
+        };
+      });
 
     return {
       ...section,

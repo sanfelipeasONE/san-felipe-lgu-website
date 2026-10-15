@@ -70,26 +70,33 @@ export function AdminSidebar({
             <ul className="space-y-0.5 mt-1.5" role="list">
               {section.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isItemActive = pathname === item.href;
+                const hasActiveChild = Boolean(
+                  item.children?.some(
+                    (child) => pathname === child.href || pathname.startsWith(`${child.href}/`)
+                  )
+                );
 
                 if (item.isImplemented) {
                   return (
-                    <li key={item.id}>
+                    <li key={item.id} className="space-y-0.5">
                       <Link
                         href={item.href}
                         onClick={onNavigate}
                         className={cn(
                           "group flex items-center gap-2.5 px-3 py-2 rounded-xs text-xs font-semibold transition-colors focus:outline-hidden focus:ring-2 focus:ring-burgundy-700",
-                          isActive
+                          isItemActive
                             ? "bg-burgundy-50 text-burgundy-800 border-l-3 border-burgundy-700 font-bold"
+                            : hasActiveChild
+                            ? "text-burgundy-900 bg-slate-50 font-bold"
                             : "text-gov-charcoal hover:bg-slate-100 hover:text-burgundy-800"
                         )}
-                        aria-current={isActive ? "page" : undefined}
+                        aria-current={isItemActive ? "page" : undefined}
                       >
                         <Icon
                           className={cn(
                             "h-4 w-4 shrink-0 transition-colors",
-                            isActive
+                            isItemActive || hasActiveChild
                               ? "text-burgundy-700"
                               : "text-gov-muted group-hover:text-burgundy-700"
                           )}
@@ -97,6 +104,32 @@ export function AdminSidebar({
                         />
                         <span className="truncate flex-1">{item.label}</span>
                       </Link>
+
+                      {item.children && item.children.length > 0 && (
+                        <ul className="ml-5 pl-3 border-l border-gray-200 space-y-0.5 mt-0.5" role="list">
+                          {item.children.map((child) => {
+                            const isChildActive =
+                              pathname === child.href || pathname.startsWith(`${child.href}/`);
+                            return (
+                              <li key={child.id}>
+                                <Link
+                                  href={child.href}
+                                  onClick={onNavigate}
+                                  className={cn(
+                                    "block px-2.5 py-1.5 rounded-xs text-[11px] font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-burgundy-700",
+                                    isChildActive
+                                      ? "bg-burgundy-50 text-burgundy-800 font-bold"
+                                      : "text-gov-muted hover:text-gov-charcoal hover:bg-slate-100"
+                                  )}
+                                  aria-current={isChildActive ? "page" : undefined}
+                                >
+                                  {child.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </li>
                   );
                 }

@@ -18,6 +18,11 @@ import {
   FileText,
   RotateCcw,
   ExternalLink,
+  Upload,
+  Download,
+  RefreshCw,
+  FileUp,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -27,7 +32,11 @@ import {
   saveServiceDraftAction,
   publishServiceAction,
   unpublishServiceAction,
+  uploadCharterPdfAction,
+  removeCharterAssociationAction,
+  linkExistingCharterDocumentAction,
 } from "@/app/(cms)/admin/services/actions";
+import { formatBytes } from "@/lib/validation/documents";
 import type { ServiceSectionInput } from "@/lib/validation/services";
 
 export interface ServicePageFormProps {
@@ -48,9 +57,30 @@ export interface ServicePageFormProps {
       sortOrder: number;
     }>;
     charterDocumentId?: string | null;
+    charterDocument?: {
+      id: string;
+      title: string;
+      originalFilename: string;
+      storagePublicId: string;
+      storageUrl: string;
+      downloadUrl?: string;
+      format: string;
+      mimeType: string;
+      bytes: number;
+      status: string;
+      publishedAt?: Date | string | null;
+    } | null;
   };
   offices: Array<{ id: string; name: string; shortName: string | null }>;
-  charterDocuments?: Array<{ id: string; title: string; originalFilename: string; status: string }>;
+  charterDocuments?: Array<{
+    id: string;
+    title: string;
+    originalFilename: string;
+    status: string;
+    bytes?: number;
+    storageUrl?: string;
+    downloadUrl?: string;
+  }>;
   isSystemScoped: boolean;
   canPublish: boolean;
 }
@@ -78,6 +108,20 @@ export function ServicePageForm({
     }))
   );
 
+  // Official Citizen's Charter PDF workflow states
+  const [activeCharterDoc, setActiveCharterDoc] = React.useState(
+    servicePage.charterDocument || null
+  );
+  const [isUploadingPdf, setIsUploadingPdf] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = React.useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [pdfTitle, setPdfTitle] = React.useState("");
+  const [isReplacing, setIsReplacing] = React.useState(false);
+  const [showRemoveCharterDialog, setShowRemoveCharterDialog] = React.useState(false);
+  const [isRemovingCharter, setIsRemovingCharter] = React.useState(false);
+  const [isLinkingExisting, setIsLinkingExisting] = React.useState(false);
+
   // Status & Concurrency
   const [status, setStatus] = React.useState(servicePage.status);
   const [expectedUpdatedAt, setExpectedUpdatedAt] = React.useState(
@@ -102,6 +146,120 @@ export function ServicePageForm({
     setHasUnsavedChanges(true);
     setSuccessMessage(null);
     setErrorMessage(null);
+  };
+
+  // ---------------------------------------------------------------------------
+  // CITIZEN'S CHARTER PDF ACTIONS
+  // ---------------------------------------------------------------------------
+  const handleDirectPdfUpload = async () => {
+    if (!selectedFile) return;
+
+    if (!selectedFile.name.toLowerCase().endsWith(".pdf")) {
+      setUploadError("Only PDF files (.pdf) are permitted for the official Citizen's Charter.");
+      return;
+    }
+
+    if (selectedFile.size > 15 * 1024 * 1024) {
+      setUploadError(
+        `File size exceeds 15 MB limit (received ${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB).`
+      );
+      return;
+    }
+
+    setIsUploadingPdf(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    const formData = new FormData();
+    formData.append("serviceKey", "citizens-charter");
+    formData.append("file", selectedFile);
+    if (pdfTitle.trim()) {
+      formData.append("title", pdfTitle.trim());
+    }
+
+    const res = await uploadCharterPdfAction(formData);
+    setIsUploadingPdf(false);
+
+    if (!res.success || !res.data) {
+      setUploadError(res.error || "Failed to upload Citizen's Charter PDF.");
+      return;
+    }
+
+    setActiveCharterDoc({
+      id: res.data.documentId,
+      title: res.data.title,
+      originalFilename: res.data.originalFilename,
+      storagePublicId: "",
+      storageUrl: res.data.storageUrl,
+      downloadUrl: res.data.downloadUrl,
+      format: "pdf",
+      mimeType: "application/pdf",
+      bytes: res.data.bytes,
+      status: "PUBLISHED",
+    });
+    setCharterDocumentId(res.data.documentId);
+    setIsReplacing(false);
+    setSelectedFile(null);
+    setPdfTitle("");
+    setUploadSuccess("Official Citizen's Charter PDF uploaded, published, and linked successfully.");
+    router.refresh();
+  };
+
+  const handleRemoveCharterAssociation = async () => {
+    setIsRemovingCharter(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    const res = await removeCharterAssociationAction("citizens-charter");
+    setIsRemovingCharter(false);
+    setShowRemoveCharterDialog(false);
+
+    if (!res.success) {
+      setUploadError(res.error || "Failed to remove Charter association.");
+      return;
+    }
+
+    setActiveCharterDoc(null);
+    setCharterDocumentId("");
+    setUploadSuccess(
+      "Citizen's Charter document association removed. The Document remains preserved in Document Management."
+    );
+    router.refresh();
+  };
+
+  const handleLinkExistingDocument = async (docId: string) => {
+    if (!docId) return;
+
+    setIsLinkingExisting(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    const res = await linkExistingCharterDocumentAction("citizens-charter", docId);
+    setIsLinkingExisting(false);
+
+    if (!res.success) {
+      setUploadError(res.error || "Failed to associate existing document.");
+      return;
+    }
+
+    const found = charterDocuments.find((d) => d.id === docId);
+    if (found) {
+      setActiveCharterDoc({
+        id: found.id,
+        title: found.title,
+        originalFilename: found.originalFilename,
+        storagePublicId: "",
+        storageUrl: found.storageUrl || "",
+        downloadUrl: found.downloadUrl,
+        format: "pdf",
+        mimeType: "application/pdf",
+        bytes: found.bytes || 0,
+        status: found.status,
+      });
+      setCharterDocumentId(found.id);
+    }
+    setUploadSuccess("Existing Citizen's Charter document associated successfully.");
+    router.refresh();
   };
 
   // ---------------------------------------------------------------------------
@@ -656,44 +814,233 @@ export function ServicePageForm({
 
           {/* Card: Official Citizen's Charter PDF (citizens-charter route only) */}
           {servicePage.serviceKey === "citizens-charter" && (
-            <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gov-muted border-b border-gray-100 pb-2 flex items-center justify-between">
-                <span>Official Charter PDF</span>
-                <span className="text-[10px] font-semibold text-burgundy-800 bg-burgundy-50 px-2 py-0.5 rounded-xs">
-                  Document Integration
-                </span>
-              </h3>
-              <p className="text-[11px] text-gov-muted leading-relaxed">
-                Attach an official Citizen&apos;s Charter document uploaded in the CMS with purpose &quot;Citizen&apos;s Charter&quot;.
-              </p>
-              <div>
-                <label
-                  htmlFor="charter-doc-select"
-                  className="block text-[11px] font-bold text-gov-charcoal mb-1"
-                >
-                  Linked Charter Document
-                </label>
-                <select
-                  id="charter-doc-select"
-                  value={charterDocumentId}
-                  onChange={(e) => {
-                    setCharterDocumentId(e.target.value);
-                    markDirty();
-                  }}
-                  className="w-full text-xs p-2 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer focus:outline-none focus:ring-1 focus:ring-burgundy-700"
-                >
-                  <option value="">-- No Document Linked (Unpublished / None) --</option>
-                  {charterDocuments.map((doc) => (
-                    <option key={doc.id} value={doc.id}>
-                      {doc.title} ({doc.originalFilename}) [{doc.status}]
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {charterDocumentId && (
-                <p className="text-[10px] text-emerald-700 font-medium bg-emerald-50 p-2 rounded-xs border border-emerald-200">
-                  When this service page and document are published, public visitors can View and Download this official PDF.
-                </p>
+            <div className="space-y-4">
+              {activeCharterDoc && !isReplacing ? (
+                /* Management Card when PDF is already associated */
+                <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gov-charcoal flex items-center gap-1.5">
+                      <FileText className="h-4 w-4 text-burgundy-700" aria-hidden="true" />
+                      <span>Official Charter PDF</span>
+                    </h3>
+                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-xs bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Published
+                    </span>
+                  </div>
+
+                  {uploadSuccess && (
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      <span>{uploadSuccess}</span>
+                    </div>
+                  )}
+
+                  {uploadError && (
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
+                      <span>{uploadError}</span>
+                    </div>
+                  )}
+
+                  <div className="bg-slate-50 border border-gray-200 rounded-xs p-3.5 space-y-2.5">
+                    <div>
+                      <h4 className="text-xs font-bold text-gov-charcoal">
+                        {activeCharterDoc.title}
+                      </h4>
+                      <p className="text-[11px] text-gov-muted mt-0.5">
+                        {activeCharterDoc.originalFilename} • PDF • {formatBytes(activeCharterDoc.bytes)}
+                      </p>
+                    </div>
+
+                    {/* Action Buttons: View PDF, Download PDF, Replace PDF, Remove Association */}
+                    <div className="pt-2 border-t border-gray-200/80 flex flex-wrap gap-2">
+                      <a
+                        href={activeCharterDoc.storageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
+                      >
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        <span>View PDF</span>
+                      </a>
+
+                      {activeCharterDoc.downloadUrl && (
+                        <a
+                          href={activeCharterDoc.downloadUrl}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-white border border-gray-300 text-gov-charcoal hover:text-burgundy-800 hover:border-burgundy-800 transition-colors shadow-2xs"
+                        >
+                          <Download className="h-3 w-3" aria-hidden="true" />
+                          <span>Download PDF</span>
+                        </a>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsReplacing(true);
+                          setUploadError(null);
+                          setUploadSuccess(null);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-burgundy-50 border border-burgundy-200 text-burgundy-800 hover:bg-burgundy-100 transition-colors shadow-2xs"
+                      >
+                        <RefreshCw className="h-3 w-3" aria-hidden="true" />
+                        <span>Replace PDF</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowRemoveCharterDialog(true)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xs bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition-colors shadow-2xs"
+                      >
+                        <Trash2 className="h-3 w-3" aria-hidden="true" />
+                        <span>Remove Association</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-emerald-700 font-medium bg-emerald-50 p-2 rounded-xs border border-emerald-200">
+                    This official PDF is embedded in the public /services/citizens-charter page with Open and Download actions.
+                  </p>
+                </div>
+              ) : (
+                /* Upload / Replace Uploader Form */
+                <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gov-charcoal flex items-center gap-1.5">
+                      <FileUp className="h-4 w-4 text-burgundy-700" aria-hidden="true" />
+                      <span>{isReplacing ? "Replace Official Citizen's Charter PDF" : "Official Citizen's Charter PDF"}</span>
+                    </h3>
+                    {isReplacing && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsReplacing(false);
+                          setSelectedFile(null);
+                          setPdfTitle("");
+                          setUploadError(null);
+                        }}
+                        className="text-[11px] font-semibold text-gov-muted hover:text-gov-charcoal flex items-center gap-1"
+                      >
+                        <X className="h-3 w-3" aria-hidden="true" />
+                        <span>Cancel</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-gov-muted leading-relaxed">
+                    Upload the official Citizen&apos;s Charter handbook (.pdf only, max 15 MB). Uploading automatically creates and publishes a managed Document and links it to this service page.
+                  </p>
+
+                  {uploadSuccess && (
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      <span>{uploadSuccess}</span>
+                    </div>
+                  )}
+
+                  {uploadError && (
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
+                      <span>{uploadError}</span>
+                    </div>
+                  )}
+
+                  <div className="border border-dashed border-gray-300 rounded-xs p-3.5 bg-slate-50 space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
+                        Handbook PDF File
+                      </label>
+                      <input
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setSelectedFile(file);
+                          setUploadError(null);
+                        }}
+                        disabled={isUploadingPdf}
+                        className="w-full text-xs text-gov-charcoal file:mr-2.5 file:py-1 file:px-2.5 file:rounded-xs file:border-0 file:text-[11px] file:font-semibold file:bg-burgundy-50 file:text-burgundy-800 hover:file:bg-burgundy-100 cursor-pointer"
+                      />
+                      <span className="text-[10px] text-gov-muted mt-1 block">
+                        PDF format only. Maximum size: 15 MB. Authentic %PDF- header verified.
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gov-charcoal mb-1">
+                        Document Title (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={pdfTitle}
+                        onChange={(e) => setPdfTitle(e.target.value)}
+                        placeholder="e.g. San Felipe Citizen's Charter 2026 Edition"
+                        disabled={isUploadingPdf}
+                        className="w-full px-2.5 py-1.5 text-xs text-gov-charcoal bg-white border border-gray-300 rounded-xs focus:outline-none focus:ring-1 focus:ring-burgundy-700"
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleDirectPdfUpload}
+                      disabled={!selectedFile || isUploadingPdf}
+                      className="w-full text-xs h-8.5 font-bold justify-center bg-burgundy-800 hover:bg-burgundy-900 text-white"
+                    >
+                      {isUploadingPdf ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" aria-hidden="true" />
+                          <span>Uploading & Publishing PDF...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-3.5 w-3.5 mr-2" aria-hidden="true" />
+                          <span>{isReplacing ? "Upload & Replace Official PDF" : "Upload Official PDF"}</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Select Existing Document Option */}
+                  {!isReplacing && charterDocuments.length > 0 && (
+                    <div className="pt-2 border-t border-gray-100 space-y-2">
+                      <label
+                        htmlFor="charter-doc-select"
+                        className="block text-[11px] font-bold text-gov-charcoal"
+                      >
+                        Or Select Existing Published Charter Document
+                      </label>
+                      <div className="flex gap-2">
+                        <select
+                          id="charter-doc-select"
+                          value={charterDocumentId}
+                          onChange={(e) => setCharterDocumentId(e.target.value)}
+                          disabled={isLinkingExisting}
+                          className="flex-1 text-xs p-1.5 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer focus:outline-none focus:ring-1 focus:ring-burgundy-700"
+                        >
+                          <option value="">-- Choose Existing Document --</option>
+                          {charterDocuments.map((doc) => (
+                            <option key={doc.id} value={doc.id}>
+                              {doc.title} ({doc.originalFilename})
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={!charterDocumentId || isLinkingExisting}
+                          onClick={() => handleLinkExistingDocument(charterDocumentId)}
+                          className="text-xs h-8 font-semibold text-gov-charcoal border-gray-300 shrink-0"
+                        >
+                          {isLinkingExisting ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <span>Link</span>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -736,6 +1083,19 @@ export function ServicePageForm({
         isLoading={isUnpublishing}
         onConfirm={handleUnpublish}
         onCancel={() => setShowUnpublishDialog(false)}
+      />
+
+      {/* Confirmation Dialog: Remove Charter Document Association */}
+      <ConfirmationDialog
+        isOpen={showRemoveCharterDialog}
+        title="Remove Citizen's Charter Document Association?"
+        description="This will disconnect the PDF from the Citizen's Charter public page. The document file itself will NOT be deleted and will remain safely preserved in Document Management."
+        confirmLabel="Remove Association"
+        cancelLabel="Cancel"
+        variant="danger"
+        isLoading={isRemovingCharter}
+        onConfirm={handleRemoveCharterAssociation}
+        onCancel={() => setShowRemoveCharterDialog(false)}
       />
     </div>
   );

@@ -240,6 +240,40 @@ export function validateDocumentFile(file: {
   return { valid: true, extension: ext as AllowedDocumentExtension };
 }
 
+/**
+ * Dedicated file validation for the official Citizen's Charter handbook.
+ * Strictly enforces PDF-only format (.pdf extension) and authentic %PDF- header magic bytes,
+ * up to the standard 15 MB document limit.
+ */
+export function validateCharterPdfFile(file: {
+  name?: string;
+  filename?: string;
+  size?: number;
+  type?: string;
+  mimeType?: string;
+  buffer?: Buffer | Uint8Array;
+}): { valid: boolean; error?: string } {
+  const filename = file.name || file.filename || "";
+  if (!filename) {
+    return { valid: false, error: "A PDF file must be selected for the official Citizen's Charter." };
+  }
+
+  const ext = getFileExtension(filename);
+  if (ext !== "pdf") {
+    return {
+      valid: false,
+      error: `Only PDF files (.pdf) are permitted for the official Citizen's Charter handbook (received .${ext || "unknown"}).`,
+    };
+  }
+
+  const result = validateDocumentFile(file);
+  if (!result.valid) {
+    return { valid: false, error: result.error };
+  }
+
+  return { valid: true };
+}
+
 export const DOCUMENT_PURPOSES = [
   "DOWNLOADABLE_FORM",
   "CITIZENS_CHARTER",

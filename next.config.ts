@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
       "img-src 'self' blob: https://res.cloudinary.com",
       "font-src 'self' data:",
       "connect-src 'self' https://res.cloudinary.com",
+      "frame-src 'self' https://res.cloudinary.com",
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
