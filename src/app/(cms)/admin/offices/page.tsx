@@ -2,7 +2,7 @@ import * as React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Edit, Building2, MapPin, Clock, UserCheck } from "lucide-react";
+import { Edit, Building2, UserCheck } from "lucide-react";
 import { getCurrentUser } from "@/server/auth/session";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
@@ -20,11 +20,10 @@ export const metadata: Metadata = {
 };
 
 const OFFICE_COLUMNS: DataTableColumn[] = [
-  { key: "name", header: "Department & Acronym", width: "32%" },
-  { key: "head", header: "Department Head", width: "18%" },
-  { key: "location", header: "Location & Schedule", width: "24%" },
-  { key: "content", header: "Assigned Records", width: "12%" },
-  { key: "status", header: "Status", width: "8%" },
+  { key: "name", header: "Department & Acronym", width: "42%" },
+  { key: "head", header: "Department Head", width: "24%" },
+  { key: "content", header: "Assigned Records", width: "18%" },
+  { key: "status", header: "Status", width: "10%" },
   { key: "actions", header: "Actions", width: "6%", align: "right" },
 ];
 
@@ -80,22 +79,6 @@ export default async function AdminOfficesListPage() {
                   </div>
                 ) : (
                   <span className="text-slate-400 italic">Unassigned</span>
-                )}
-              </td>
-
-              {/* Location & Schedule */}
-              <td className="px-4 py-3 text-xs text-slate-600 space-y-0.5">
-                {item.location && (
-                  <div className="flex items-center gap-1 truncate" title={item.location}>
-                    <MapPin className="h-3 w-3 text-slate-400 shrink-0" />
-                    <span className="truncate">{item.location}</span>
-                  </div>
-                )}
-                {item.officeHours && (
-                  <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate">
-                    <Clock className="h-2.5 w-2.5 text-slate-400 shrink-0" />
-                    <span>{item.officeHours}</span>
-                  </div>
                 )}
               </td>
 

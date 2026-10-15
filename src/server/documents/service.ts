@@ -842,4 +842,58 @@ export async function getPublishedDocuments(filters?: {
   }));
 }
 
+/**
+ * Resolves an eligible Citizen's Charter document for public view or download.
+ * Security enforcement:
+ * - Document must exist in DB.
+ * - Document status must be strictly PUBLISHED.
+ * - Document purpose must be strictly CITIZENS_CHARTER.
+ * - Document must be associated with the published canonical "citizens-charter" ServicePage.
+ *
+ * Any violation returns null, resulting in a 404 Not Found response.
+ */
+export async function getEligiblePublicCharterDocument(id: string) {
+  if (!id || typeof id !== "string") {
+    return null;
+  }
+
+  const document = await prisma.document.findUnique({
+    where: { id },
+    include: {
+      charterServicePages: {
+        where: {
+          serviceKey: "citizens-charter",
+          status: "PUBLISHED",
+        },
+        select: {
+          id: true,
+          serviceKey: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  if (!document) {
+    return null;
+  }
+
+  // 1. Must be PUBLISHED
+  if (document.status !== "PUBLISHED") {
+    return null;
+  }
+
+  // 2. Purpose must be CITIZENS_CHARTER
+  if (document.purpose !== "CITIZENS_CHARTER") {
+    return null;
+  }
+
+  // 3. Must be associated with the published canonical citizens-charter ServicePage
+  if (!document.charterServicePages || document.charterServicePages.length === 0) {
+    return null;
+  }
+
+  return document;
+}
+
 export { formatBytes } from "@/lib/validation/documents";
