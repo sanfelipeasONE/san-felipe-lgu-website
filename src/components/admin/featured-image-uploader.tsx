@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 
 export interface FeaturedImageData {
   publicId?: string | null;
@@ -84,6 +85,7 @@ export function FeaturedImageUploader({
 
       if (!res.success || !res.data) {
         setUploadError(res.error || "Upload failed. Please try again.");
+        toast.error(res.error || "Upload failed. Please try again.");
       } else {
         onChange({
           publicId: res.data.publicId,
@@ -94,9 +96,11 @@ export function FeaturedImageUploader({
           format: res.data.format,
           bytes: res.data.bytes,
         });
+        toast.success("Image uploaded successfully.");
       }
     } catch {
       setUploadError("An unexpected error occurred during upload.");
+      toast.error("An unexpected error occurred during upload.");
     } finally {
       setIsUploading(false);
     }
@@ -113,6 +117,7 @@ export function FeaturedImageUploader({
       bytes: null,
     });
     setUploadError(null);
+    toast.success("Image removed.");
   };
 
   const hasImage = Boolean(value.url);

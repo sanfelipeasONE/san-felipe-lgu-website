@@ -1,147 +1,154 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Quote } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { OFFICIALS_DATA } from "@/config/homepage-data";
 import { ASSETS } from "@/config/assets";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
-import { cn } from "@/lib/utils";
-import {
-  CARD_INTERACTIVE_CLASSES,
-  CARD_IMAGE_ZOOM_CLASSES,
-} from "@/lib/card-styles";
 
 export function MunicipalOfficialsPreview() {
   const { mayor, viceMayor } = OFFICIALS_DATA;
 
   return (
-    <section className="py-16 sm:py-20 bg-slate-50/80 border-b border-gray-200">
+    <section className="py-16 sm:py-20 bg-slate-50/70 border-b border-gray-200">
       <Container>
-        {/* Centered Section Heading (pure fade-only, no vertical translation) */}
-        <ScrollReveal variant="fade-only">
+        {/* Section Header: Dignified Civic Editorial Presentation */}
+        <ScrollReveal variant="fade-up">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block mb-1">
-              LEADERSHIP & SERVICE
+            <span className="text-[11px] font-bold uppercase tracking-widest text-burgundy-700 block mb-1.5 font-mono">
+              MUNICIPAL LEADERSHIP
             </span>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gov-charcoal tracking-tight">
-              Municipal Officials
+              Serving the Municipality of San Felipe
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-gov-muted leading-relaxed">
-              Leading San Felipe with transparency, accountability, and dedicated public service for the welfare of every resident from every barangay.
+            <div className="w-12 h-0.5 bg-gold-500 mx-auto mt-3.5 mb-3" aria-hidden="true" />
+            <p className="text-sm sm:text-base text-gov-muted leading-relaxed">
+              Executive and legislative leadership dedicated to transparent governance, responsive public service, and the welfare of every resident across all 11 barangays.
             </p>
           </div>
         </ScrollReveal>
 
-        {/* 2-Column Leadership Preview Grid with Equal Heights (pure fade-only, no tilt or parallax) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12 items-stretch">
-          {/* Mayor Card */}
-          <ScrollReveal variant="fade-only" staggerIndex={0} className="h-full">
-            <div
-              className={cn(
-                "bg-white border border-gray-200 rounded-xs p-6 sm:p-7 shadow-xs flex flex-col sm:flex-row gap-6 justify-between h-full group",
-                CARD_INTERACTIVE_CLASSES
-              )}
-            >
-              {/* Verified Mayor Portrait from Centralized Assets */}
-              <div className="shrink-0 flex flex-col items-center mx-auto sm:mx-0">
-                <div className="relative w-36 h-48 sm:w-44 sm:h-56 rounded-xs border border-gold-600/60 shadow-xs overflow-hidden bg-white">
-                  <Image
-                    src={ASSETS.officials.mayor.src}
-                    alt={ASSETS.officials.mayor.alt}
-                    fill
-                    sizes="(max-width: 640px) 144px, 176px"
-                    className={cn("object-contain object-center", CARD_IMAGE_ZOOM_CLASSES)}
-                    priority
-                  />
-                </div>
-              </div>
+        {/* Cohesive Editorial Leadership Panel: Executive & Legislative Wings */}
+        <ScrollReveal variant="fade-up" delayMs={100} className="max-w-5xl mx-auto">
+          <div className="bg-white border border-slate-200/90 rounded-xs shadow-2xs overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+              {/* 1. Office of the Municipal Mayor (Executive) */}
+              <article className="p-7 sm:p-9 group">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                  {/* Formal Photographic Frame */}
+                  <Link
+                    href="/government/officials#mayor"
+                    className="shrink-0 focus-visible:outline-2 focus-visible:outline-burgundy-700 focus-visible:outline-offset-2 rounded-xs block"
+                    aria-label="View official profile of Municipal Mayor Reinhard Jeresano"
+                  >
+                    <div className="relative w-36 h-48 sm:w-40 sm:h-52 rounded-xs border border-slate-200/90 bg-slate-50/70 p-1.5 shadow-2xs transition-colors duration-200 group-hover:border-burgundy-700/40">
+                      <div className="relative w-full h-full overflow-hidden rounded-2xs bg-white">
+                        <Image
+                          src={ASSETS.officials.mayor.src}
+                          alt={ASSETS.officials.mayor.alt}
+                          fill
+                          sizes="(max-width: 640px) 144px, 160px"
+                          className="object-contain object-center transition-transform duration-300 ease-out group-hover:scale-[1.015] motion-reduce:transform-none"
+                          priority
+                        />
+                      </div>
+                    </div>
+                  </Link>
 
-              {/* Mayor Information & Message */}
-              <div className="flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy-700 block">
-                    {mayor.officeTitle}
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-black text-burgundy-900 tracking-tight leading-tight mt-1 group-hover:text-burgundy-700 transition-colors duration-200">
-                    {mayor.name}
-                  </h3>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    {mayor.subtitle}
-                  </p>
-                </div>
-
-                {/* Quote bubble */}
-                <div className="bg-slate-50 border border-slate-200/90 rounded-xs p-4 relative text-xs sm:text-[13px] text-slate-700 leading-relaxed italic mt-2 shadow-2xs group-hover:border-gold-500/40 group-hover:bg-white transition-colors duration-200">
-                  <Quote className="h-4 w-4 text-burgundy-700/20 absolute top-2 right-2" aria-hidden="true" />
-                  &ldquo;{mayor.quote}&rdquo;
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          {/* Vice Mayor Card */}
-          <ScrollReveal variant="fade-only" staggerIndex={1} className="h-full">
-            <div
-              className={cn(
-                "bg-white border border-gray-200 rounded-xs p-6 sm:p-7 shadow-xs flex flex-col sm:flex-row gap-6 justify-between h-full group",
-                CARD_INTERACTIVE_CLASSES
-              )}
-            >
-              {/* Verified Vice Mayor Portrait from Centralized Assets */}
-              <div className="shrink-0 flex flex-col items-center mx-auto sm:mx-0">
-                <div className="relative w-36 h-48 sm:w-44 sm:h-56 rounded-xs border border-gold-600/60 shadow-xs overflow-hidden bg-white">
-                  <Image
-                    src={ASSETS.officials.viceMayor.src}
-                    alt={ASSETS.officials.viceMayor.alt}
-                    fill
-                    sizes="(max-width: 640px) 144px, 176px"
-                    className={cn("object-contain object-center", CARD_IMAGE_ZOOM_CLASSES)}
-                    priority
-                  />
-                </div>
-              </div>
-
-              {/* Vice Mayor Info */}
-              <div className="flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy-700 block">
-                    {viceMayor.officeTitle}
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-black text-burgundy-900 tracking-tight leading-tight mt-1 group-hover:text-burgundy-700 transition-colors duration-200">
-                    {viceMayor.name}
-                  </h3>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    {viceMayor.subtitle}
-                  </p>
-                  {viceMayor.committee && (
-                    <span className="inline-block text-[10px] font-bold text-burgundy-800 bg-burgundy-50 border border-burgundy-200/80 px-2 py-0.5 rounded-xs mt-1">
-                      {viceMayor.committee}
+                  {/* Official Details */}
+                  <div className="flex-1 text-center sm:text-left">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block">
+                      Municipal Mayor
                     </span>
-                  )}
-                </div>
+                    <h3 className="text-lg sm:text-xl font-black text-gov-charcoal tracking-tight leading-snug mt-1">
+                      <Link
+                        href="/government/officials#mayor"
+                        className="hover:text-burgundy-800 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-burgundy-700 focus-visible:outline-offset-2 rounded-xs"
+                      >
+                        HON. ENGR. REINHARD &ldquo;HART&rdquo; E. JERESANO
+                      </Link>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      Municipality of San Felipe, Zambales
+                    </p>
 
-                {/* Quote bubble */}
-                <div className="bg-slate-50 border border-slate-200/90 rounded-xs p-4 relative text-xs sm:text-[13px] text-slate-700 leading-relaxed italic mt-2 shadow-2xs group-hover:border-gold-500/40 group-hover:bg-white transition-colors duration-200">
-                  <Quote className="h-4 w-4 text-burgundy-700/20 absolute top-2 right-2" aria-hidden="true" />
-                  &ldquo;{viceMayor.quote}&rdquo;
+                    {/* Quotation without motto heading */}
+                    {mayor.quote && (
+                      <p className="mt-3.5 pt-2.5 border-t border-slate-100 text-xs font-serif italic text-slate-700 leading-relaxed pl-3 border-l-2 border-gold-500/60">
+                        &ldquo;{mayor.quote}&rdquo;
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </article>
+
+              {/* 2. Office of the Sangguniang Bayan (Legislative) */}
+              <article className="p-7 sm:p-9 group">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                  {/* Formal Photographic Frame */}
+                  <Link
+                    href="/government/officials#vice-mayor"
+                    className="shrink-0 focus-visible:outline-2 focus-visible:outline-burgundy-700 focus-visible:outline-offset-2 rounded-xs block"
+                    aria-label="View official profile of Municipal Vice Mayor Mary Ann Quiba"
+                  >
+                    <div className="relative w-36 h-48 sm:w-40 sm:h-52 rounded-xs border border-slate-200/90 bg-slate-50/70 p-1.5 shadow-2xs transition-colors duration-200 group-hover:border-burgundy-700/40">
+                      <div className="relative w-full h-full overflow-hidden rounded-2xs bg-white">
+                        <Image
+                          src={ASSETS.officials.viceMayor.src}
+                          alt={ASSETS.officials.viceMayor.alt}
+                          fill
+                          sizes="(max-width: 640px) 144px, 160px"
+                          className="object-contain object-center transition-transform duration-300 ease-out group-hover:scale-[1.015] motion-reduce:transform-none"
+                          priority
+                        />
+                      </div>
+                    </div>
+                  </Link>
+
+                  {/* Official Details */}
+                  <div className="flex-1 text-center sm:text-left">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block">
+                      Municipal Vice Mayor &amp; SB Presiding Officer
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-black text-gov-charcoal tracking-tight leading-snug mt-1">
+                      <Link
+                        href="/government/officials#vice-mayor"
+                        className="hover:text-burgundy-800 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-burgundy-700 focus-visible:outline-offset-2 rounded-xs"
+                      >
+                        HON. MARY ANN R. QUIBA
+                      </Link>
+                    </h3>
+                    {viceMayor.committee && (
+                      <p className="text-[11px] text-slate-600 font-medium mt-1">
+                        {viceMayor.committee}
+                      </p>
+                    )}
+
+                    {/* Quotation without motto heading */}
+                    {viceMayor.quote && (
+                      <p className="mt-3.5 pt-2.5 border-t border-slate-100 text-xs font-serif italic text-slate-700 leading-relaxed pl-3 border-l-2 border-gold-500/60">
+                        &ldquo;{viceMayor.quote}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </article>
             </div>
-          </ScrollReveal>
-        </div>
+          </div>
+        </ScrollReveal>
 
-        {/* Center CTA Button (fade-only) */}
-        <ScrollReveal variant="fade-only" className="text-center">
-          <Link href="/government/officials" className="group inline-block">
+        {/* Civic CTA: Full Officials Directory Link */}
+        <ScrollReveal variant="fade-up" delayMs={200} className="text-center mt-10">
+          <Link href="/government/officials" className="inline-block">
             <Button
-              variant="primary"
-              size="lg"
-              className="bg-burgundy-800 hover:bg-burgundy-900 text-white font-bold text-xs uppercase tracking-wider px-8 py-3 rounded-xs shadow-xs"
+              variant="outline"
+              size="sm"
+              className="border-slate-300 text-gov-charcoal hover:border-burgundy-700 hover:text-burgundy-800 font-bold text-xs uppercase tracking-wider px-6 py-2.5 shadow-2xs"
             >
-              <span>Meet All Municipal Officials & Councilors</span>
-              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 group-focus-visible:translate-x-1 transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+              <span>Meet All Municipal Officials &amp; Sangguniang Bayan Members</span>
+              <ArrowRight className="h-3.5 w-3.5 ml-2" />
             </Button>
           </Link>
         </ScrollReveal>

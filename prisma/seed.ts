@@ -309,11 +309,17 @@ async function main() {
       update: {
         name: off.name,
         shortName: verifiedAcronym,
+        officeHead: off.head ?? null,
+        phone: off.telephone ?? null,
+        email: off.email ?? null,
       },
       create: {
         name: off.name,
         shortName: verifiedAcronym,
         slug: off.slug,
+        officeHead: off.head ?? null,
+        phone: off.telephone ?? null,
+        email: off.email ?? null,
         status: "ACTIVE",
       },
     });
@@ -336,9 +342,9 @@ async function main() {
 
       if (existingSuperAdmin) {
         // Protect existing production-like users: preserve existing account, email, and password on rerun
-        console.log(`   ✓ Super Admin user verified (ID: ${existingSuperAdmin.id}, Email: ${existingSuperAdmin.email}, credentials untouched).`);
+        console.log("   ✓ Super Admin credentials preserved and untouched.");
       } else {
-        console.log(`⚙️  Upserting Super Admin user (${adminEmail})...`);
+        console.log("⚙️  Creating initial Super Admin user...");
         const passwordHash = await hash(adminPassword, {
           algorithm: ARGON2ID_ALGORITHM,
           memoryCost: 19456,
@@ -346,7 +352,7 @@ async function main() {
           parallelism: 1,
         });
 
-        const adminUser = await prisma.user.create({
+        await prisma.user.create({
           data: {
             name: adminName,
             email: adminEmail,
@@ -356,7 +362,7 @@ async function main() {
             status: "ACTIVE",
           },
         });
-        console.log(`   ✓ Super Admin user configured (ID: ${adminUser.id}, Email: ${adminUser.email}).`);
+        console.log("   ✓ Super Admin user configured.");
       }
     }
   } else {

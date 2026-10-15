@@ -47,11 +47,8 @@ export function AdminSidebar({
           />
         </div>
         <div className="min-w-0">
-          <span className="block text-[10px] font-bold uppercase tracking-wider text-burgundy-700 leading-tight truncate">
+          <span className="block text-xs font-bold uppercase tracking-wider text-burgundy-700 leading-snug">
             Municipality of San Felipe
-          </span>
-          <span className="block text-xs font-bold text-gov-charcoal tracking-tight leading-tight truncate">
-            Staff & Multi-Office CMS
           </span>
         </div>
       </div>

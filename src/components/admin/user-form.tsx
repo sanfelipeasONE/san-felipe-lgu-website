@@ -24,13 +24,14 @@ import {
   KeyRound,
   Shield,
   AlertTriangle,
-  CheckCircle2,
   Lock,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
+import { ConcurrencyConflictBanner } from "@/components/admin/concurrency-conflict-banner";
+import { toast } from "@/components/ui/toast";
 import type { UserStatus } from "@prisma/client";
 import { z } from "zod";
 
@@ -87,7 +88,6 @@ export function UserForm({
 }: UserFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Deletion state
@@ -102,11 +102,14 @@ export function UserForm({
       const res = await deleteUserAction(initialData.id, initialData.updatedAt);
       if (!res.success) {
         setDeleteError(res.error || "Failed to delete user account.");
+        toast.error(res.error || "Failed to delete user account.");
       } else {
+        toast.success("Staff account permanently deleted.");
         router.push("/admin/users");
       }
     } catch {
       setDeleteError("An unexpected error occurred while deleting the user.");
+      toast.error("An unexpected error occurred while deleting the user.");
     } finally {
       setIsDeleting(false);
     }
@@ -116,7 +119,6 @@ export function UserForm({
   const [resetPasswordOpen, setResetPasswordOpen] = React.useState(false);
   const [resetPasswordValue, setResetPasswordValue] = React.useState("");
   const [resetPasswordError, setResetPasswordError] = React.useState<string | null>(null);
-  const [resetPasswordSuccess, setResetPasswordSuccess] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
 
   // Status toggle state
@@ -153,7 +155,6 @@ export function UserForm({
 
   const onSubmit = async (data: UserFormData) => {
     setServerError(null);
-    setSuccessMessage(null);
 
     // Role-aware validation: Office-scoped roles require an assigned municipal office
     if (isSystemScoped && !isSelectedRoleSystem && (!data.officeId || (typeof data.officeId === "string" && data.officeId.trim() === ""))) {
@@ -177,9 +178,11 @@ export function UserForm({
         const result = await createUserAction(payload);
         if (!result.success) {
           setServerError(result.error || "Failed to create user account.");
+          toast.error(result.error || "Failed to create user account.");
           return;
         }
 
+        toast.success("Staff account created.");
         router.push("/admin/users");
         router.refresh();
       } else {
@@ -197,14 +200,17 @@ export function UserForm({
         const result = await updateUserAction(initialData.id, payload);
         if (!result.success) {
           setServerError(result.error || "Failed to update user account.");
+          toast.error(result.error || "Failed to update user account.");
           return;
         }
 
-        setSuccessMessage("User account updated successfully.");
+        toast.success("Staff account updated.");
         router.refresh();
       }
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setServerError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -213,7 +219,6 @@ export function UserForm({
   const handleStatusChange = async (newStatus: UserStatus) => {
     if (!initialData) return;
     setServerError(null);
-    setSuccessMessage(null);
     setIsUpdatingStatus(true);
 
     try {
@@ -225,14 +230,17 @@ export function UserForm({
 
       if (!result.success) {
         setServerError(result.error || "Failed to update account status.");
+        toast.error(result.error || "Failed to update account status.");
         return;
       }
 
       setCurrentStatus(result.data!.status);
-      setSuccessMessage(`Account status changed to ${result.data!.status}.`);
+      toast.success(`Staff account status updated to ${result.data!.status}.`);
       router.refresh();
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Failed to change account status.");
+      const msg = err instanceof Error ? err.message : "Failed to change account status.";
+      setServerError(msg);
+      toast.error(msg);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -242,11 +250,12 @@ export function UserForm({
     e.preventDefault();
     if (!initialData) return;
     setResetPasswordError(null);
-    setResetPasswordSuccess(false);
 
     const parse = resetPasswordSchema.safeParse({ password: resetPasswordValue });
     if (!parse.success) {
-      setResetPasswordError(parse.error.issues[0]?.message || "Invalid password format.");
+      const msg = parse.error.issues[0]?.message || "Invalid password format.";
+      setResetPasswordError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -260,14 +269,17 @@ export function UserForm({
 
       if (!result.success) {
         setResetPasswordError(result.error || "Failed to reset password.");
+        toast.error(result.error || "Failed to reset password.");
         return;
       }
 
-      setResetPasswordSuccess(true);
       setResetPasswordValue("");
+      toast.success("Temporary password set successfully.");
       router.refresh();
     } catch (err) {
-      setResetPasswordError(err instanceof Error ? err.message : "Failed to reset password.");
+      const msg = err instanceof Error ? err.message : "Failed to reset password.";
+      setResetPasswordError(msg);
+      toast.error(msg);
     } finally {
       setIsResetting(false);
     }
@@ -277,23 +289,19 @@ export function UserForm({
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Top Banner Notifications */}
       {serverError && (
-        <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Operation Failed</p>
-            <p className="mt-0.5">{serverError}</p>
+        serverError.includes("409") ||
+        serverError.toLowerCase().includes("modified by another user") ||
+        serverError.toLowerCase().includes("another session") ? (
+          <ConcurrencyConflictBanner message="This user account was modified in another session. Please reload the latest version before saving your changes." />
+        ) : (
+          <div role="alert" className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold">Operation Failed</p>
+              <p className="mt-0.5">{serverError}</p>
+            </div>
           </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Success</p>
-            <p className="mt-0.5">{successMessage}</p>
-          </div>
-        </div>
+        )
       )}
 
       {/* Main Account Form */}
@@ -566,12 +574,6 @@ export function UserForm({
               <p className="text-xs text-slate-600">
                 Issue a new temporary password for this user. Doing so will immediately invalidate all currently active sessions for this account.
               </p>
-
-              {resetPasswordSuccess && (
-                <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">
-                  Password has been successfully updated and all existing sessions revoked.
-                </div>
-              )}
 
               {resetPasswordError && (
                 <div className="p-3 rounded-lg border border-rose-200 bg-rose-50 text-rose-800 text-xs">

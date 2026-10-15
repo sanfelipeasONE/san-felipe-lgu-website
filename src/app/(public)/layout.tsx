@@ -1,7 +1,7 @@
 import * as React from "react";
-import { GovernmentTopBar } from "@/components/layout/government-top-bar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { PublicSealSplash } from "@/components/layout/public-seal-splash";
 
 export default function PublicLayout({
   children,
@@ -10,13 +10,13 @@ export default function PublicLayout({
 }) {
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Official Municipal Seal Initial Entry Experience */}
+      <PublicSealSplash />
+
       {/* Accessibility: Skip link */}
       <a href="#main-content" className="sr-only skip-to-content">
         Skip to main content
       </a>
-
-      {/* Official PH Government Bar */}
-      <GovernmentTopBar />
 
       {/* Municipal Header & Navigation */}
       <SiteHeader />

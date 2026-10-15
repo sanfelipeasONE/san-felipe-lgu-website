@@ -498,6 +498,96 @@ async function runOfficeAdministrationTests() {
       "Remaining 11 canonical offices have shortName set to null (no speculative acronyms)"
     );
 
+    // -------------------------------------------------------------
+    // Test 9: Client-Provided Office Heads & Directory Contacts
+    // -------------------------------------------------------------
+    console.log("\n9. Client-Provided Office Heads & Directory Contacts");
+    const EXPECTED_HEADS: Record<string, string> = {
+      "office-of-the-mayor": "HON. ENGR. REINHARD E. JERESANO",
+      "office-of-the-sangguniang-bayan": "HON. MARY ANN R. QUIBA",
+      "municipal-planning-and-development-office": "FREDERICK F. TORRES",
+      "municipal-health-office": "SALOME F. ARINDUQUE",
+      "municipal-budget-office": "DAISY R. NERY",
+      "municipal-accounting-office": "MICHELLE ANN N. CALLES",
+      "municipal-treasury-office": "ELSIE C. ALIP",
+      "municipal-assessors-office": "GERALDINE B. BADA",
+      "municipal-social-welfare-and-development-office": "ROWEL A. VILLANUEVA",
+      "local-civil-registrars-office": "JEANELLENE R. SALES (OIC)",
+      "municipal-engineering-office": "BENEDICT F. JADLOC",
+      "municipal-agriculture-office": "JOHN REY F. FUNIESTAS (OIC)",
+      "municipal-disaster-risk-reduction-and-management-office": "RAYMOND F. DE JESUS",
+      "municipal-tourism-and-investments-promotions-office": "DWAIN O. DOCTANA",
+      "local-youth-development-office": "ADRIAN LUKE R. GALLARDO",
+      "municipal-ecological-and-natural-resources-office": "ANDRE CARLO A. DASIG",
+      "human-resource-management-office": "MERCEDES L. FORONDA",
+      "public-employment-service-office": "FREDERICK F. TORRES",
+    };
+
+    let allHeadsMatch = true;
+    for (const off of dbOffices) {
+      if (off.officeHead !== EXPECTED_HEADS[off.slug]) {
+        console.error(`  Mismatch for ${off.slug}: expected "${EXPECTED_HEADS[off.slug]}", got "${off.officeHead}"`);
+        allHeadsMatch = false;
+      }
+    }
+    assert(allHeadsMatch, "All 18 canonical municipal offices have exact client-provided office heads mapped");
+
+    // Dual office head: Frederick F. Torres heads BOTH MPDO and PESO
+    const mpdo = dbOffices.find((o) => o.slug === "municipal-planning-and-development-office");
+    const peso = dbOffices.find((o) => o.slug === "public-employment-service-office");
+    assert(
+      mpdo?.officeHead === "FREDERICK F. TORRES" && peso?.officeHead === "FREDERICK F. TORRES",
+      "Dual office head: Frederick F. Torres legitimately heads BOTH MPDO and PESO"
+    );
+
+    // OIC designations preserved
+    const lcro = dbOffices.find((o) => o.slug === "local-civil-registrars-office");
+    const mao = dbOffices.find((o) => o.slug === "municipal-agriculture-office");
+    assert(
+      lcro?.officeHead === "JEANELLENE R. SALES (OIC)",
+      "Jeanellene R. Sales preserved as Registrar OIC without promotion or omission"
+    );
+    assert(
+      mao?.officeHead === "JOHN REY F. FUNIESTAS (OIC)",
+      "John Rey F. Funiestas preserved as Agriculture OIC without promotion or omission"
+    );
+
+    // Both Agriculture phone numbers preserved
+    assert(
+      mao?.phone === "09097884173 / 09100757895",
+      "Both client-provided Agriculture phone numbers preserved (09097884173 / 09100757895)"
+    );
+
+    // Unusual formats preserved
+    const acct = dbOffices.find((o) => o.slug === "municipal-accounting-office");
+    const menro = dbOffices.find((o) => o.slug === "municipal-ecological-and-natural-resources-office");
+    assert(acct?.phone === "602-5181", "Accounting landline format preserved (602-5181)");
+    assert(menro?.phone === "09467585305", "MENRO mobile format preserved (09467585305)");
+
+    // LCRO and HRMO have null contacts
+    const hrmo = dbOffices.find((o) => o.slug === "human-resource-management-office");
+    assert(
+      lcro?.phone === null && lcro?.email === null,
+      "Local Civil Registrar has null phone/email (no guessed or fabricated contact)"
+    );
+    assert(
+      hrmo?.phone === null && hrmo?.email === null,
+      "HRMO has null phone/email (no guessed or fabricated contact)"
+    );
+
+    // Zero noncanonical agencies exist as Office rows
+    const noncanonicalSlugs = [
+      "dilg", "bplo", "popcom", "dti", "senior-citizen",
+      "mat", "mtc", "pdao", "pnp", "bfp",
+    ];
+    const noncanonicalRows = await prisma.office.findMany({
+      where: { slug: { in: noncanonicalSlugs } },
+    });
+    assert(
+      noncanonicalRows.length === 0,
+      "Zero noncanonical agency rows (DILG, BPLO, POPCOM, DTI, SENIOR CITIZEN, MAT, MTC, PDAO, PNP, BFP) exist in Office table"
+    );
+
   } finally {
     console.log("\nCleaning up test records...");
     await prisma.session.deleteMany({

@@ -10,7 +10,6 @@ import {
   Archive,
   ArrowLeft,
   Loader2,
-  CheckCircle2,
   AlertCircle,
   Building2,
 } from "lucide-react";
@@ -32,6 +31,8 @@ import {
   deleteNewsAction,
 } from "@/app/(cms)/admin/news/actions";
 import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
+import { ConcurrencyConflictBanner } from "@/components/admin/concurrency-conflict-banner";
+import { toast } from "@/components/ui/toast";
 import {
   NEWS_TYPES,
   NEWS_CATEGORIES,
@@ -107,7 +108,6 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
 
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
   // Permissions & Capabilities
   const canPublish = user.permissions.includes("posts.publish");
@@ -137,7 +137,6 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
 
   const handleSaveDraft = async () => {
     setErrorMessage(null);
-    setSuccessMessage(null);
     setIsSaving(true);
 
     try {
@@ -147,21 +146,24 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
         const res = await updateNewsAction(initialData.id, payload);
         if (!res.success) {
           setErrorMessage(res.error || "Failed to update draft.");
+          toast.error(res.error || "Failed to update draft.");
         } else {
-          setSuccessMessage("Changes saved successfully.");
+          toast.success("News article saved.");
           router.refresh();
         }
       } else {
         const res = await createNewsAction(payload);
         if (!res.success || !res.data) {
           setErrorMessage(res.error || "Failed to create draft.");
+          toast.error(res.error || "Failed to create draft.");
         } else {
-          setSuccessMessage("Draft created successfully. Redirecting to editor...");
+          toast.success("News article draft created.");
           router.push(`/admin/news/${res.data.id}/edit`);
         }
       }
     } catch {
       setErrorMessage("An unexpected error occurred while saving.");
+      toast.error("An unexpected error occurred while saving.");
     } finally {
       setIsSaving(false);
     }
@@ -169,7 +171,6 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
 
   const handlePublish = async () => {
     setErrorMessage(null);
-    setSuccessMessage(null);
     setIsPublishing(true);
 
     try {
@@ -181,6 +182,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
         const updateRes = await updateNewsAction(articleId, payload);
         if (!updateRes.success) {
           setErrorMessage(updateRes.error || "Failed to save latest changes before publishing.");
+          toast.error(updateRes.error || "Failed to save latest changes before publishing.");
           setIsPublishing(false);
           return;
         }
@@ -188,6 +190,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
         const createRes = await createNewsAction(payload);
         if (!createRes.success || !createRes.data) {
           setErrorMessage(createRes.error || "Failed to create article for publishing.");
+          toast.error(createRes.error || "Failed to create article for publishing.");
           setIsPublishing(false);
           return;
         }
@@ -198,12 +201,14 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
       const pubRes = await publishNewsAction(articleId);
       if (!pubRes.success) {
         setErrorMessage(pubRes.error || "Failed to publish article.");
+        toast.error(pubRes.error || "Failed to publish article.");
       } else {
-        setSuccessMessage("Article published successfully!");
+        toast.success("News article published.");
         router.push("/admin/news");
       }
     } catch {
       setErrorMessage("An unexpected error occurred during publishing.");
+      toast.error("An unexpected error occurred during publishing.");
     } finally {
       setIsPublishing(false);
     }
@@ -218,12 +223,15 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
       const res = await archiveNewsAction(initialData.id);
       if (!res.success) {
         setErrorMessage(res.error || "Failed to archive article.");
+        toast.error(res.error || "Failed to archive article.");
       } else {
         setShowArchiveDialog(false);
+        toast.success("News article archived.");
         router.push("/admin/news");
       }
     } catch {
       setErrorMessage("An unexpected error occurred during archiving.");
+      toast.error("An unexpected error occurred during archiving.");
     } finally {
       setIsArchiving(false);
     }
@@ -238,12 +246,15 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
       const res = await deleteNewsAction(initialData.id, initialData.updatedAt);
       if (!res.success) {
         setErrorMessage(res.error || "Failed to delete article.");
+        toast.error(res.error || "Failed to delete article.");
         setIsDeleting(false);
       } else {
+        toast.success("News article deleted.");
         router.push("/admin/news");
       }
     } catch {
       setErrorMessage("An unexpected error occurred during article deletion.");
+      toast.error("An unexpected error occurred during article deletion.");
       setIsDeleting(false);
     }
   };
@@ -355,17 +366,16 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
 
       {/* Feedback Alerts */}
       {errorMessage && (
-        <div className="p-3.5 rounded-xs bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-3.5 rounded-xs bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-          <span>{successMessage}</span>
-        </div>
+        errorMessage.includes("409") ||
+        errorMessage.toLowerCase().includes("modified by another user") ||
+        errorMessage.toLowerCase().includes("another session") ? (
+          <ConcurrencyConflictBanner message="This article was modified in another session. Please reload the latest version before saving your changes." />
+        ) : (
+          <div role="alert" className="p-3.5 rounded-xs bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )
       )}
 
       {/* Main Form Body */}

@@ -18,6 +18,7 @@ import {
   Redo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 
 export interface TiptapEditorProps {
   value: string;
@@ -93,7 +94,7 @@ export function TiptapEditor({
       !trimmed.startsWith("mailto:") &&
       !trimmed.startsWith("tel:")
     ) {
-      alert("Invalid link protocol. Please enter a valid URL starting with https://");
+      toast.error("Invalid link protocol. Please enter a valid URL starting with https://, mailto:, or tel:");
       return;
     }
 

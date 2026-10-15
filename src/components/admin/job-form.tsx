@@ -9,7 +9,6 @@ import {
   Archive,
   ArrowLeft,
   AlertCircle,
-  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
@@ -24,6 +23,9 @@ import {
 import { ALLOWED_EMPLOYMENT_TYPES } from "@/lib/validation/jobs";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
+import { ConfirmationDialog } from "@/components/admin/confirmation-dialog";
+import { ConcurrencyConflictBanner } from "@/components/admin/concurrency-conflict-banner";
+import { toast } from "@/components/ui/toast";
 import {
   FeaturedImageUploader,
   type FeaturedImageData,
@@ -133,13 +135,13 @@ export function JobForm({
   // Status & Feedback
   const [isPending, setIsPending] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const [showPublishDialog, setShowPublishDialog] = React.useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPending(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const formData = new FormData();
@@ -178,10 +180,12 @@ export function JobForm({
         const result = await createJobAction(formData);
         if (!result.success || !result.data) {
           setErrorMessage(result.error || "Failed to create job opportunity.");
+          toast.error(result.error || "Failed to create job opportunity.");
           setIsPending(false);
           return;
         }
 
+        toast.success("Job opportunity created.");
         router.push(`/admin/jobs/${result.data.id}/edit?created=true`);
       } else {
         if (initialData?.updatedAt) {
@@ -191,74 +195,68 @@ export function JobForm({
         const result = await updateJobAction(initialData!.id, formData);
         if (!result.success) {
           setErrorMessage(result.error || "Failed to update job opportunity.");
+          toast.error(result.error || "Failed to update job opportunity.");
           setIsPending(false);
           return;
         }
 
-        setSuccessMessage("Job opportunity saved successfully.");
+        toast.success("Job opportunity saved.");
         setIsPending(false);
         router.refresh();
       }
     } catch {
       setErrorMessage("An unexpected error occurred. Please try again.");
+      toast.error("An unexpected error occurred. Please try again.");
       setIsPending(false);
     }
   };
 
-  const handlePublish = async () => {
+  const handleConfirmPublish = async () => {
     if (!initialData) return;
-    if (!confirm("Are you sure you want to publish this job opportunity to the public portal?")) {
-      return;
-    }
-
+    setShowPublishDialog(false);
     setIsPending(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const result = await publishJobAction(initialData.id, initialData.updatedAt);
       if (!result.success) {
         setErrorMessage(result.error || "Failed to publish job opportunity.");
+        toast.error(result.error || "Failed to publish job opportunity.");
         setIsPending(false);
         return;
       }
 
-      setSuccessMessage("Job opportunity published successfully!");
+      toast.success("Job opportunity published.");
       setIsPending(false);
       router.refresh();
     } catch {
       setErrorMessage("An error occurred while publishing.");
+      toast.error("An error occurred while publishing.");
       setIsPending(false);
     }
   };
 
-  const handleArchive = async () => {
+  const handleConfirmArchive = async () => {
     if (!initialData) return;
-    if (
-      !confirm(
-        "Are you sure you want to archive this job opportunity? It will be removed from public display but preserved in administrative records."
-      )
-    ) {
-      return;
-    }
-
+    setShowArchiveDialog(false);
     setIsPending(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const result = await archiveJobAction(initialData.id, initialData.updatedAt);
       if (!result.success) {
         setErrorMessage(result.error || "Failed to archive job opportunity.");
+        toast.error(result.error || "Failed to archive job opportunity.");
         setIsPending(false);
         return;
       }
 
-      setSuccessMessage("Job opportunity archived successfully.");
+      toast.success("Job opportunity archived.");
       setIsPending(false);
       router.refresh();
     } catch {
       setErrorMessage("An error occurred while archiving.");
+      toast.error("An error occurred while archiving.");
       setIsPending(false);
     }
   };
@@ -269,18 +267,20 @@ export function JobForm({
     if (!initialData?.id) return;
     setIsDeleting(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const res = await deleteJobAction(initialData.id, initialData.updatedAt);
       if (!res.success) {
         setErrorMessage(res.error || "Failed to delete job opportunity.");
+        toast.error(res.error || "Failed to delete job opportunity.");
         setIsDeleting(false);
       } else {
+        toast.success("Job opportunity permanently deleted.");
         router.push("/admin/jobs");
       }
     } catch {
       setErrorMessage("An unexpected error occurred during job opportunity deletion.");
+      toast.error("An unexpected error occurred during job opportunity deletion.");
       setIsDeleting(false);
     }
   };
@@ -327,23 +327,19 @@ export function JobForm({
 
       {/* Feedback Banners */}
       {errorMessage && (
-        <div
-          role="alert"
-          className="p-4 bg-red-50 border border-red-200 rounded-xs flex items-start gap-3 text-red-800 text-xs"
-        >
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <div>{errorMessage}</div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div
-          role="status"
-          className="p-4 bg-emerald-50 border border-emerald-200 rounded-xs flex items-start gap-3 text-emerald-800 text-xs"
-        >
-          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-          <div>{successMessage}</div>
-        </div>
+        errorMessage.includes("409") ||
+        errorMessage.toLowerCase().includes("modified by another user") ||
+        errorMessage.toLowerCase().includes("another session") ? (
+          <ConcurrencyConflictBanner message="This job opportunity was modified in another session. Please reload the latest version before saving your changes." />
+        ) : (
+          <div
+            role="alert"
+            className="p-4 bg-red-50 border border-red-200 rounded-xs flex items-start gap-3 text-red-800 text-xs"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>{errorMessage}</div>
+          </div>
+        )
       )}
 
       {/* Main Form */}
@@ -671,9 +667,9 @@ export function JobForm({
             {mode === "edit" && canPublish && initialData?.status !== "PUBLISHED" && (
               <button
                 type="button"
-                onClick={handlePublish}
+                onClick={() => setShowPublishDialog(true)}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xs disabled:opacity-50 transition-colors shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xs disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
               >
                 <FileCheck className="w-3.5 h-3.5" />
                 Publish Directly
@@ -684,9 +680,9 @@ export function JobForm({
             {mode === "edit" && canArchive && initialData?.status !== "ARCHIVED" && (
               <button
                 type="button"
-                onClick={handleArchive}
+                onClick={() => setShowArchiveDialog(true)}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xs disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xs disabled:opacity-50 transition-colors cursor-pointer"
               >
                 <Archive className="w-3.5 h-3.5" />
                 Archive
@@ -707,6 +703,32 @@ export function JobForm({
             )}
           </div>
         </div>
+
+        {/* Publish Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={showPublishDialog}
+          title="Publish Job Vacancy?"
+          description="Are you sure you want to publish this job opportunity to the public portal? It will become visible to all citizens immediately."
+          confirmLabel="Publish Directly"
+          cancelLabel="Cancel"
+          variant="warning"
+          isLoading={isPending}
+          onConfirm={handleConfirmPublish}
+          onCancel={() => setShowPublishDialog(false)}
+        />
+
+        {/* Archive Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={showArchiveDialog}
+          title="Archive Job Opportunity?"
+          description="Are you sure you want to archive this job opportunity? It will be removed from public display but preserved in administrative records."
+          confirmLabel="Archive Vacancy"
+          cancelLabel="Cancel"
+          variant="warning"
+          isLoading={isPending}
+          onConfirm={handleConfirmArchive}
+          onCancel={() => setShowArchiveDialog(false)}
+        />
       </form>
     </div>
   );

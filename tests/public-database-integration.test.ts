@@ -510,18 +510,18 @@ async function runPublicDatabaseIntegrationTestSuite() {
       });
     }
 
-    // Null DB profile fields use neutral/canonical fallback
+    // Verified DB profile fields use client-provided office head
     const treasuryOffice = publicOffices.find((o) => o.slug === "municipal-treasury-office");
     assert(treasuryOffice !== undefined, "Municipal Treasury Office exists in canonical directory");
     assert(
-      treasuryOffice?.head === undefined || treasuryOffice?.head === null,
-      "Office without verified head has null/undefined head (neutral fallback)"
+      treasuryOffice?.head === "ELSIE C. ALIP",
+      "Treasury office head resolved to client-provided head ELSIE C. ALIP"
     );
     assert(treasuryOffice?.acronym === "", "Office without verified acronym has empty acronym (neutral fallback)");
 
     // Office head correctly resolved from DB for Mayor
     const mayorPublic = publicOffices.find((o) => o.slug === "office-of-the-mayor");
-    assert(mayorPublic?.head === 'Hon. Engr. Reinhard "Hart" E. Jeresano', "Mayor office head correctly resolved from DB");
+    assert(mayorPublic?.head === "HON. ENGR. REINHARD E. JERESANO", "Mayor office head correctly resolved from DB");
 
     // Inactive canonical office institutional reality rule
     if (mhoOffice) {

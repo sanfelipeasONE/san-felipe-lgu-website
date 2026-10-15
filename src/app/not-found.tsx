@@ -1,7 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { Home, Building2, PhoneCall, ArrowRight, SearchX } from "lucide-react";
-import { GovernmentTopBar } from "@/components/layout/government-top-bar";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Container } from "@/components/layout/container";
@@ -10,9 +9,6 @@ import { Button } from "@/components/ui/button";
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      {/* Official PH Government Top Bar */}
-      <GovernmentTopBar />
-
       {/* Municipal Header & Navigation */}
       <SiteHeader />
 

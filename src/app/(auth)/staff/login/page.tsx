@@ -54,7 +54,7 @@ export default async function StaffLoginPage() {
             Municipal Government of San Felipe
           </span>
           <h1 className="text-xl font-bold text-gov-charcoal tracking-tight mt-1">
-            Staff & Multi-Office CMS
+            Administrative Portal
           </h1>
           <p className="text-xs text-gov-muted mt-1">
             Authorized Municipal Personnel Access Only

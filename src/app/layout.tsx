@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,6 +19,15 @@ export const metadata: Metadata = {
   },
   description:
     "Official digital portal of the Municipal Local Government Unit of San Felipe, Zambales, Philippines. Delivering civic services, public advisories, and transparent governance.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", type: "image/png", sizes: "180x180" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -29,6 +39,7 @@ export default function RootLayout({
     <html lang="en" className={`h-full antialiased scroll-smooth ${inter.variable}`}>
       <body className={`${inter.className} min-h-full flex flex-col bg-white text-gov-charcoal`}>
         {children}
+        <Toaster />
       </body>
     </html>
   );

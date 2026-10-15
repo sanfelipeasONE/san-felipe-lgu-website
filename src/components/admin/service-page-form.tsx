@@ -13,7 +13,6 @@ import {
   ArrowDown,
   Building2,
   AlertTriangle,
-  CheckCircle2,
   Loader2,
   FileText,
   ExternalLink,
@@ -28,6 +27,8 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { ConfirmationDialog } from "@/components/admin/confirmation-dialog";
+import { ConcurrencyConflictBanner } from "@/components/admin/concurrency-conflict-banner";
+import { toast } from "@/components/ui/toast";
 import { FeaturedImageUploader } from "@/components/admin/featured-image-uploader";
 import {
   saveServiceDraftAction,
@@ -187,7 +188,6 @@ export function ServicePageForm({
   );
   const [isUploadingPdf, setIsUploadingPdf] = React.useState(false);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
-  const [uploadSuccess, setUploadSuccess] = React.useState<string | null>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [pdfTitle, setPdfTitle] = React.useState("");
   const [isReplacing, setIsReplacing] = React.useState(false);
@@ -201,7 +201,6 @@ export function ServicePageForm({
   );
   const [isUploadingAttachment, setIsUploadingAttachment] = React.useState(false);
   const [attachmentUploadError, setAttachmentUploadError] = React.useState<string | null>(null);
-  const [attachmentUploadSuccess, setAttachmentUploadSuccess] = React.useState<string | null>(null);
   const [selectedAttachmentFile, setSelectedAttachmentFile] = React.useState<File | null>(null);
   const [attachmentTitle, setAttachmentTitle] = React.useState("");
   const [attachmentPurpose, setAttachmentPurpose] = React.useState<"DOWNLOADABLE_FORM" | "OTHER_PUBLIC_DOCUMENT">("DOWNLOADABLE_FORM");
@@ -222,7 +221,6 @@ export function ServicePageForm({
   const [isPublishing, setIsPublishing] = React.useState(false);
   const [isUnpublishing, setIsUnpublishing] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
 
   // Confirmation dialogs
@@ -233,7 +231,6 @@ export function ServicePageForm({
   // Mark unsaved changes
   const markDirty = () => {
     setHasUnsavedChanges(true);
-    setSuccessMessage(null);
     setErrorMessage(null);
   };
 
@@ -257,7 +254,6 @@ export function ServicePageForm({
 
     setIsUploadingPdf(true);
     setUploadError(null);
-    setUploadSuccess(null);
 
     const formData = new FormData();
     formData.append("serviceKey", "citizens-charter");
@@ -293,14 +289,13 @@ export function ServicePageForm({
     setIsReplacing(false);
     setSelectedFile(null);
     setPdfTitle("");
-    setUploadSuccess("Official Citizen's Charter PDF uploaded, published, and linked successfully.");
+    toast.success("Citizen's Charter PDF uploaded.");
     router.refresh();
   };
 
   const handleRemoveCharterAssociation = async () => {
     setIsRemovingCharter(true);
     setUploadError(null);
-    setUploadSuccess(null);
 
     const res = await removeCharterAssociationAction("citizens-charter");
     setIsRemovingCharter(false);
@@ -308,6 +303,7 @@ export function ServicePageForm({
 
     if (!res.success) {
       setUploadError(res.error || "Failed to remove Charter association.");
+      toast.error(res.error || "Failed to remove Charter association.");
       return;
     }
 
@@ -316,9 +312,7 @@ export function ServicePageForm({
     }
     setActiveCharterDoc(null);
     setCharterDocumentId("");
-    setUploadSuccess(
-      "Citizen's Charter document association removed. The Document remains preserved in Document Management."
-    );
+    toast.success("Citizen's Charter removed.");
     router.refresh();
   };
 
@@ -327,7 +321,6 @@ export function ServicePageForm({
 
     setIsLinkingExisting(true);
     setUploadError(null);
-    setUploadSuccess(null);
 
     const res = await linkExistingCharterDocumentAction("citizens-charter", docId);
     setIsLinkingExisting(false);
@@ -356,7 +349,7 @@ export function ServicePageForm({
       });
       setCharterDocumentId(found.id);
     }
-    setUploadSuccess("Existing Citizen's Charter document associated successfully.");
+    toast.success("Citizen's Charter document associated.");
     router.refresh();
   };
 
@@ -380,7 +373,6 @@ export function ServicePageForm({
 
     setIsUploadingAttachment(true);
     setAttachmentUploadError(null);
-    setAttachmentUploadSuccess(null);
 
     const formData = new FormData();
     formData.append("serviceKey", servicePage.serviceKey);
@@ -417,14 +409,13 @@ export function ServicePageForm({
     setIsReplacingAttachment(false);
     setSelectedAttachmentFile(null);
     setAttachmentTitle("");
-    setAttachmentUploadSuccess("Official service document uploaded, published, and attached successfully.");
+    toast.success("Document attached to service page.");
     router.refresh();
   };
 
   const handleRemoveAttachmentAssociation = async () => {
     setIsRemovingAttachment(true);
     setAttachmentUploadError(null);
-    setAttachmentUploadSuccess(null);
 
     const res = await removeServiceAttachmentAction(servicePage.serviceKey);
     setIsRemovingAttachment(false);
@@ -432,6 +423,7 @@ export function ServicePageForm({
 
     if (!res.success) {
       setAttachmentUploadError(res.error || "Failed to remove attachment association.");
+      toast.error(res.error || "Failed to remove attachment association.");
       return;
     }
 
@@ -439,9 +431,7 @@ export function ServicePageForm({
       setExpectedUpdatedAt(res.data.servicePageUpdatedAt);
     }
     setActiveAttachmentDoc(null);
-    setAttachmentUploadSuccess(
-      "Service document attachment removed. The file remains preserved in Document Management."
-    );
+    toast.success("Document attachment removed.");
     router.refresh();
   };
 
@@ -450,7 +440,6 @@ export function ServicePageForm({
 
     setIsLinkingExistingAttachment(true);
     setAttachmentUploadError(null);
-    setAttachmentUploadSuccess(null);
 
     const res = await linkExistingServiceAttachmentAction(
       servicePage.serviceKey,
@@ -482,7 +471,7 @@ export function ServicePageForm({
         purpose: found.purpose,
       });
     }
-    setAttachmentUploadSuccess("Existing document attached successfully.");
+    toast.success("Document attached to service page.");
     setIsReplacingAttachment(false);
     router.refresh();
   };
@@ -569,16 +558,16 @@ export function ServicePageForm({
   const handleSaveDraft = async () => {
     setIsSaving(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const result = await saveServiceDraftAction(servicePage.serviceKey, buildPayload());
 
       if (!result.success) {
         setErrorMessage(result.error || "Failed to save draft changes.");
+        toast.error(result.error || "Failed to save draft changes.");
       } else {
         setHasUnsavedChanges(false);
-        setSuccessMessage("Service page draft saved successfully.");
+        toast.success("Service page draft saved.");
         if (result.data?.updatedAt) {
           setExpectedUpdatedAt(result.data.updatedAt);
         }
@@ -586,6 +575,7 @@ export function ServicePageForm({
       }
     } catch {
       setErrorMessage("An unexpected network error occurred while saving.");
+      toast.error("An unexpected network error occurred while saving.");
     } finally {
       setIsSaving(false);
     }
@@ -595,17 +585,17 @@ export function ServicePageForm({
     setShowPublishDialog(false);
     setIsPublishing(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const result = await publishServiceAction(servicePage.serviceKey, buildPayload());
 
       if (!result.success) {
         setErrorMessage(result.error || "Failed to publish service page.");
+        toast.error(result.error || "Failed to publish service page.");
       } else {
         setHasUnsavedChanges(false);
         setStatus("PUBLISHED");
-        setSuccessMessage("Service page published successfully to the public portal.");
+        toast.success("Service page published.");
         if (result.data?.updatedAt) {
           setExpectedUpdatedAt(result.data.updatedAt);
         } else if (result.data?.publishedAt) {
@@ -615,6 +605,7 @@ export function ServicePageForm({
       }
     } catch {
       setErrorMessage("An unexpected error occurred while publishing.");
+      toast.error("An unexpected error occurred while publishing.");
     } finally {
       setIsPublishing(false);
     }
@@ -624,15 +615,16 @@ export function ServicePageForm({
     setShowUnpublishDialog(false);
     setIsUnpublishing(true);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const result = await unpublishServiceAction(servicePage.serviceKey, expectedUpdatedAt);
+
       if (!result.success) {
         setErrorMessage(result.error || "Failed to unpublish service page.");
+        toast.error(result.error || "Failed to unpublish service page.");
       } else {
         setStatus("DRAFT");
-        setSuccessMessage("Service page unpublished. Content reverted to draft status.");
+        toast.success("Service page reverted to draft.");
         if (result.data?.updatedAt) {
           setExpectedUpdatedAt(result.data.updatedAt);
         }
@@ -640,6 +632,7 @@ export function ServicePageForm({
       }
     } catch {
       setErrorMessage("An unexpected error occurred while unpublishing.");
+      toast.error("An unexpected error occurred while unpublishing.");
     } finally {
       setIsUnpublishing(false);
     }
@@ -651,29 +644,22 @@ export function ServicePageForm({
     <div className="space-y-6">
       {/* Top Notification Alerts */}
       {errorMessage && (
-        <div
-          role="alert"
-          className="p-4 bg-rose-50 border border-rose-200 rounded-xs flex items-start gap-3 text-rose-800 shadow-2xs"
-        >
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="flex-1 text-xs">
-            <span className="font-bold block mb-0.5">Operation Error</span>
-            <span>{errorMessage}</span>
+        errorMessage.includes("409") ||
+        errorMessage.toLowerCase().includes("modified by another user") ||
+        errorMessage.toLowerCase().includes("another session") ? (
+          <ConcurrencyConflictBanner message="This service page was modified in another session. Please reload the latest version before saving your changes." />
+        ) : (
+          <div
+            role="alert"
+            className="p-4 bg-rose-50 border border-rose-200 rounded-xs flex items-start gap-3 text-rose-800 shadow-2xs"
+          >
+            <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex-1 text-xs">
+              <span className="font-bold block mb-0.5">Operation Error</span>
+              <span>{errorMessage}</span>
+            </div>
           </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div
-          role="status"
-          className="p-4 bg-emerald-50 border border-emerald-200 rounded-xs flex items-start gap-3 text-emerald-800 shadow-2xs"
-        >
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="flex-1 text-xs">
-            <span className="font-bold block mb-0.5">Success</span>
-            <span>{successMessage}</span>
-          </div>
-        </div>
+        )
       )}
 
       {/* Main Form Layout */}
@@ -758,13 +744,6 @@ export function ServicePageForm({
                 )}
               </div>
 
-              {uploadSuccess && (
-                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                  <span>{uploadSuccess}</span>
-                </div>
-              )}
-
               {uploadError && (
                 <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
@@ -811,7 +790,6 @@ export function ServicePageForm({
                       onClick={() => {
                         setIsReplacing(true);
                         setUploadError(null);
-                        setUploadSuccess(null);
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-burgundy-50 border border-burgundy-200 text-burgundy-800 hover:bg-burgundy-100 transition-colors shadow-2xs"
                     >
@@ -1013,13 +991,6 @@ export function ServicePageForm({
                   )}
                 </div>
 
-                {attachmentUploadSuccess && (
-                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xs text-[11px] text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                    <span>{attachmentUploadSuccess}</span>
-                  </div>
-                )}
-
                 {attachmentUploadError && (
                   <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xs text-[11px] text-rose-800 flex items-center gap-2">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
@@ -1071,7 +1042,6 @@ export function ServicePageForm({
                         onClick={() => {
                           setIsReplacingAttachment(true);
                           setAttachmentUploadError(null);
-                          setAttachmentUploadSuccess(null);
                         }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xs bg-burgundy-50 border border-burgundy-200 text-burgundy-800 hover:bg-burgundy-100 transition-colors shadow-2xs"
                       >

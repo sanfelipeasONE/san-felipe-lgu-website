@@ -14,10 +14,11 @@ import {
   ArrowLeft,
   Building2,
   AlertTriangle,
-  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { ConcurrencyConflictBanner } from "@/components/admin/concurrency-conflict-banner";
+import { toast } from "@/components/ui/toast";
 import type { OfficeStatus } from "@prisma/client";
 
 interface OfficeFormProps {
@@ -41,7 +42,6 @@ interface OfficeFormProps {
 export function OfficeForm({ initialData }: OfficeFormProps) {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const {
@@ -69,7 +69,6 @@ export function OfficeForm({ initialData }: OfficeFormProps) {
 
   const onSubmit = async (data: UpdateOfficeInput) => {
     setServerError(null);
-    setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
@@ -90,13 +89,16 @@ export function OfficeForm({ initialData }: OfficeFormProps) {
       const result = await updateOfficeAction(initialData.id, payload);
       if (!result.success) {
         setServerError(result.error || "Failed to update municipal office.");
+        toast.error(result.error || "Failed to update municipal office.");
         return;
       }
 
-      setSuccessMessage("Municipal office updated successfully.");
+      toast.success("Municipal office updated.");
       router.refresh();
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setServerError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -105,23 +107,19 @@ export function OfficeForm({ initialData }: OfficeFormProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {serverError && (
-        <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Update Failed</p>
-            <p className="mt-0.5">{serverError}</p>
+        serverError.includes("409") ||
+        serverError.toLowerCase().includes("modified by another user") ||
+        serverError.toLowerCase().includes("another session") ? (
+          <ConcurrencyConflictBanner message="This municipal office record was modified in another session. Please reload the latest version before saving your changes." />
+        ) : (
+          <div role="alert" className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold">Update Failed</p>
+              <p className="mt-0.5">{serverError}</p>
+            </div>
           </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Success</p>
-            <p className="mt-0.5">{successMessage}</p>
-          </div>
-        </div>
+        )
       )}
 
       {selectedStatus === "INACTIVE" && (

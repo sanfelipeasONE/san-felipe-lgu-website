@@ -7,12 +7,13 @@ import {
   Save,
   ArrowLeft,
   Shield,
-  CheckCircle2,
   AlertTriangle,
   Lock,
   Layers,
 } from "lucide-react";
 import Link from "next/link";
+import { ConcurrencyConflictBanner } from "@/components/admin/concurrency-conflict-banner";
+import { toast } from "@/components/ui/toast";
 
 interface PermissionCatalogItem {
   id: string;
@@ -53,7 +54,6 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
   const [roleName, setRoleName] = React.useState(role.name);
   const [roleDescription, setRoleDescription] = React.useState(role.description || "");
   const [serverError, setServerError] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Group catalog by module
@@ -108,7 +108,6 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setServerError(null);
-    setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
@@ -121,6 +120,7 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
         });
         if (!metaResult.success) {
           setServerError(metaResult.error || "Failed to update role label.");
+          toast.error(metaResult.error || "Failed to update role label.");
           setIsSubmitting(false);
           return;
         }
@@ -135,14 +135,17 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
 
       if (!permResult.success) {
         setServerError(permResult.error || "Failed to update role permissions.");
+        toast.error(permResult.error || "Failed to update role permissions.");
         setIsSubmitting(false);
         return;
       }
 
-      setSuccessMessage("Role permissions and metadata updated successfully. All user sessions for this role have been refreshed.");
+      toast.success("Role permissions updated.");
       router.refresh();
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setServerError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -151,23 +154,19 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {serverError && (
-        <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Update Failed</p>
-            <p className="mt-0.5">{serverError}</p>
+        serverError.includes("409") ||
+        serverError.toLowerCase().includes("modified by another user") ||
+        serverError.toLowerCase().includes("another session") ? (
+          <ConcurrencyConflictBanner message="This role record was modified in another session. Please reload the latest version before saving your changes." />
+        ) : (
+          <div role="alert" className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold">Update Failed</p>
+              <p className="mt-0.5">{serverError}</p>
+            </div>
           </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Success</p>
-            <p className="mt-0.5">{successMessage}</p>
-          </div>
-        </div>
+        )
       )}
 
       {isSystemAdminRole && (

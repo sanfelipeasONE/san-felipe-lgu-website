@@ -24,7 +24,7 @@ export const instant = false;
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | San Felipe LGU CMS",
-  description: "San Felipe LGU Staff & Multi-Office CMS Administrative Console",
+  description: "San Felipe LGU Administrative Console",
 };
 
 interface AdminDashboardPageProps {

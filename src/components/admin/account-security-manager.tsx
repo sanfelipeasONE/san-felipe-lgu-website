@@ -15,6 +15,7 @@ import {
   revokeAllOtherSessionsAction,
 } from "@/app/(cms)/admin/account/security/actions";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 
 interface SessionItem {
   id: string;
@@ -45,8 +46,13 @@ export function AccountSecurityManager({
       const res = await revokeOtherSessionAction(id);
       if (res.success) {
         setSessionList((prev) => prev.filter((s) => s.id !== id));
+        toast.success("Session revoked.");
         router.refresh();
+      } else {
+        toast.error(res.message || "Failed to revoke session.");
       }
+    } catch {
+      toast.error("An unexpected error occurred while revoking session.");
     } finally {
       setRevokingId(null);
     }
@@ -58,8 +64,13 @@ export function AccountSecurityManager({
       const res = await revokeAllOtherSessionsAction();
       if (res.success) {
         setSessionList((prev) => prev.filter((s) => s.isCurrent));
+        toast.success("All other sessions revoked.");
         router.refresh();
+      } else {
+        toast.error(res.message || "Failed to revoke sessions.");
       }
+    } catch {
+      toast.error("An unexpected error occurred while revoking sessions.");
     } finally {
       setIsRevokingAll(false);
     }

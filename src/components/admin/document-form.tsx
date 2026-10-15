@@ -32,6 +32,9 @@ import {
   deleteDocumentAction,
 } from "@/app/(cms)/admin/documents/actions";
 import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
+import { ConfirmationDialog } from "@/components/admin/confirmation-dialog";
+import { ConcurrencyConflictBanner } from "@/components/admin/concurrency-conflict-banner";
+import { toast } from "@/components/ui/toast";
 
 interface OfficeOption {
   id: string;
@@ -88,7 +91,7 @@ export function DocumentForm({
   // Status & Feedback
   const [isPending, setIsPending] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -125,7 +128,6 @@ export function DocumentForm({
   const handleSaveDraft = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     if (!title.trim() || title.trim().length < 3) {
       setErrorMessage("Document title must be at least 3 characters.");
@@ -156,8 +158,9 @@ export function DocumentForm({
         const res = await createDocumentAction(formData);
         if (!res.success) {
           setErrorMessage(res.error || "Failed to create document.");
+          toast.error(res.error || "Failed to create document.");
         } else {
-          setSuccessMessage("Document draft created successfully!");
+          toast.success("Document uploaded successfully.");
           router.push(`/admin/documents/${res.data!.id}/edit`);
           router.refresh();
         }
@@ -166,15 +169,18 @@ export function DocumentForm({
         const res = await updateDocumentAction(initialData!.id, formData);
         if (!res.success) {
           setErrorMessage(res.error || "Failed to update document.");
+          toast.error(res.error || "Failed to update document.");
         } else {
-          setSuccessMessage("Document updated successfully!");
+          toast.success("Document updated successfully.");
           setSelectedFile(null);
           if (fileInputRef.current) fileInputRef.current.value = "";
           router.refresh();
         }
       }
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsPending(false);
     }
@@ -183,20 +189,23 @@ export function DocumentForm({
   const handleDelete = async () => {
     if (!initialData) return;
     setErrorMessage(null);
-    setSuccessMessage(null);
     setIsPending(true);
 
     try {
       const res = await deleteDocumentAction(initialData.id, initialData.updatedAt);
       if (!res.success) {
         setErrorMessage(res.error || "Failed to delete document.");
+        toast.error(res.error || "Failed to delete document.");
         setIsPending(false);
       } else {
+        toast.success("Document permanently deleted.");
         router.push("/admin/documents");
         router.refresh();
       }
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred while deleting.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred while deleting.";
+      setErrorMessage(msg);
+      toast.error(msg);
       setIsPending(false);
     }
   };
@@ -204,48 +213,45 @@ export function DocumentForm({
   const handlePublish = async () => {
     if (!initialData) return;
     setErrorMessage(null);
-    setSuccessMessage(null);
     setIsPending(true);
 
     try {
       const res = await publishDocumentAction(initialData.id, initialData.updatedAt);
       if (!res.success) {
         setErrorMessage(res.error || "Failed to publish document.");
+        toast.error(res.error || "Failed to publish document.");
       } else {
-        setSuccessMessage("Document published successfully!");
+        toast.success("Document published successfully.");
         router.refresh();
       }
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred while publishing.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred while publishing.";
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsPending(false);
     }
   };
 
-  const handleArchive = async () => {
+  const handleConfirmArchive = async () => {
     if (!initialData) return;
-    if (
-      !confirm(
-        "Are you sure you want to archive this document? It will be removed from public view immediately while retained in municipal archives."
-      )
-    ) {
-      return;
-    }
-
+    setShowArchiveDialog(false);
     setErrorMessage(null);
-    setSuccessMessage(null);
     setIsPending(true);
 
     try {
       const res = await archiveDocumentAction(initialData.id, initialData.updatedAt);
       if (!res.success) {
         setErrorMessage(res.error || "Failed to archive document.");
+        toast.error(res.error || "Failed to archive document.");
       } else {
-        setSuccessMessage("Document archived successfully.");
+        toast.success("Document archived successfully.");
         router.refresh();
       }
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred while archiving.");
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred while archiving.";
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsPending(false);
     }
@@ -255,23 +261,19 @@ export function DocumentForm({
     <form onSubmit={handleSaveDraft} className="space-y-6 max-w-4xl">
       {/* Alert Banner */}
       {errorMessage && (
-        <div className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Operation Failed</p>
-            <p>{errorMessage}</p>
+        errorMessage.includes("409") ||
+        errorMessage.toLowerCase().includes("modified by another user") ||
+        errorMessage.toLowerCase().includes("another session") ? (
+          <ConcurrencyConflictBanner message="This document was modified in another session. Please reload the latest version before saving your changes." />
+        ) : (
+          <div role="alert" className="p-4 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold">Operation Failed</p>
+              <p>{errorMessage}</p>
+            </div>
           </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold">Success</p>
-            <p>{successMessage}</p>
-          </div>
-        </div>
+        )
       )}
 
       {/* Main Metadata Card */}
@@ -503,7 +505,7 @@ export function DocumentForm({
           {mode === "edit" && canArchive && initialData?.status !== "ARCHIVED" && (
             <button
               type="button"
-              onClick={handleArchive}
+              onClick={() => setShowArchiveDialog(true)}
               disabled={isPending}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition disabled:opacity-50 cursor-pointer"
             >
@@ -542,6 +544,19 @@ export function DocumentForm({
           )}
         </div>
       </div>
+
+      {/* Confirmation Dialog for Archiving Document */}
+      <ConfirmationDialog
+        isOpen={showArchiveDialog}
+        title="Archive Municipal Document?"
+        description="Are you sure you want to archive this document? It will be removed from public view immediately while retained in municipal archives."
+        confirmLabel="Archive Document"
+        cancelLabel="Cancel"
+        variant="warning"
+        isLoading={isPending}
+        onConfirm={handleConfirmArchive}
+        onCancel={() => setShowArchiveDialog(false)}
+      />
     </form>
   );
 }

@@ -1,5 +1,3 @@
-import * as React from "react";
-import Link from "next/link";
 import {
   MapPin,
   Clock,
@@ -9,10 +7,13 @@ import {
   Navigation,
   MessageSquare,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/button";
 import { MUNICIPAL_CONTACT_DATA } from "@/config/homepage-data";
+import { getDirectionsUrl } from "@/config/location";
+import { MunicipalMap } from "@/components/home/municipal-map";
 
 export function MunicipalContactSection() {
   return (
@@ -140,64 +141,23 @@ export function MunicipalContactSection() {
                   <span>Send a Message</span>
                 </Button>
               </a>
-              <Link href="#municipal-map">
+              <a
+                href={getDirectionsUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Button variant="outline" size="sm" className="font-bold text-xs uppercase tracking-wider border-gray-300 hover:border-burgundy-700 hover:text-burgundy-800">
                   <Navigation className="h-3.5 w-3.5 mr-1.5 text-burgundy-700" />
                   <span>Get Directions</span>
+                  <ExternalLink className="h-3 w-3 ml-1 text-slate-400" />
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
 
-          {/* Right Column: Styled Map Representation (7 cols) */}
+          {/* Right Column: Interactive Leaflet Map (7 cols) */}
           <div id="municipal-map" className="lg:col-span-7 flex flex-col justify-between h-full">
-            <div className="bg-slate-100 border border-gray-200 rounded-xs overflow-hidden shadow-2xs relative h-84 sm:h-96 flex flex-col justify-between p-4">
-              {/* Map Illustration Background */}
-              <div className="absolute inset-0 bg-emerald-50/40" />
-
-              {/* Coastline / West Philippine Sea Representation */}
-              <div
-                className="absolute inset-y-0 left-0 w-1/4 bg-blue-100/70 border-r border-blue-200 flex items-center justify-center"
-                aria-hidden="true"
-              >
-                <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest -rotate-90">
-                  West Philippine Sea
-                </span>
-              </div>
-
-              {/* National Highway Path Representation */}
-              <div
-                className="absolute inset-y-0 left-1/2 w-4 -translate-x-1/2 bg-amber-200/90 border-x border-amber-400/80 flex items-center justify-center"
-                aria-hidden="true"
-              >
-                <div className="w-0.5 h-full border-r border-dashed border-amber-600/70" />
-              </div>
-
-              {/* Highway Label */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 border border-amber-400 px-2.5 py-0.5 rounded-xs text-[9px] font-bold text-amber-900 uppercase tracking-wider shadow-2xs">
-                Olongapo - Bugallon National Highway
-              </div>
-
-              {/* Map Marker Pin Callout */}
-              <div className="relative z-10 m-auto flex flex-col items-center">
-                <div className="bg-white border-2 border-burgundy-700 px-3.5 py-2 rounded-xs shadow-md text-center max-w-xs animate-bounce">
-                  <div className="flex items-center justify-center gap-1.5 text-burgundy-900 font-bold text-xs">
-                    <MapPin className="h-4 w-4 text-burgundy-700 fill-burgundy-700" />
-                    <span>San Felipe Municipal Hall</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">
-                    Poblacion, San Felipe, Zambales
-                  </span>
-                </div>
-                <div className="w-3 h-3 bg-burgundy-700 rotate-45 -mt-1.5" />
-              </div>
-
-              {/* Map Controls Watermark */}
-              <div className="relative z-10 flex items-center justify-between text-[10px] text-slate-600 bg-white/90 backdrop-blur-xs p-2 rounded-xs border border-gray-200 shadow-2xs">
-                <span>San Felipe Geographic Gateway Map Preview</span>
-                <span className="font-bold text-burgundy-800">Province of Zambales</span>
-              </div>
-            </div>
+            <MunicipalMap />
 
             {/* Travel / Accessibility Advisory Note */}
             <div className="mt-4 p-3.5 bg-slate-50 border border-gray-200 rounded-xs flex items-start gap-2.5 text-xs text-gov-muted leading-relaxed">

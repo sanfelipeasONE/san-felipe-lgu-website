@@ -369,6 +369,15 @@ async function runCitizensCharterViewerTests() {
         where: { id: { in: cleanupDocIds } },
       });
     }
+    // Restore baseline citizens-charter ServicePage status
+    await prisma.servicePage.update({
+      where: { serviceKey: "citizens-charter" },
+      data: {
+        status: "DRAFT",
+        charterDocumentId: null,
+        description: null,
+      },
+    });
     await prisma.$disconnect();
   }
 }
