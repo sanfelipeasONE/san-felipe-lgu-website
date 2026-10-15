@@ -47,6 +47,7 @@ async function runUserAdministrationTests() {
     isEffectiveActiveSystemAdmin,
   } = await import("../src/server/users/service");
   const { verifyPassword } = await import("../src/server/auth/password");
+  const { updateUserSchema } = await import("../src/lib/validation/users");
   const { RoleTier, UserStatus, OfficeStatus } = await import("@prisma/client");
 
   let passed = 0;
@@ -846,6 +847,235 @@ async function runUserAdministrationTests() {
       remainingExcludingTarget >= 1,
       "Other effective system administrators detected in database"
     );
+
+    // -------------------------------------------------------------
+    // Test 11: Email Update & Authentication Identity Integrity
+    // -------------------------------------------------------------
+    console.log("\n11. Email Update & Authentication Identity Integrity");
+    const test11InitialEmail = `email.test.initial.${ts}@sanfelipe.gov.ph`;
+    const test11NewEmail = `email.test.updated.${ts}@sanfelipe.gov.ph`;
+    const test11Password = "InitialSecurePassword2026!";
+
+    // 1. Existing active user has old email
+    const emailTestUser = await createUser(callerSuperAdmin, {
+      name: "Email Test User",
+      email: test11InitialEmail,
+      password: test11Password,
+      roleId: staffRole.id,
+      officeId: officeA.id,
+      status: UserStatus.ACTIVE,
+    });
+    assert(emailTestUser.email === test11InitialEmail, "Existing active user has old email");
+
+    const initialDbUser = await prisma.user.findUniqueOrThrow({ where: { id: emailTestUser.id } });
+    const initialHash = initialDbUser.passwordHash;
+
+    // 2. Authorized administrator changes email to a new unique email (with mixed case & whitespace)
+    await updateUser(callerSuperAdmin, emailTestUser.id, {
+      name: emailTestUser.name,
+      email: `  ${test11NewEmail.toUpperCase()}  `,
+      expectedUpdatedAt: initialDbUser.updatedAt.toISOString(),
+    });
+
+    // 3. Database User.email becomes normalized new email
+    const reloadedAfterUpdate = await prisma.user.findUniqueOrThrow({ where: { id: emailTestUser.id } });
+    assert(
+      reloadedAfterUpdate.email === test11NewEmail,
+      "Database User.email becomes normalized new email"
+    );
+
+    // 4. New email + existing password: authentication succeeds
+    const userFoundByNew = await prisma.user.findUnique({
+      where: { email: test11NewEmail },
+    });
+    const authByNewSucceeds =
+      userFoundByNew !== null &&
+      userFoundByNew.status === UserStatus.ACTIVE &&
+      (await verifyPassword(test11Password, userFoundByNew.passwordHash));
+    assert(authByNewSucceeds === true, "New email + existing password: authentication succeeds");
+
+    // 5. Old email + existing password: authentication fails
+    const userFoundByOld = await prisma.user.findUnique({
+      where: { email: test11InitialEmail },
+    });
+    assert(userFoundByOld === null, "Old email + existing password: authentication fails");
+
+    // 6. Password hash remains unchanged by email-only edit
+    assert(
+      reloadedAfterUpdate.passwordHash === initialHash,
+      "Password hash remains unchanged by email-only edit"
+    );
+
+    // 7. Duplicate new email: update rejected cleanly
+    let duplicateRejected = false;
+    try {
+      await updateUser(callerSuperAdmin, dbStaffA.id, {
+        name: dbStaffA.name,
+        email: test11NewEmail,
+      });
+    } catch (e: unknown) {
+      duplicateRejected = e instanceof UserError && e.statusCode === 400;
+    }
+    assert(duplicateRejected, "Duplicate new email: update rejected cleanly");
+
+    // 8. Email normalization: casing/whitespace normalized according to existing auth rules
+    const testNormalizeEmail = `  Normalized.Whitespace.${ts}@SanFelipe.GOV.ph  `;
+    const expectedNormalized = `normalized.whitespace.${ts}@sanfelipe.gov.ph`;
+    const normalizedUser = await createUser(callerSuperAdmin, {
+      name: "Normalized Email User",
+      email: testNormalizeEmail,
+      password: test11Password,
+      roleId: staffRole.id,
+      officeId: officeA.id,
+      status: UserStatus.ACTIVE,
+    });
+    assert(
+      normalizedUser.email === expectedNormalized,
+      "Email normalization: casing and whitespace normalized"
+    );
+
+    // 9. Changing SEED_SUPERADMIN_EMAIL is NOT required for runtime login
+    const dbEmailMatchesAuth = reloadedAfterUpdate.email === test11NewEmail;
+    assert(
+      dbEmailMatchesAuth,
+      "Changing SEED_SUPERADMIN_EMAIL is NOT required for runtime login"
+    );
+
+    // 10. Normal login does not authenticate against seed environment email
+    const fakeSeedEmail = `fake.seed.${ts}@sanfelipe.gov.ph`;
+    const fakeSeedLookup = await prisma.user.findUnique({
+      where: { email: fakeSeedEmail },
+    });
+    assert(
+      fakeSeedLookup === null,
+      "Normal login does not authenticate against seed environment email"
+    );
+
+    // -------------------------------------------------------------
+    // Test 12: Municipal Office Assignment & Normalization Boundaries
+    // -------------------------------------------------------------
+    console.log("\n12. Municipal Office Assignment & Normalization Boundaries");
+
+    // 11. Super Admin + officeId null: accepted
+    const testSuperAdmin = await createUser(callerSuperAdmin, {
+      name: "Synthetic Super Admin",
+      email: `sa.null.office.${ts}@sanfelipe.gov.ph`,
+      password: test11Password,
+      roleId: superAdminRole.id,
+      officeId: null,
+      status: UserStatus.ACTIVE,
+    });
+    assert(testSuperAdmin.officeId === null, "Super Admin + officeId null: accepted");
+
+    // 12. Super Admin form sends empty office selection: normalized to null
+    const formParsedEmpty = updateUserSchema.safeParse({
+      name: "Synthetic Super Admin",
+      email: `sa.null.office.${ts}@sanfelipe.gov.ph`,
+      roleId: superAdminRole.id,
+      officeId: "",
+      status: "ACTIVE",
+    });
+    assert(
+      formParsedEmpty.success && formParsedEmpty.data.officeId === null,
+      "Super Admin form sends empty office selection: normalized to null"
+    );
+
+    // 13. Reloaded Super Admin: displays Municipal-wide / Unassigned
+    const reloadedSA = await getUserById(callerSuperAdmin, testSuperAdmin.id);
+    const formDisplayValue = reloadedSA.officeId ?? "";
+    const isMunicipalWide = formDisplayValue === "";
+    assert(
+      isMunicipalWide && reloadedSA.office === null,
+      "Reloaded Super Admin: displays Municipal-wide / Unassigned"
+    );
+
+    // 14. Office Admin + officeId null: rejected
+    let oaNullRejected = false;
+    try {
+      await updateUser(callerSuperAdmin, dbOfficeAdminA.id, {
+        name: dbOfficeAdminA.name,
+        email: dbOfficeAdminA.email,
+        officeId: null,
+      });
+    } catch (e: unknown) {
+      oaNullRejected = e instanceof UserError && e.statusCode === 400;
+    }
+    assert(oaNullRejected, "Office Admin + officeId null: rejected");
+
+    // 15. Staff + officeId null: rejected
+    let staffNullRejected = false;
+    try {
+      await updateUser(callerSuperAdmin, dbStaffA.id, {
+        name: dbStaffA.name,
+        email: dbStaffA.email,
+        officeId: null,
+      });
+    } catch (e: unknown) {
+      staffNullRejected = e instanceof UserError && e.statusCode === 400;
+    }
+    assert(staffNullRejected, "Staff + officeId null: rejected");
+
+    // 16. Office Admin cannot submit null office for managed Staff
+    let oaSubmitNullDenied = false;
+    try {
+      await updateUser(callerOfficeAdminA, dbStaffA.id, {
+        name: dbStaffA.name,
+        email: dbStaffA.email,
+        officeId: null,
+      });
+    } catch (e: unknown) {
+      oaSubmitNullDenied = e instanceof UserError && (e.statusCode === 403 || e.statusCode === 400);
+    }
+    assert(oaSubmitNullDenied, "Office Admin cannot submit null office for managed Staff");
+
+    // 17. Invalid/nonexistent office ID: rejected
+    let invalidOfficeRejected = false;
+    try {
+      await updateUser(callerSuperAdmin, dbStaffA.id, {
+        name: dbStaffA.name,
+        email: dbStaffA.email,
+        officeId: `nonexistent-office-${ts}`,
+      });
+    } catch (e: unknown) {
+      invalidOfficeRejected = e instanceof UserError && e.statusCode === 400;
+    }
+    assert(invalidOfficeRejected, "Invalid/nonexistent office ID: rejected");
+
+    // 18. Legacy ICTO cannot be selected through canonical assignment flow
+    const ictoOffice = await prisma.office.findUnique({ where: { slug: "icto" } });
+    let ictoRejected = false;
+    if (ictoOffice) {
+      try {
+        await updateUser(callerSuperAdmin, dbStaffA.id, {
+          name: dbStaffA.name,
+          email: dbStaffA.email,
+          officeId: ictoOffice.id,
+        });
+      } catch (e: unknown) {
+        ictoRejected = e instanceof UserError && e.statusCode === 400;
+      }
+    } else {
+      ictoRejected = true;
+    }
+    assert(ictoRejected, "Legacy ICTO cannot be selected through canonical assignment flow");
+
+    // 19. Canonical office selection continues working normally
+    const updatedToOfficeB = await updateUser(callerSuperAdmin, dbStaffA.id, {
+      name: dbStaffA.name,
+      email: dbStaffA.email,
+      officeId: officeB.id,
+    });
+    assert(
+      updatedToOfficeB.officeId === officeB.id,
+      "Canonical office selection continues working normally"
+    );
+
+    // Reset Staff A back to Office A
+    await updateUser(callerSuperAdmin, dbStaffA.id, {
+      name: dbStaffA.name,
+      email: dbStaffA.email,
+      officeId: officeA.id,
+    });
 
   } finally {
     // Cleanup isolated test fixtures

@@ -9,6 +9,26 @@ export const strongPasswordSchema = z
   .regex(/[0-9]/, "Password must contain at least one number")
   .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
 
+/**
+ * Normalizes office selection from HTML forms and API payloads:
+ * - Empty string `""` or whitespace-only is normalized to `null`
+ * - Explicit `null` remains `null`
+ * - Explicit `undefined` remains `undefined`
+ * - Valid non-empty strings are trimmed
+ */
+export const officeIdSchema = z.preprocess(
+  (val) => {
+    if (val === undefined) return undefined;
+    if (val === null || val === "") return null;
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      return trimmed === "" ? null : trimmed;
+    }
+    return val;
+  },
+  z.string().min(1, "Office selection must be a valid identifier").nullable().optional()
+);
+
 export const createUserSchema = z.object({
   name: z
     .string()
@@ -24,7 +44,7 @@ export const createUserSchema = z.object({
   password: strongPasswordSchema,
   // Role & office are optional in the DTO because for Office Admin they are forced server-side
   roleId: z.string().trim().min(1, "Role selection is required").optional(),
-  officeId: z.string().trim().min(1, "Office selection is required").nullable().optional(),
+  officeId: officeIdSchema,
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
 });
 
@@ -43,7 +63,7 @@ export const updateUserSchema = z.object({
     .min(1, "Municipal email is required")
     .email("Please enter a valid municipal email address"),
   roleId: z.string().trim().min(1).optional(),
-  officeId: z.string().trim().min(1).nullable().optional(),
+  officeId: officeIdSchema,
   status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
   expectedUpdatedAt: z.string().optional(),
 });

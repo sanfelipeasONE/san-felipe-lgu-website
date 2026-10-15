@@ -154,6 +154,13 @@ export function UserForm({
   const onSubmit = async (data: UserFormData) => {
     setServerError(null);
     setSuccessMessage(null);
+
+    // Role-aware validation: Office-scoped roles require an assigned municipal office
+    if (isSystemScoped && !isSelectedRoleSystem && (!data.officeId || (typeof data.officeId === "string" && data.officeId.trim() === ""))) {
+      setServerError("An assigned municipal office is required for office-scoped roles.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -163,7 +170,7 @@ export function UserForm({
           email: data.email,
           password: data.password ?? "",
           roleId: isSystemScoped ? data.roleId : undefined,
-          officeId: isSystemScoped ? (data.officeId || null) : undefined,
+          officeId: isSystemScoped ? (data.officeId ? data.officeId : null) : undefined,
           status: isSystemScoped ? data.status : "ACTIVE",
         };
 
@@ -182,7 +189,7 @@ export function UserForm({
           name: data.name,
           email: data.email,
           roleId: isSystemScoped ? data.roleId : undefined,
-          officeId: isSystemScoped ? (data.officeId || null) : undefined,
+          officeId: isSystemScoped ? (data.officeId ? data.officeId : null) : undefined,
           status: data.status,
           expectedUpdatedAt: initialData.updatedAt,
         };
@@ -407,7 +414,7 @@ export function UserForm({
                     className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition-colors bg-white"
                   >
                     <option value="">
-                      {isSelectedRoleSystem ? "None (Municipal-Wide / Unassigned)" : "-- Select Office --"}
+                      {isSelectedRoleSystem ? "Municipal-wide / Unassigned" : "-- Select Office --"}
                     </option>
                     {offices.map((o) => (
                       <option key={o.id} value={o.id}>

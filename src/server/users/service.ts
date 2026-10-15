@@ -336,9 +336,13 @@ export async function createUser(
           where: { id: input.officeId },
           select: { id: true, slug: true, status: true },
         });
-        if (office && office.status === "ACTIVE" && office.slug !== "icto") {
-          targetOfficeId = office.id;
+        if (!office || office.slug === "icto") {
+          throw new UserError("The selected municipal office does not exist.", 400);
         }
+        if (office.status !== "ACTIVE") {
+          throw new UserError("User accounts can only be assigned to active municipal offices.", 400);
+        }
+        targetOfficeId = office.id;
       }
     }
 
@@ -499,6 +503,7 @@ export async function updateUser(
   let nextStatus = target.status;
   let roleChanged = false;
   let officeChanged = false;
+  let nextRoleIsSystemScope = target.role.isSystemScope;
 
   if (caller.isSystemScope) {
     // Role change validation
@@ -526,6 +531,7 @@ export async function updateUser(
       }
 
       nextRoleId = targetRole.id;
+      nextRoleIsSystemScope = targetRole.isSystemScope;
       roleChanged = true;
     }
 
@@ -549,11 +555,22 @@ export async function updateUser(
       officeChanged = true;
     }
 
+    // Role-aware validation: Office-scoped roles MUST have an assigned active municipal office
+    if (!nextRoleIsSystemScope && !nextOfficeId) {
+      throw new UserError("An assigned municipal office is required for office-scoped roles.", 400);
+    }
+
     if (input.status) {
       nextStatus = input.status;
     }
   } else {
     // Office Admin: cannot alter role or office.
+    if (input.roleId && input.roleId !== target.roleId) {
+      throw new UserError("Access restricted: Office Administrators cannot alter role assignments.", 403);
+    }
+    if (input.officeId !== undefined && input.officeId !== target.officeId) {
+      throw new UserError("Access restricted: Office Administrators cannot alter office assignments.", 403);
+    }
     // Authorized to change status of ordinary Staff in own office.
     if (input.status && input.status !== target.status) {
       if (input.status !== UserStatus.ACTIVE && !hasPermission(caller, PERMISSIONS.USERS_DISABLE)) {
@@ -584,10 +601,17 @@ export async function updateUser(
     },
   });
 
+  const emailChanged = normalizedEmail !== target.email;
   const statusChanged = nextStatus !== target.status;
 
-  // Security: Revoke all sessions for target user if role, office, or status changed to inactive/suspended
-  if (roleChanged || officeChanged || (statusChanged && nextStatus !== UserStatus.ACTIVE)) {
+  // Security: Revoke all sessions for target user if role, office, or status changed to inactive/suspended,
+  // or if an administrator changed another user's login email
+  if (
+    roleChanged ||
+    officeChanged ||
+    (statusChanged && nextStatus !== UserStatus.ACTIVE) ||
+    (emailChanged && caller.id !== target.id)
+  ) {
     await revokeAllUserSessions(target.id);
   }
 
