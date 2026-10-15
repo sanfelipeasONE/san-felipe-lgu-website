@@ -39,6 +39,7 @@ export default async function JobOpportunitiesPage() {
     employmentType: job.employmentType || undefined,
     salaryGrade: job.salaryGrade,
     monthlySalary: job.monthlySalary,
+    description: job.description,
     postingDate: job.postingDate,
     closingDate: job.closingDate,
     educationRequirement: job.educationRequirement,

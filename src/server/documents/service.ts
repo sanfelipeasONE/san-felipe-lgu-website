@@ -16,9 +16,10 @@ import {
   ALLOWED_DOCUMENT_EXTENSIONS,
   type AllowedDocumentExtension,
   type DocumentInput,
+  type DocumentPurpose,
 } from "@/lib/validation/documents";
 import type { SessionUser } from "@/server/auth/session";
-import type { DocumentStatus, Prisma } from "@prisma/client";
+import type { DocumentStatus, Prisma, DocumentPurpose as PrismaDocumentPurpose } from "@prisma/client";
 
 export class DocumentError extends Error {
   constructor(message: string, public readonly statusCode = 400) {
@@ -31,6 +32,7 @@ export interface AdminDocumentFilters {
   search?: string;
   status?: string;
   category?: string;
+  purpose?: string;
   officeId?: string;
   page?: number;
   pageSize?: number;
@@ -76,6 +78,10 @@ export async function getAdminDocumentsList(
 
   if (filters?.category) {
     where.category = filters.category;
+  }
+
+  if (filters?.purpose) {
+    where.purpose = filters.purpose as PrismaDocumentPurpose;
   }
 
   if (filters?.search && filters.search.trim()) {
@@ -231,6 +237,7 @@ export async function createDocument(
         title: params.input.title.trim(),
         description: params.input.description?.trim() || null,
         category: params.input.category?.trim() || null,
+        purpose: (params.input.purpose as PrismaDocumentPurpose) || "DOWNLOADABLE_FORM",
         status: "DRAFT",
         officeId: targetOfficeId,
         originalFilename: cleanOriginalFilename,
@@ -376,6 +383,7 @@ export async function updateDocument(
           title: params.input.title.trim(),
           description: params.input.description?.trim() || null,
           category: params.input.category?.trim() || null,
+          purpose: (params.input.purpose as PrismaDocumentPurpose) ?? existing.purpose,
           officeId: targetOfficeId,
           originalFilename: cleanFilename,
           storagePublicId: newUploadResult.publicId,
@@ -451,6 +459,7 @@ export async function updateDocument(
       title: params.input.title.trim(),
       description: params.input.description?.trim() || null,
       category: params.input.category?.trim() || null,
+      purpose: (params.input.purpose as PrismaDocumentPurpose) ?? existing.purpose,
       officeId: targetOfficeId,
       updatedById: user.id,
     },
@@ -672,17 +681,112 @@ export async function archiveDocument(
 }
 
 /**
+ * Permanently deletes a Document.
+ * - Requires documents.delete permission.
+ * - SYSTEM scope: can delete across municipal offices.
+ * - OFFICE scope: strictly restricted to own office (doc.officeId === user.officeId).
+ * - STAFF: denied permanent deletion.
+ * - DEPENDENCY CHECK: Blocks deletion if referenced by:
+ *   1. Any JobOpportunity (attachmentDocumentId === id)
+ *   2. Any ServicePage (charterDocumentId === id)
+ * - Safely cleans up associated Cloudinary file asset.
+ * - Records durable audit log (AUDIT_ACTIONS.DOCUMENT_DELETED).
+ */
+export async function deleteDocument(
+  user: SessionUser,
+  id: string,
+  expectedUpdatedAt?: string
+) {
+  if (!hasPermission(user, PERMISSIONS.DOCUMENTS_DELETE)) {
+    throw new DocumentError("Missing required permission: documents.delete", 403);
+  }
+
+  const existing = await prisma.document.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new DocumentError("Document not found.", 404);
+  }
+
+  if (!isSystemScoped(user)) {
+    if (!user.officeId || existing.officeId !== user.officeId) {
+      throw new DocumentError("Access restricted: you may only delete documents belonging to your assigned office.", 403);
+    }
+  }
+
+  if (
+    expectedUpdatedAt &&
+    existing.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new DocumentError(
+      "This document was modified by another user. Please refresh and review before deleting.",
+      409
+    );
+  }
+
+  // Dependency Protection Check
+  const [jobReferenceCount, charterReferenceCount] = await Promise.all([
+    prisma.jobOpportunity.count({
+      where: { attachmentDocumentId: id },
+    }),
+    prisma.servicePage.count({
+      where: { charterDocumentId: id },
+    }),
+  ]);
+
+  if (jobReferenceCount > 0 || charterReferenceCount > 0) {
+    throw new DocumentError(
+      "This document cannot be permanently deleted because it is currently used by another published or managed resource. Remove the reference before deleting the document.",
+      400
+    );
+  }
+
+  const storagePublicId = existing.storagePublicId;
+
+  await prisma.document.delete({
+    where: { id },
+  });
+
+  if (storagePublicId) {
+    deleteCloudinaryDocument(storagePublicId).catch((err) => {
+      console.error("[CLOUDINARY] Failed to clean up deleted document file:", err);
+    });
+  }
+
+  await logAuditEvent({
+    action: AUDIT_ACTIONS.DOCUMENT_DELETED,
+    userId: user.id,
+    officeId: existing.officeId,
+    details: {
+      documentId: existing.id,
+      title: existing.title,
+      originalFilename: existing.originalFilename,
+      officeId: existing.officeId,
+      purpose: existing.purpose,
+      previousStatus: existing.status,
+      entityType: "Document",
+    },
+  });
+
+  return { success: true, id: existing.id };
+}
+
+/**
  * Public document query.
  * Strictly queries documents with status === "PUBLISHED" belonging to ACTIVE offices.
+ * By default, queries only documents with purpose === "DOWNLOADABLE_FORM".
  * Draft and Archived documents are strictly excluded.
  */
 export async function getPublishedDocuments(filters?: {
   search?: string;
   category?: string;
   officeId?: string;
+  purpose?: DocumentPurpose;
 }) {
   const where: Prisma.DocumentWhereInput = {
     status: "PUBLISHED",
+    purpose: (filters?.purpose as PrismaDocumentPurpose) ?? "DOWNLOADABLE_FORM",
     office: {
       status: "ACTIVE",
     },
@@ -727,6 +831,7 @@ export async function getPublishedDocuments(filters?: {
     title: doc.title,
     description: doc.description,
     category: doc.category,
+    purpose: doc.purpose,
     originalFilename: doc.originalFilename,
     format: doc.format.toUpperCase(),
     bytes: doc.bytes,

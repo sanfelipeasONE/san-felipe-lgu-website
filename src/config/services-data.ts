@@ -135,6 +135,7 @@ export interface JobOpportunity {
   employmentType?: EmploymentType | string;
   salaryGrade?: string;
   monthlySalary?: string;
+  description?: string;
   postingDate: string; // ISO date
   closingDate: string; // ISO date
   educationRequirement?: string;

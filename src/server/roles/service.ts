@@ -19,6 +19,28 @@ export class RoleError extends Error {
 }
 
 /**
+ * The three canonical production roles for the San Felipe LGU portal.
+ * site-admin, approver, and office-editor are retired from active production assignment.
+ */
+export const CANONICAL_PRODUCTION_ROLES = [
+  "super-admin",
+  "office-admin",
+  "staff",
+] as const;
+
+export type CanonicalProductionRole = (typeof CANONICAL_PRODUCTION_ROLES)[number];
+
+export const RETIRED_ROLE_SLUGS = [
+  "site-admin",
+  "office-editor",
+  "approver",
+] as const;
+
+export type RetiredRoleSlug = (typeof RETIRED_ROLE_SLUGS)[number];
+
+export const CANONICAL_ROLE_SLUGS = CANONICAL_PRODUCTION_ROLES;
+
+/**
  * Critical permissions required for effective system administration.
  * A system administrator role cannot be stripped of these permissions.
  */

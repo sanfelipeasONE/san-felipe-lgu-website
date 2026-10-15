@@ -156,6 +156,21 @@ export async function getAdminServicePage(
           sortOrder: "asc",
         },
       },
+      charterDocument: {
+        select: {
+          id: true,
+          title: true,
+          originalFilename: true,
+          storagePublicId: true,
+          storageUrl: true,
+          format: true,
+          mimeType: true,
+          bytes: true,
+          status: true,
+          purpose: true,
+          publishedAt: true,
+        },
+      },
     },
   });
 
@@ -253,6 +268,48 @@ export async function updateServicePage(
     sortOrder: idx,
   }));
 
+  // Validate charter document association if provided
+  let targetCharterDocId: string | null | undefined = undefined;
+  if (input.charterDocumentId !== undefined) {
+    if (input.charterDocumentId && input.charterDocumentId.trim()) {
+      if (serviceKey !== "citizens-charter") {
+        throw new ServiceError(
+          "Citizen's Charter document attachment is strictly restricted to the citizens-charter service page.",
+          400
+        );
+      }
+
+      const doc = await prisma.document.findUnique({
+        where: { id: input.charterDocumentId.trim() },
+        select: {
+          id: true,
+          status: true,
+          purpose: true,
+          officeId: true,
+          office: { select: { id: true, status: true } },
+        },
+      });
+      if (!doc) {
+        throw new ServiceError("The selected Citizen's Charter document does not exist.", 400);
+      }
+      if (doc.status !== "PUBLISHED") {
+        throw new ServiceError("Only PUBLISHED documents can be associated as the official Citizen's Charter.", 400);
+      }
+      if (doc.purpose !== "CITIZENS_CHARTER") {
+        throw new ServiceError("Only documents classified with the CITIZENS_CHARTER purpose may be associated as the official Citizen's Charter.", 400);
+      }
+      if (doc.office.status !== "ACTIVE") {
+        throw new ServiceError("The selected document belongs to an inactive municipal office.", 400);
+      }
+      if (!user.isSystemScope && user.officeId && doc.officeId !== user.officeId) {
+        throw new ServiceError("You cannot associate a document belonging to another municipal office.", 403);
+      }
+      targetCharterDocId = doc.id;
+    } else {
+      targetCharterDocId = null;
+    }
+  }
+
   // Reconcile page and sections in a transaction
   const updated = await prisma.$transaction(async (tx) => {
     // Update main page metadata
@@ -262,6 +319,7 @@ export async function updateServicePage(
         title: input.title.trim(),
         description: input.description ? input.description.trim() : null,
         officeId: targetOfficeId,
+        ...(targetCharterDocId !== undefined ? { charterDocumentId: targetCharterDocId } : {}),
         updatedById: user.id,
       },
     });
@@ -508,8 +566,29 @@ export async function getPublishedServicePage(serviceKey: string) {
           sortOrder: "asc",
         },
       },
+      charterDocument: {
+        select: {
+          id: true,
+          title: true,
+          originalFilename: true,
+          storagePublicId: true,
+          storageUrl: true,
+          format: true,
+          mimeType: true,
+          bytes: true,
+          status: true,
+          publishedAt: true,
+        },
+      },
     },
   });
+
+  if (page && page.charterDocument && page.charterDocument.status !== "PUBLISHED") {
+    return {
+      ...page,
+      charterDocument: null,
+    };
+  }
 
   return page;
 }

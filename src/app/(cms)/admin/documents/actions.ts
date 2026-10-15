@@ -7,6 +7,7 @@ import {
   updateDocument,
   publishDocument,
   archiveDocument,
+  deleteDocument,
   DocumentError,
 } from "@/server/documents/service";
 import { documentInputSchema } from "@/lib/validation/documents";
@@ -29,12 +30,14 @@ export async function createDocumentAction(
     const title = formData.get("title")?.toString() || "";
     const description = formData.get("description")?.toString() || undefined;
     const category = formData.get("category")?.toString() || undefined;
+    const purpose = formData.get("purpose")?.toString() || undefined;
     const officeId = formData.get("officeId")?.toString() || undefined;
 
     const parsed = documentInputSchema.safeParse({
       title,
       description: description || null,
       category: category || null,
+      purpose,
       officeId,
     });
 
@@ -90,6 +93,7 @@ export async function updateDocumentAction(
     const title = formData.get("title")?.toString() || "";
     const description = formData.get("description")?.toString() || undefined;
     const category = formData.get("category")?.toString() || undefined;
+    const purpose = formData.get("purpose")?.toString() || undefined;
     const officeId = formData.get("officeId")?.toString() || undefined;
     const expectedUpdatedAt = formData.get("expectedUpdatedAt")?.toString() || undefined;
 
@@ -97,6 +101,7 @@ export async function updateDocumentAction(
       title,
       description: description || null,
       category: category || null,
+      purpose,
       officeId,
       expectedUpdatedAt,
     });
@@ -186,6 +191,31 @@ export async function archiveDocumentAction(
     };
   } catch (err: unknown) {
     const message = err instanceof DocumentError ? err.message : "Failed to archive document.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Permanently deletes a Document.
+ */
+export async function deleteDocumentAction(
+  id: string,
+  expectedUpdatedAt?: string
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const user = await requireUser();
+    const result = await deleteDocument(user, id, expectedUpdatedAt);
+
+    revalidatePath("/admin/documents");
+    revalidatePath("/services/downloadable-forms");
+    revalidatePath("/services/citizens-charter");
+
+    return {
+      success: true,
+      data: { id: result.id },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof DocumentError ? err.message : "Failed to delete document.";
     return { success: false, error: message };
   }
 }

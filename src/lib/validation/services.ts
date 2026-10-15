@@ -40,6 +40,7 @@ export const servicePageDraftSchema = z.object({
     .optional()
     .nullable(),
   sections: z.array(serviceSectionInputSchema).default([]),
+  charterDocumentId: z.string().trim().optional().nullable(),
   expectedUpdatedAt: z.string().optional(),
 });
 

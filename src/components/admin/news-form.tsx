@@ -29,7 +29,9 @@ import {
   updateNewsAction,
   publishNewsAction,
   archiveNewsAction,
+  deleteNewsAction,
 } from "@/app/(cms)/admin/news/actions";
+import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
 import {
   NEWS_TYPES,
   NEWS_CATEGORIES,
@@ -101,6 +103,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isPublishing, setIsPublishing] = React.useState(false);
   const [isArchiving, setIsArchiving] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = React.useState(false);
 
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -108,9 +111,10 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
 
   // Permissions & Capabilities
   const canPublish = user.permissions.includes("posts.publish");
-  const canArchive =
-    user.permissions.includes("posts.archive") ||
-    user.permissions.includes("posts.delete");
+  const canArchive = user.permissions.includes("posts.archive");
+  const canDelete =
+    user.permissions.includes("posts.delete") &&
+    (user.isSystemScope || user.officeId === (initialData?.officeId || user.officeId));
 
   const buildPayload = (): NewsDraftInput => {
     return {
@@ -225,6 +229,25 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!initialData?.id) return;
+    setIsDeleting(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await deleteNewsAction(initialData.id, initialData.updatedAt);
+      if (!res.success) {
+        setErrorMessage(res.error || "Failed to delete article.");
+        setIsDeleting(false);
+      } else {
+        router.push("/admin/news");
+      }
+    } catch {
+      setErrorMessage("An unexpected error occurred during article deletion.");
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Action & Navigation Bar */}
@@ -307,12 +330,25 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
               variant="outline"
               size="sm"
               onClick={() => setShowArchiveDialog(true)}
-              disabled={isSaving || isPublishing || isArchiving}
-              className="text-xs font-semibold border-rose-300 text-rose-700 hover:bg-rose-50"
+              disabled={isSaving || isPublishing || isArchiving || isDeleting}
+              className="text-xs font-semibold border-amber-300 text-amber-800 hover:bg-amber-50"
             >
               <Archive className="h-3.5 w-3.5 mr-1.5" />
               <span>Archive</span>
             </Button>
+          )}
+
+          {/* Permanent Delete Action */}
+          {isEditing && canDelete && (
+            <DestructiveConfirmDialog
+              title="Permanently delete this article?"
+              description="This action cannot be undone."
+              warningText="Any featured photography hosted in cloud storage will also be permanently deleted. This article will be completely removed from the database."
+              confirmLabel="Permanently Delete Article"
+              isPending={isDeleting}
+              onConfirm={handleDelete}
+              triggerLabel="Delete"
+            />
           )}
         </div>
       </div>

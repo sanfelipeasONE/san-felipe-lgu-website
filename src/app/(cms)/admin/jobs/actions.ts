@@ -7,6 +7,7 @@ import {
   updateJobOpportunity,
   publishJobOpportunity,
   archiveJobOpportunity,
+  deleteJobOpportunity,
   JobError,
 } from "@/server/jobs/service";
 import { jobOpportunityInputSchema } from "@/lib/validation/jobs";
@@ -201,6 +202,30 @@ export async function archiveJobAction(
     };
   } catch (err: unknown) {
     const message = err instanceof JobError ? err.message : "Failed to archive job opportunity.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Permanently deletes a Job Opportunity.
+ */
+export async function deleteJobAction(
+  id: string,
+  expectedUpdatedAt?: string
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const user = await requireUser();
+    const result = await deleteJobOpportunity(user, id, expectedUpdatedAt);
+
+    revalidatePath("/admin/jobs");
+    revalidatePath("/services/job-opportunities");
+
+    return {
+      success: true,
+      data: { id: result.id },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof JobError ? err.message : "Failed to delete job opportunity.";
     return { success: false, error: message };
   }
 }

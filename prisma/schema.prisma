@@ -279,9 +279,14 @@ model ServicePage {
 
   sections    ServiceSection[]
 
+  // Associated official Document (e.g. Citizen's Charter handbook PDF)
+  charterDocumentId String?
+  charterDocument   Document?       @relation("ServiceCharterDocument", fields: [charterDocumentId], references: [id], onDelete: SetNull)
+
   @@index([status])
   @@index([officeId])
   @@index([serviceKey])
+  @@index([charterDocumentId])
   @@map("service_pages")
 }
 
@@ -303,6 +308,13 @@ model ServiceSection {
   @@map("service_sections")
 }
 
+enum DocumentPurpose {
+  DOWNLOADABLE_FORM
+  CITIZENS_CHARTER
+  JOB_ATTACHMENT
+  OTHER_PUBLIC_DOCUMENT
+}
+
 enum DocumentStatus {
   DRAFT
   PUBLISHED
@@ -311,43 +323,47 @@ enum DocumentStatus {
 
 /// Official downloadable municipal documents and application form templates (Phase 14).
 model Document {
-  id               String         @id @default(cuid())
+  id               String          @id @default(cuid())
   title            String
-  description      String?        @db.Text
-  category         String?        // e.g. "Business & Licensing", "Civil Registry", "Building & Engineering", "Taxation & Revenue", "Social Services", "General Administration"
-  status           DocumentStatus @default(DRAFT)
+  description      String?         @db.Text
+  category         String?         // e.g. "Business & Licensing", "Civil Registry", "Building & Engineering", "Taxation & Revenue", "Social Services", "General Administration"
+  purpose          DocumentPurpose @default(DOWNLOADABLE_FORM)
+  status           DocumentStatus  @default(DRAFT)
 
   // Office ownership: every document must belong to a municipal office
   officeId         String
-  office           Office         @relation(fields: [officeId], references: [id], onDelete: Restrict)
+  office           Office          @relation(fields: [officeId], references: [id], onDelete: Restrict)
 
   // File metadata (Cloudinary raw storage)
   originalFilename String
   storagePublicId  String
   storageUrl       String
-  resourceType     String         @default("raw")
-  format           String         // "pdf" | "doc" | "docx" | "xls" | "xlsx"
-  mimeType         String         // e.g. "application/pdf"
-  bytes            Int            // file size in bytes
+  resourceType     String          @default("raw")
+  format           String          // "pdf" | "doc" | "docx" | "xls" | "xlsx"
+  mimeType         String          // e.g. "application/pdf"
+  bytes            Int             // file size in bytes
 
   // Authorship & audit tracking
   createdById      String
-  createdBy        User           @relation("DocumentsCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy        User            @relation("DocumentsCreated", fields: [createdById], references: [id], onDelete: Restrict)
   updatedById      String?
-  updatedBy        User?          @relation("DocumentsUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedBy        User?           @relation("DocumentsUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
 
   // Lifecycle timestamps
   publishedAt      DateTime?
   archivedAt       DateTime?
 
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
-  jobOpportunities JobOpportunity[]
+  jobOpportunities    JobOpportunity[]
+  charterServicePages ServicePage[]    @relation("ServiceCharterDocument")
 
   @@index([status])
   @@index([officeId])
   @@index([category])
+  @@index([purpose])
+  @@index([status, purpose])
   @@index([status, publishedAt])
   @@index([status, officeId])
   @@map("documents")

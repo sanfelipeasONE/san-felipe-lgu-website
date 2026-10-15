@@ -6,7 +6,7 @@ import { Edit, Shield, BookOpen } from "lucide-react";
 import { getCurrentUser } from "@/server/auth/session";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
-import { listRoles, listPermissionCatalog } from "@/server/roles/service";
+import { listRoles, listPermissionCatalog, CANONICAL_PRODUCTION_ROLES } from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { DataTable, type DataTableColumn } from "@/components/admin/data-table";
@@ -37,10 +37,14 @@ export default async function AdminRolesListPage() {
     redirect("/admin");
   }
 
-  const [roles, catalog] = await Promise.all([
+  const [allRoles, catalog] = await Promise.all([
     listRoles(user),
     listPermissionCatalog(user),
   ]);
+
+  const roles = allRoles.filter((r) =>
+    CANONICAL_PRODUCTION_ROLES.includes(r.slug as (typeof CANONICAL_PRODUCTION_ROLES)[number])
+  );
 
   // Group permission catalog by module for read-only inspection
   const catalogByModule = new Map<string, typeof catalog>();

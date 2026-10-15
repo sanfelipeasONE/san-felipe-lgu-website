@@ -156,6 +156,7 @@ export function UserForm({
           email: data.email,
           roleId: isSystemScoped ? data.roleId : undefined,
           officeId: isSystemScoped ? (data.officeId || null) : undefined,
+          status: data.status,
           expectedUpdatedAt: initialData.updatedAt,
         };
 
@@ -391,26 +392,62 @@ export function UserForm({
                     <p className="text-xs text-rose-600 mt-1">{errors.officeId.message as string}</p>
                   )}
                 </div>
+
+                {mode === "edit" && (
+                  <div className="sm:col-span-2">
+                    <label htmlFor="admin-status" className="block text-xs font-medium text-slate-700 mb-1">
+                      Account Status
+                    </label>
+                    <select
+                      id="admin-status"
+                      {...register("status")}
+                      className="w-full sm:w-64 px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition-colors bg-white font-medium"
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="SUSPENDED">SUSPENDED</option>
+                    </select>
+                  </div>
+                )}
               </div>
             ) : (
-              /* Office Admin View: Read-only scope enforcement */
-              <div className="pt-2 border-t border-slate-100 bg-slate-50/50 p-4 rounded-lg space-y-2 border border-slate-200/60">
+              /* Office Admin View: Read-only scope enforcement with permitted Status management */
+              <div className="pt-2 border-t border-slate-100 bg-slate-50/50 p-4 rounded-lg space-y-3 border border-slate-200/60">
                 <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
                   <Shield className="h-4 w-4 text-burgundy-700" />
                   <span>Office Administrator Authority Boundary</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-slate-500">Assigned Office:</span>
+                    <span className="text-slate-500">Assigned Office (Fixed):</span>
                     <p className="font-medium text-slate-800 mt-0.5">{userOfficeName || "Your Assigned Office"}</p>
                   </div>
                   <div>
-                    <span className="text-slate-500">Account Classification:</span>
+                    <span className="text-slate-500">Account Classification (Fixed):</span>
                     <p className="font-medium text-slate-800 mt-0.5">Staff (Content Personnel)</p>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 italic mt-1">
-                  Office Administrators create and manage ordinary Staff accounts within their assigned office only. Role, scope, and office are fixed by security policy.
+                {mode === "edit" && (
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <label htmlFor="staff-status" className="block text-xs font-medium text-slate-700 mb-1">
+                      Account Status
+                    </label>
+                    <select
+                      id="staff-status"
+                      {...register("status")}
+                      className="w-full sm:w-64 px-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition-colors bg-white font-medium"
+                    >
+                      <option value="ACTIVE">ACTIVE (Operational)</option>
+                      <option value="INACTIVE">INACTIVE (Deactivated)</option>
+                      <option value="SUSPENDED">SUSPENDED (Access Revoked)</option>
+                    </select>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Changing status to INACTIVE or SUSPENDED immediately invalidates all active staff sessions.
+                    </p>
+                  </div>
+                )}
+                <p className="text-[11px] text-slate-500 italic">
+                  Office Administrators create and manage ordinary Staff accounts within their assigned office only. Role and office are fixed by security policy.
                 </p>
               </div>
             )}

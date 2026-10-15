@@ -118,6 +118,10 @@ export default async function EditJobOpportunityPage({ params }: EditJobPageProp
           userOfficeName={userOfficeName}
           canPublish={hasPermission(user, PERMISSIONS.JOBS_PUBLISH)}
           canArchive={hasPermission(user, PERMISSIONS.JOBS_ARCHIVE)}
+          canDelete={
+            hasPermission(user, PERMISSIONS.JOBS_DELETE) &&
+            (isSystem || user.officeId === job.officeId)
+          }
         />
       </AdminContent>
     </div>

@@ -55,29 +55,44 @@ async function runAuthTests() {
   console.log("MUNICIPALITY OF SAN FELIPE - PHASE 10 AUTH TEST SUITE");
   console.log("=======================================================\n");
 
-  const testEmail = process.env.SEED_SUPERADMIN_EMAIL || "admin@sanfelipe.gov.ph";
   const validPassword = process.env.SEED_SUPERADMIN_PASSWORD || "TestDevPassword2026!";
   const wrongPassword = "WrongPassword999!";
   const nonExistentEmail = "ghost.official@sanfelipe.gov.ph";
 
-  // Ensure initial test user exists
-  const user = await prisma.user.findUnique({
-    where: { email: testEmail },
-    include: {
-      role: {
-        include: {
-          permissions: {
-            include: { permission: true },
+  // Ensure initial test user exists (lookup super-admin role user first to support custom emails)
+  const user =
+    (await prisma.user.findFirst({
+      where: { role: { slug: "super-admin" } },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: { permission: true },
+            },
           },
         },
+        office: true,
       },
-      office: true,
-    },
-  });
+    })) ||
+    (await prisma.user.findUnique({
+      where: { email: process.env.SEED_SUPERADMIN_EMAIL || "admin@sanfelipe.gov.ph" },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: { permission: true },
+            },
+          },
+        },
+        office: true,
+      },
+    }));
 
   if (!user) {
-    throw new Error(`Test setup failure: Expected seed user ${testEmail} not found in database.`);
+    throw new Error(`Test setup failure: Expected super-admin user not found in database.`);
   }
+
+  const testEmail = user.email;
 
   // -------------------------------------------------------------
   // Test 1: Password Verification with Argon2id

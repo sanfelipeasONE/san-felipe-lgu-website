@@ -12,6 +12,18 @@ import type {
   UpdateUserInput,
 } from "@/lib/validation/users";
 
+export const CANONICAL_ROLE_SLUGS = [
+  "super-admin",
+  "office-admin",
+  "staff",
+] as const;
+
+export const RETIRED_ROLE_SLUGS = [
+  "site-admin",
+  "office-editor",
+  "approver",
+] as const;
+
 export class UserError extends Error {
   constructor(
     message: string,
@@ -292,10 +304,13 @@ export async function createUser(
 
     const role = await prisma.role.findUnique({
       where: { id: input.roleId },
-      select: { id: true, isSystemScope: true, tier: true },
+      select: { id: true, isSystemScope: true, tier: true, slug: true },
     });
     if (!role) {
       throw new UserError("The selected role does not exist.", 400);
+    }
+    if ((RETIRED_ROLE_SLUGS as readonly string[]).includes(role.slug)) {
+      throw new UserError("The selected role is retired and cannot be assigned to user accounts.", 400);
     }
 
     if (!role.isSystemScope) {
@@ -447,6 +462,16 @@ export async function updateUser(
     throw new UserError("User account not found.", 404);
   }
 
+  // Office Admin eligibility check: strictly own office, strictly ordinary staff
+  if (!caller.isSystemScope) {
+    if (!caller.officeId || target.officeId !== caller.officeId) {
+      throw new UserError("Access restricted: you do not hold authority over this office's accounts.", 403);
+    }
+    if (target.role.tier !== RoleTier.STAFF || target.role.isSystemScope) {
+      throw new UserError("Access restricted: Office Administrators may only manage ordinary Staff accounts.", 403);
+    }
+  }
+
   // Optimistic concurrency check
   if (
     input.expectedUpdatedAt &&
@@ -458,7 +483,7 @@ export async function updateUser(
     );
   }
 
-  const normalizedEmail = input.email.trim().toLowerCase();
+  const normalizedEmail = input.email ? input.email.trim().toLowerCase() : target.email;
   if (normalizedEmail !== target.email) {
     const emailConflict = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -480,10 +505,13 @@ export async function updateUser(
     if (input.roleId && input.roleId !== target.roleId) {
       const targetRole = await prisma.role.findUnique({
         where: { id: input.roleId },
-        select: { id: true, isSystemScope: true, tier: true },
+        select: { id: true, isSystemScope: true, tier: true, slug: true },
       });
       if (!targetRole) {
         throw new UserError("The selected role does not exist.", 400);
+      }
+      if ((RETIRED_ROLE_SLUGS as readonly string[]).includes(targetRole.slug)) {
+        throw new UserError("The selected role is retired and cannot be assigned to user accounts.", 400);
       }
 
       // Last system admin protection on role demotion
@@ -525,20 +553,20 @@ export async function updateUser(
       nextStatus = input.status;
     }
   } else {
-    // OFFICE Admin: strictly own office, strictly ordinary staff
-    if (!caller.officeId || target.officeId !== caller.officeId) {
-      throw new UserError("Access restricted: you do not hold authority over this office's accounts.", 403);
+    // Office Admin: cannot alter role or office.
+    // Authorized to change status of ordinary Staff in own office.
+    if (input.status && input.status !== target.status) {
+      if (input.status !== UserStatus.ACTIVE && !hasPermission(caller, PERMISSIONS.USERS_DISABLE)) {
+        throw new UserError("Missing required permission: users.disable", 403);
+      }
+      nextStatus = input.status;
     }
-    if (target.role.tier !== RoleTier.STAFF || target.role.isSystemScope) {
-      throw new UserError("Access restricted: Office Administrators may only manage ordinary Staff accounts.", 403);
-    }
-    // Office admin CANNOT alter role, office, or status in this action
   }
 
   const updatedUser = await prisma.user.update({
     where: { id: target.id },
     data: {
-      name: input.name.trim(),
+      name: input.name ? input.name.trim() : target.name,
       email: normalizedEmail,
       officeId: nextOfficeId,
       roleId: nextRoleId,
@@ -556,8 +584,10 @@ export async function updateUser(
     },
   });
 
-  // Security: Revoke all sessions for target user if role or office changed
-  if (roleChanged || officeChanged) {
+  const statusChanged = nextStatus !== target.status;
+
+  // Security: Revoke all sessions for target user if role, office, or status changed to inactive/suspended
+  if (roleChanged || officeChanged || (statusChanged && nextStatus !== UserStatus.ACTIVE)) {
     await revokeAllUserSessions(target.id);
   }
 
@@ -567,10 +597,11 @@ export async function updateUser(
     officeId: updatedUser.officeId,
     details: {
       targetUserId: updatedUser.id,
-      nameChanged: input.name.trim() !== target.name,
-      emailChanged: normalizedEmail !== target.email,
+      nameChanged: input.name !== undefined ? input.name.trim() !== target.name : false,
+      emailChanged: input.email !== undefined ? normalizedEmail !== target.email : false,
       roleChanged,
       officeChanged,
+      statusChanged,
     },
     ipAddress: clientMeta?.ipAddress,
     userAgent: clientMeta?.userAgent,
@@ -606,6 +637,34 @@ export async function updateUser(
     });
   }
 
+  if (statusChanged) {
+    await recordAuditEvent({
+      action: AUDIT_ACTIONS.USER_STATUS_CHANGED,
+      userId: caller.id,
+      officeId: updatedUser.officeId,
+      details: {
+        targetUserId: updatedUser.id,
+        previousStatus: target.status,
+        newStatus: nextStatus,
+      },
+      ipAddress: clientMeta?.ipAddress,
+      userAgent: clientMeta?.userAgent,
+    });
+    if (nextStatus !== UserStatus.ACTIVE) {
+      await recordAuditEvent({
+        action: AUDIT_ACTIONS.USER_DISABLED,
+        userId: caller.id,
+        officeId: updatedUser.officeId,
+        details: {
+          targetUserId: updatedUser.id,
+          status: nextStatus,
+        },
+        ipAddress: clientMeta?.ipAddress,
+        userAgent: clientMeta?.userAgent,
+      });
+    }
+  }
+
   return updatedUser;
 }
 
@@ -621,7 +680,14 @@ export async function setUserStatus(
   expectedUpdatedAt?: string,
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
 ) {
-  if (!hasPermission(caller, PERMISSIONS.USERS_DISABLE)) {
+  const isActivating = newStatus === UserStatus.ACTIVE;
+  const hasDisablePerm = hasPermission(caller, PERMISSIONS.USERS_DISABLE);
+  const hasUpdatePerm = hasPermission(caller, PERMISSIONS.USERS_UPDATE);
+
+  if (!hasDisablePerm && !hasUpdatePerm) {
+    throw new UserError("Missing required permission to manage user status.", 403);
+  }
+  if (!isActivating && !hasDisablePerm) {
     throw new UserError("Missing required permission: users.disable", 403);
   }
 
@@ -630,6 +696,7 @@ export async function setUserStatus(
     include: {
       role: {
         select: {
+          slug: true,
           isSystemScope: true,
           tier: true,
           permissions: {
@@ -660,8 +727,8 @@ export async function setUserStatus(
     if (!caller.officeId || target.officeId !== caller.officeId) {
       throw new UserError("Access restricted: you do not hold authority over this office's accounts.", 403);
     }
-    if (target.role.tier !== RoleTier.STAFF || target.role.isSystemScope) {
-      throw new UserError("Access restricted: Office Administrators may only disable ordinary Staff accounts.", 403);
+    if (target.role.tier !== RoleTier.STAFF || target.role.isSystemScope || target.role.slug !== "staff") {
+      throw new UserError("Access restricted: Office Administrators may only manage status for ordinary Staff accounts.", 403);
     }
   }
 

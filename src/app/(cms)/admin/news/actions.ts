@@ -9,6 +9,7 @@ import {
   updateNewsArticle,
   publishNewsArticle,
   archiveNewsArticle,
+  deleteNewsArticle,
   removeNewsFeaturedImage,
   NewsError,
 } from "@/server/news/service";
@@ -221,6 +222,31 @@ export async function removeNewsImageAction(id: string): Promise<ActionResult> {
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof NewsError ? err.message : "Failed to remove image.";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Server Action: Permanently deletes a News article.
+ */
+export async function deleteNewsAction(
+  id: string,
+  expectedUpdatedAt?: string
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const user = await requireUser();
+    const result = await deleteNewsArticle(user, id, expectedUpdatedAt);
+
+    revalidatePath("/admin/news");
+    revalidatePath("/news");
+    revalidatePath("/");
+
+    return {
+      success: true,
+      data: { id: result.id },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof NewsError ? err.message : "Failed to delete news article.";
     return { success: false, error: message };
   }
 }

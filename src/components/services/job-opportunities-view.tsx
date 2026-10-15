@@ -6,6 +6,7 @@ import {
   Search,
   Calendar,
   ChevronDown,
+  FileText,
 } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -183,7 +184,18 @@ export function JobOpportunitiesView({ opportunities }: JobOpportunitiesViewProp
 
                     {isExpanded && (
                       <div className="p-5 pt-0 border-t border-gray-100 text-xs text-gov-charcoal space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+                        {job.description && (
+                          <div className="pt-3">
+                            <span className="font-bold text-gov-charcoal uppercase block mb-1.5">
+                              Job Overview / Detailed Duties
+                            </span>
+                            <div
+                              className="prose prose-xs max-w-none text-gov-charcoal/90 leading-relaxed bg-slate-50 p-3.5 rounded-xs border border-gray-200/80"
+                              dangerouslySetInnerHTML={{ __html: job.description }}
+                            />
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                           <div className="p-3 bg-slate-50 rounded-xs border border-gray-200/80">
                             <span className="font-bold text-gov-charcoal uppercase block mb-1">Education</span>
                             <span className="text-gov-muted">{job.educationRequirement ?? "None Required"}</span>
@@ -201,6 +213,34 @@ export function JobOpportunitiesView({ opportunities }: JobOpportunitiesViewProp
                             <span className="text-gov-muted">{job.eligibilityRequirement ?? "None Required"}</span>
                           </div>
                         </div>
+
+                        {job.competencyRequirements && job.competencyRequirements.length > 0 && (
+                          <div className="p-3 bg-slate-50 rounded-xs border border-gray-200/80">
+                            <span className="font-bold text-gov-charcoal uppercase block mb-1">Competencies</span>
+                            <p className="text-gov-muted">{job.competencyRequirements.join(", ")}</p>
+                          </div>
+                        )}
+
+                        {job.applicationInstructions && job.applicationInstructions.length > 0 && (
+                          <div className="p-3 bg-slate-50 rounded-xs border border-gray-200/80">
+                            <span className="font-bold text-gov-charcoal uppercase block mb-1">Application Instructions</span>
+                            <p className="text-gov-muted">{job.applicationInstructions.join(" ")}</p>
+                          </div>
+                        )}
+
+                        {job.officialAttachmentUrl && (
+                          <div className="pt-2 flex items-center justify-end">
+                            <a
+                              href={job.officialAttachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-burgundy-800 hover:bg-burgundy-900 text-white rounded-xs text-xs font-semibold transition-colors shadow-2xs"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>View Official Vacancy Bulletin (PDF)</span>
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

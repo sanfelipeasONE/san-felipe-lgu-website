@@ -665,10 +665,13 @@ function formatAuditAction(action: string): {
   // Humanize action label
   let actionLabel = action.replace(/_/g, " ").replace(/\./g, " : ");
   if (action === "posts.publish") actionLabel = "Content Published";
+  else if (action === "posts.delete" || action === "POST_DELETED") actionLabel = "Article Deleted";
   else if (action === "documents.publish") actionLabel = "Document Published";
   else if (action === "documents.create") actionLabel = "Document Uploaded";
+  else if (action === "documents.delete" || action === "DOCUMENT_DELETED") actionLabel = "Document Deleted";
   else if (action === "jobs.publish") actionLabel = "Job Vacancy Posted";
   else if (action === "jobs.create") actionLabel = "Job Draft Created";
+  else if (action === "jobs.delete" || action === "JOB_DELETED") actionLabel = "Job Vacancy Deleted";
   else if (action === "posts.create") actionLabel = "Draft Created";
   else if (action === "posts.update") actionLabel = "Draft Updated";
   else if (action === "auth.login_success") actionLabel = "Staff Authenticated";

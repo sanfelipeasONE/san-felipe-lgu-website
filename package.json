@@ -24,7 +24,8 @@
     "test:audit": "tsx tests/audit-logs.test.ts",
     "test:security": "tsx tests/security-hardening.test.ts",
     "test:public-integration": "tsx tests/public-database-integration.test.ts",
-    "test:dashboard": "tsx tests/dashboard.test.ts"
+    "test:dashboard": "tsx tests/dashboard.test.ts",
+    "test:phase19-3": "tsx tests/phase19-3-production-cleanup.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

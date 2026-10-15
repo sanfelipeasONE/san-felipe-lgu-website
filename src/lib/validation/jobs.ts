@@ -105,7 +105,7 @@ export const jobOpportunityInputSchema = z
       .nullish(),
     description: z
       .string()
-      .max(5000, "Description cannot exceed 5000 characters.")
+      .max(20000, "Description cannot exceed 20000 characters.")
       .nullish(),
     education: z
       .string()

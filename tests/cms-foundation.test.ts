@@ -182,11 +182,11 @@ async function runCMSFoundationTests() {
   assert(superItemIds.includes("dashboard"), "Super Admin has Dashboard item");
   assert(superItemIds.includes("news"), "Super Admin has News item");
   assert(superItemIds.includes("services"), "Super Admin has Services item");
-  assert(superItemIds.includes("citizens-charter"), "Super Admin has Citizen's Charter item");
-  assert(superItemIds.includes("business-permits"), "Super Admin has Business Permits item");
-  assert(superItemIds.includes("downloadable-forms"), "Super Admin has Downloadable Forms item");
+  assert(superItemIds.includes("documents"), "Super Admin has Documents item");
   assert(superItemIds.includes("job-opportunities"), "Super Admin has Job Opportunities item");
-  assert(superItemIds.includes("emergency-hotlines"), "Super Admin has Emergency Hotlines item");
+  assert(!superItemIds.includes("citizens-charter"), "Citizen's Charter removed from direct navigation (managed under Services)");
+  assert(!superItemIds.includes("business-permits"), "Business Permits removed from direct navigation (managed under Services)");
+  assert(!superItemIds.includes("emergency-hotlines"), "Emergency Hotlines removed from CMS navigation");
   assert(superItemIds.includes("offices"), "Super Admin has Municipal Offices item");
   assert(superItemIds.includes("users"), "Super Admin has Staff Accounts item");
   assert(superItemIds.includes("roles"), "Super Admin has Roles & Permissions item");
@@ -265,8 +265,8 @@ async function runCMSFoundationTests() {
   const servicesItem = allConfigItems.find((i) => i.id === "services");
   assert(servicesItem?.isImplemented === true, "Services item is activated with isImplemented: true in Phase 13");
 
-  const downloadableFormsItem = allConfigItems.find((i) => i.id === "downloadable-forms");
-  assert(downloadableFormsItem?.isImplemented === true, "Downloadable Forms item is activated with isImplemented: true in Phase 14");
+  const downloadableFormsItem = allConfigItems.find((i) => i.id === "documents" || i.id === "downloadable-forms");
+  assert(downloadableFormsItem?.isImplemented === true, "Documents item is activated with isImplemented: true in Phase 14");
 
   const jobOpportunitiesItem = allConfigItems.find((i) => i.id === "job-opportunities");
   assert(jobOpportunitiesItem?.isImplemented === true, "Job Opportunities item is activated with isImplemented: true in Phase 15");

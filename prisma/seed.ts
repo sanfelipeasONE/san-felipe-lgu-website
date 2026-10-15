@@ -59,6 +59,7 @@ const BASELINE_PERMISSIONS = [
   { code: "jobs.update", name: "Update Job Opportunities", module: "jobs", description: "Edit municipal job vacancy details" },
   { code: "jobs.publish", name: "Publish Job Opportunities", module: "jobs", description: "Publish official job vacancies directly to the portal" },
   { code: "jobs.archive", name: "Archive Job Opportunities", module: "jobs", description: "Archive municipal job opportunities" },
+  { code: "jobs.delete", name: "Delete Job Opportunities", module: "jobs", description: "Permanently delete municipal job opportunities" },
 ];
 
 const BASELINE_ROLES = [
@@ -242,12 +243,12 @@ async function main() {
   // Office Admin permissions
   const officeAdminRoleId = roleMap.get("office-admin")!;
   const officeAdminPermCodes = [
-    "users.view", "offices.view", "offices.update",
+    "users.view", "users.create", "users.update", "users.disable", "offices.view", "offices.update",
     "posts.view", "posts.create", "posts.update", "posts.delete", "posts.submit", "posts.approve", "posts.archive",
     "documents.view", "documents.create", "documents.update", "documents.delete", "documents.approve", "documents.publish", "documents.archive",
     "events.create", "events.update", "events.publish",
     "services.view", "services.update", "services.publish",
-    "jobs.view", "jobs.create", "jobs.update", "jobs.publish", "jobs.archive",
+    "jobs.view", "jobs.create", "jobs.update", "jobs.publish", "jobs.archive", "jobs.delete",
   ];
   for (const code of officeAdminPermCodes) {
     const permId = permissionMap.get(code);
@@ -327,22 +328,14 @@ async function main() {
     if (adminPassword.length < 12) {
       console.warn("⚠️  SEED_SUPERADMIN_PASSWORD is shorter than 12 characters. Skipping user creation for security.");
     } else {
-      const existingAdmin = await prisma.user.findUnique({
-        where: { email: adminEmail },
+      // Check if ANY super admin user already exists in the database
+      const existingSuperAdmin = await prisma.user.findFirst({
+        where: { role: { slug: "super-admin" } },
       });
 
-      if (existingAdmin) {
-        // Protect existing production-like users: preserve existing password on rerun
-        await prisma.user.update({
-          where: { email: adminEmail },
-          data: {
-            name: adminName,
-            roleId: superAdminRoleId,
-            officeId: null,
-            status: "ACTIVE",
-          },
-        });
-        console.log(`   ✓ Super Admin user verified (ID: ${existingAdmin.id}, Email: ${existingAdmin.email}, password preserved).`);
+      if (existingSuperAdmin) {
+        // Protect existing production-like users: preserve existing account, email, and password on rerun
+        console.log(`   ✓ Super Admin user verified (ID: ${existingSuperAdmin.id}, Email: ${existingSuperAdmin.email}, credentials untouched).`);
       } else {
         console.log(`⚙️  Upserting Super Admin user (${adminEmail})...`);
         const passwordHash = await hash(adminPassword, {

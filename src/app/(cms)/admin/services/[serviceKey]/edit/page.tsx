@@ -71,6 +71,25 @@ export default async function AdminEditServicePage({ params }: EditServicePagePr
     });
   }
 
+  // Load available Citizen's Charter documents if managing citizens-charter
+  let charterDocuments: Array<{ id: string; title: string; originalFilename: string; status: string }> = [];
+  if (serviceKey === "citizens-charter") {
+    charterDocuments = await prisma.document.findMany({
+      where: {
+        purpose: "CITIZENS_CHARTER",
+        status: "PUBLISHED",
+        ...(isSystemScoped(user) ? {} : { officeId: user.officeId! }),
+      },
+      select: {
+        id: true,
+        title: true,
+        originalFilename: true,
+        status: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   const canPublish = hasPermission(user, PERMISSIONS.SERVICES_PUBLISH);
 
   return (
@@ -88,6 +107,7 @@ export default async function AdminEditServicePage({ params }: EditServicePagePr
       <ServicePageForm
         servicePage={servicePage}
         offices={officesList}
+        charterDocuments={charterDocuments}
         isSystemScoped={isSystemScoped(user)}
         canPublish={canPublish}
       />

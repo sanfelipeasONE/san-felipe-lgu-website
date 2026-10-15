@@ -47,8 +47,10 @@ export interface ServicePageFormProps {
       content: string;
       sortOrder: number;
     }>;
+    charterDocumentId?: string | null;
   };
   offices: Array<{ id: string; name: string; shortName: string | null }>;
+  charterDocuments?: Array<{ id: string; title: string; originalFilename: string; status: string }>;
   isSystemScoped: boolean;
   canPublish: boolean;
 }
@@ -56,6 +58,7 @@ export interface ServicePageFormProps {
 export function ServicePageForm({
   servicePage,
   offices,
+  charterDocuments = [],
   isSystemScoped,
   canPublish,
 }: ServicePageFormProps) {
@@ -65,6 +68,7 @@ export function ServicePageForm({
   const [title, setTitle] = React.useState(servicePage.title);
   const [description, setDescription] = React.useState(servicePage.description || "");
   const [officeId, setOfficeId] = React.useState(servicePage.officeId || "");
+  const [charterDocumentId, setCharterDocumentId] = React.useState(servicePage.charterDocumentId || "");
   const [sections, setSections] = React.useState<ServiceSectionInput[]>(
     servicePage.sections.map((s) => ({
       id: s.id,
@@ -165,6 +169,7 @@ export function ServicePageForm({
         title,
         description: description.trim() || null,
         officeId: isSystemScoped ? (officeId || null) : servicePage.officeId,
+        charterDocumentId: servicePage.serviceKey === "citizens-charter" ? (charterDocumentId || null) : undefined,
         sections,
         expectedUpdatedAt,
       });
@@ -197,6 +202,7 @@ export function ServicePageForm({
         title,
         description: description.trim() || null,
         officeId: isSystemScoped ? (officeId || null) : servicePage.officeId,
+        charterDocumentId: servicePage.serviceKey === "citizens-charter" ? (charterDocumentId || null) : undefined,
         sections,
         expectedUpdatedAt,
       });
@@ -647,6 +653,50 @@ export function ServicePageForm({
               </div>
             )}
           </div>
+
+          {/* Card: Official Citizen's Charter PDF (citizens-charter route only) */}
+          {servicePage.serviceKey === "citizens-charter" && (
+            <div className="bg-white border border-gray-200 rounded-xs p-5 shadow-2xs space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gov-muted border-b border-gray-100 pb-2 flex items-center justify-between">
+                <span>Official Charter PDF</span>
+                <span className="text-[10px] font-semibold text-burgundy-800 bg-burgundy-50 px-2 py-0.5 rounded-xs">
+                  Document Integration
+                </span>
+              </h3>
+              <p className="text-[11px] text-gov-muted leading-relaxed">
+                Attach an official Citizen&apos;s Charter document uploaded in the CMS with purpose &quot;Citizen&apos;s Charter&quot;.
+              </p>
+              <div>
+                <label
+                  htmlFor="charter-doc-select"
+                  className="block text-[11px] font-bold text-gov-charcoal mb-1"
+                >
+                  Linked Charter Document
+                </label>
+                <select
+                  id="charter-doc-select"
+                  value={charterDocumentId}
+                  onChange={(e) => {
+                    setCharterDocumentId(e.target.value);
+                    markDirty();
+                  }}
+                  className="w-full text-xs p-2 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer focus:outline-none focus:ring-1 focus:ring-burgundy-700"
+                >
+                  <option value="">-- No Document Linked (Unpublished / None) --</option>
+                  {charterDocuments.map((doc) => (
+                    <option key={doc.id} value={doc.id}>
+                      {doc.title} ({doc.originalFilename}) [{doc.status}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {charterDocumentId && (
+                <p className="text-[10px] text-emerald-700 font-medium bg-emerald-50 p-2 rounded-xs border border-emerald-200">
+                  When this service page and document are published, public visitors can View and Download this official PDF.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

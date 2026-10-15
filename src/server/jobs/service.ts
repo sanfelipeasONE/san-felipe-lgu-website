@@ -10,6 +10,7 @@ import {
   sanitizePlainText,
   type JobOpportunityInput,
 } from "@/lib/validation/jobs";
+import { sanitizeArticleHtml } from "@/server/news/sanitize";
 import { getDocumentDownloadUrl } from "@/server/media/cloudinary-documents";
 import type { SessionUser } from "@/server/auth/session";
 import type { Prisma, JobOpportunityStatus } from "@prisma/client";
@@ -317,7 +318,7 @@ export async function createJobOpportunity(
       employmentType: sanitizePlainText(input.employmentType),
       salaryGrade: sanitizePlainText(input.salaryGrade),
       monthlySalary: sanitizePlainText(input.monthlySalary),
-      description: sanitizePlainText(input.description),
+      description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
       education: sanitizePlainText(input.education),
       training: sanitizePlainText(input.training),
       experience: sanitizePlainText(input.experience),
@@ -442,7 +443,7 @@ export async function updateJobOpportunity(
       employmentType: sanitizePlainText(input.employmentType),
       salaryGrade: sanitizePlainText(input.salaryGrade),
       monthlySalary: sanitizePlainText(input.monthlySalary),
-      description: sanitizePlainText(input.description),
+      description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
       education: sanitizePlainText(input.education),
       training: sanitizePlainText(input.training),
       experience: sanitizePlainText(input.experience),
@@ -712,6 +713,69 @@ export async function archiveJobOpportunity(
     ...archived,
     isClosed: isJobClosed(archived.closingDate),
   };
+}
+
+/**
+ * Permanently deletes a Job Opportunity.
+ * - Requires jobs.delete permission.
+ * - SYSTEM scope: can delete across municipal offices.
+ * - OFFICE scope: strictly restricted to own office (job.officeId === user.officeId).
+ * - STAFF: denied permanent deletion.
+ * - CRITICAL: Does NOT delete referenced attachment Document! (Section L).
+ * - Records durable audit log (AUDIT_ACTIONS.JOB_DELETED).
+ */
+export async function deleteJobOpportunity(
+  user: SessionUser,
+  id: string,
+  expectedUpdatedAt?: string
+) {
+  if (!hasPermission(user, PERMISSIONS.JOBS_DELETE)) {
+    throw new JobError("You do not have permission to delete job opportunities.", 403);
+  }
+
+  const existing = await prisma.jobOpportunity.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new JobError("Job opportunity not found.", 404);
+  }
+
+  if (!isSystemScoped(user)) {
+    if (!user.officeId || existing.officeId !== user.officeId) {
+      throw new JobError("Access restricted: you may only delete job opportunities belonging to your assigned office.", 403);
+    }
+  }
+
+  if (
+    expectedUpdatedAt &&
+    existing.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new JobError(
+      "This job opportunity was modified by another user. Please refresh and review before deleting.",
+      409
+    );
+  }
+
+  // Delete database record (Document attachment is intentionally NOT deleted)
+  await prisma.jobOpportunity.delete({
+    where: { id },
+  });
+
+  await logAuditEvent({
+    action: AUDIT_ACTIONS.JOB_DELETED,
+    userId: user.id,
+    officeId: existing.officeId,
+    details: {
+      jobId: existing.id,
+      title: existing.title,
+      officeId: existing.officeId,
+      previousStatus: existing.status,
+      entityType: "JobOpportunity",
+    },
+  });
+
+  return { success: true, id: existing.id };
 }
 
 /**

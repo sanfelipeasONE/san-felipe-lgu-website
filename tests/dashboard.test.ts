@@ -769,16 +769,16 @@ async function runDashboardTestSuite() {
 
     // Quick action permission gating check
     const { hasPermission } = await import("../src/lib/authz/scope");
-    assert(
-      hasPermission(officeAdminSession, "users.create") === false,
-      "Office Admin without users.create cannot see Create Staff Account quick action"
-    );
-    const oaWithUserCreate: SessionUser = {
+    const oaWithoutUserCreate: SessionUser = {
       ...officeAdminSession,
-      permissions: [...officeAdminPermissions, "users.create"],
+      permissions: officeAdminPermissions.filter((p) => p !== "users.create"),
     };
     assert(
-      hasPermission(oaWithUserCreate, "users.create") === true,
+      hasPermission(oaWithoutUserCreate, "users.create") === false,
+      "Office Admin without users.create cannot see Create Staff Account quick action"
+    );
+    assert(
+      hasPermission(officeAdminSession, "users.create") === true,
       "Office Admin granted users.create is permitted to see Create Staff Account quick action"
     );
     assert(

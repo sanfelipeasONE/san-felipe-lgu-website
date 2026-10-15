@@ -240,6 +240,22 @@ export function validateDocumentFile(file: {
   return { valid: true, extension: ext as AllowedDocumentExtension };
 }
 
+export const DOCUMENT_PURPOSES = [
+  "DOWNLOADABLE_FORM",
+  "CITIZENS_CHARTER",
+  "JOB_ATTACHMENT",
+  "OTHER_PUBLIC_DOCUMENT",
+] as const;
+
+export type DocumentPurpose = (typeof DOCUMENT_PURPOSES)[number];
+
+export const DOCUMENT_PURPOSE_LABELS: Record<DocumentPurpose, string> = {
+  DOWNLOADABLE_FORM: "Downloadable Form",
+  CITIZENS_CHARTER: "Citizen's Charter",
+  JOB_ATTACHMENT: "Job Attachment",
+  OTHER_PUBLIC_DOCUMENT: "Other Public Document",
+};
+
 /**
  * Zod schema for document metadata creation and updates.
  */
@@ -260,6 +276,10 @@ export const documentInputSchema = z.object({
     .trim()
     .max(100, "Category cannot exceed 100 characters.")
     .nullable()
+    .optional(),
+  purpose: z
+    .enum(DOCUMENT_PURPOSES)
+    .default("DOWNLOADABLE_FORM")
     .optional(),
   officeId: z
     .string()

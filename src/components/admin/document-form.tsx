@@ -16,17 +16,22 @@ import {
 import { StatusBadge } from "@/components/admin/status-badge";
 import {
   DOCUMENT_CATEGORIES,
+  DOCUMENT_PURPOSES,
+  DOCUMENT_PURPOSE_LABELS,
   ALLOWED_DOCUMENT_EXTENSIONS,
   MAX_DOCUMENT_FILE_SIZE_BYTES,
   getFileExtension,
   formatBytes,
+  type DocumentPurpose,
 } from "@/lib/validation/documents";
 import {
   createDocumentAction,
   updateDocumentAction,
   publishDocumentAction,
   archiveDocumentAction,
+  deleteDocumentAction,
 } from "@/app/(cms)/admin/documents/actions";
+import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
 
 interface OfficeOption {
   id: string;
@@ -40,6 +45,7 @@ interface DocumentFormProps {
     title: string;
     description: string | null;
     category: string | null;
+    purpose?: DocumentPurpose;
     status: string;
     officeId: string;
     office: { id: string; name: string };
@@ -54,6 +60,7 @@ interface DocumentFormProps {
   userOfficeName?: string;
   canPublish?: boolean;
   canArchive?: boolean;
+  canDelete?: boolean;
 }
 
 export function DocumentForm({
@@ -64,6 +71,7 @@ export function DocumentForm({
   userOfficeName,
   canPublish = false,
   canArchive = false,
+  canDelete = false,
 }: DocumentFormProps) {
   const router = useRouter();
 
@@ -71,6 +79,9 @@ export function DocumentForm({
   const [title, setTitle] = React.useState(initialData?.title || "");
   const [description, setDescription] = React.useState(initialData?.description || "");
   const [category, setCategory] = React.useState(initialData?.category || "");
+  const [purpose, setPurpose] = React.useState<DocumentPurpose>(
+    initialData?.purpose || "DOWNLOADABLE_FORM"
+  );
   const [officeId, setOfficeId] = React.useState(initialData?.officeId || offices[0]?.id || "");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
 
@@ -133,6 +144,7 @@ export function DocumentForm({
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("category", category.trim());
+      formData.append("purpose", purpose);
       if (isSystemScoped) {
         formData.append("officeId", officeId);
       }
@@ -164,6 +176,27 @@ export function DocumentForm({
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialData) return;
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setIsPending(true);
+
+    try {
+      const res = await deleteDocumentAction(initialData.id, initialData.updatedAt);
+      if (!res.success) {
+        setErrorMessage(res.error || "Failed to delete document.");
+        setIsPending(false);
+      } else {
+        router.push("/admin/documents");
+        router.refresh();
+      }
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred while deleting.");
       setIsPending(false);
     }
   };
@@ -274,6 +307,31 @@ export function DocumentForm({
             placeholder="e.g., Application for Mayor's Business Permit"
             className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
           />
+        </div>
+
+        {/* Document Purpose Selector */}
+        <div>
+          <label htmlFor="doc-purpose" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+            Document Purpose <span className="text-rose-500">*</span>
+          </label>
+          <select
+            id="doc-purpose"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value as DocumentPurpose)}
+            className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
+          >
+            {DOCUMENT_PURPOSES.map((p) => (
+              <option key={p} value={p}>
+                {DOCUMENT_PURPOSE_LABELS[p]}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-slate-500 mt-1">
+            {purpose === "DOWNLOADABLE_FORM" && "Official forms and applications intended for citizen or business municipal transactions."}
+            {purpose === "CITIZENS_CHARTER" && "Official Citizen's Charter guideline or frontline service standards document."}
+            {purpose === "JOB_ATTACHMENT" && "Official supporting document attached to a municipal job opportunity vacancy."}
+            {purpose === "OTHER_PUBLIC_DOCUMENT" && "Official public document published for general municipal transparency."}
+          </p>
         </div>
 
         {/* Category & Office Grid */}
@@ -430,6 +488,18 @@ export function DocumentForm({
         </button>
 
         <div className="flex flex-wrap items-center gap-2.5 ml-auto">
+          {mode === "edit" && canDelete && (
+            <DestructiveConfirmDialog
+              title="Permanently delete this document?"
+              description="This action cannot be undone."
+              warningText="The managed document file in cloud storage will be permanently removed upon deletion. Ensure no active service pages or job vacancies depend on this file."
+              confirmLabel="Permanently Delete Document"
+              isPending={isPending}
+              onConfirm={handleDelete}
+              triggerLabel="Delete Document"
+            />
+          )}
+
           {mode === "edit" && canArchive && initialData?.status !== "ARCHIVED" && (
             <button
               type="button"

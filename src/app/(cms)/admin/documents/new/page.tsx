@@ -50,7 +50,7 @@ export default async function CreateDocumentPage() {
         title="Upload Municipal Document"
         description="Upload official application forms, procedural guidelines, or civic templates for citizen access."
         breadcrumbs={[
-          { label: "Downloadable Forms", href: "/admin/documents" },
+          { label: "Documents", href: "/admin/documents" },
           { label: "Upload Document" },
         ]}
       />

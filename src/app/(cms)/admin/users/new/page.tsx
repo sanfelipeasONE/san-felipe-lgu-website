@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/server/auth/session";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { prisma } from "@/server/db/client";
+import { CANONICAL_PRODUCTION_ROLES } from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { UserForm, type RoleOption, type OfficeOption } from "@/components/admin/user-form";
@@ -42,6 +43,9 @@ export default async function NewUserPage() {
     });
 
     const dbRoles = await prisma.role.findMany({
+      where: {
+        slug: { in: [...CANONICAL_PRODUCTION_ROLES] },
+      },
       select: {
         id: true,
         name: true,

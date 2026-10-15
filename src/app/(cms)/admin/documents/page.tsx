@@ -16,7 +16,7 @@ import { DOCUMENT_CATEGORIES } from "@/lib/validation/documents";
 import type { DocumentStatus } from "@prisma/client";
 
 export const metadata: Metadata = {
-  title: "Downloadable Forms & Document Management | San Felipe LGU CMS",
+  title: "Document Management | San Felipe LGU CMS",
   description: "Official municipal application forms, civic documents, and guidelines management",
 };
 
@@ -82,9 +82,9 @@ export default async function AdminDocumentsListPage({ searchParams }: Documents
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
-        title="Downloadable Forms & Documents"
-        description="Manage official application forms, civic templates, and procedural guidelines available for public download."
-        breadcrumbs={[{ label: "Downloadable Forms" }]}
+        title="Document Management"
+        description="Manage official municipal application forms, Citizen's Charter documents, civic templates, and procedural guidelines."
+        breadcrumbs={[{ label: "Documents" }]}
         actions={
           canCreate ? (
             <Link

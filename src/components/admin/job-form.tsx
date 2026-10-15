@@ -18,8 +18,11 @@ import {
   updateJobAction,
   publishJobAction,
   archiveJobAction,
+  deleteJobAction,
 } from "@/app/(cms)/admin/jobs/actions";
 import { ALLOWED_EMPLOYMENT_TYPES } from "@/lib/validation/jobs";
+import { TiptapEditor } from "@/components/admin/tiptap-editor";
+import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
 
 export interface OfficeOption {
   id: string;
@@ -63,6 +66,7 @@ export interface JobFormProps {
   userOfficeName?: string;
   canPublish?: boolean;
   canArchive?: boolean;
+  canDelete?: boolean;
 }
 
 export function JobForm({
@@ -74,6 +78,7 @@ export function JobForm({
   userOfficeName,
   canPublish = false,
   canArchive = false,
+  canDelete = false,
 }: JobFormProps) {
   const router = useRouter();
 
@@ -221,6 +226,28 @@ export function JobForm({
     } catch {
       setErrorMessage("An error occurred while archiving.");
       setIsPending(false);
+    }
+  };
+
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const handleDelete = async () => {
+    if (!initialData?.id) return;
+    setIsDeleting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const res = await deleteJobAction(initialData.id, initialData.updatedAt);
+      if (!res.success) {
+        setErrorMessage(res.error || "Failed to delete job opportunity.");
+        setIsDeleting(false);
+      } else {
+        router.push("/admin/jobs");
+      }
+    } catch {
+      setErrorMessage("An unexpected error occurred during job opportunity deletion.");
+      setIsDeleting(false);
     }
   };
 
@@ -440,18 +467,11 @@ export function JobForm({
             </div>
 
             {/* Overview / Description */}
-            <div className="md:col-span-2 space-y-1">
-              <label htmlFor="job-desc" className="block text-xs font-semibold text-gov-charcoal">
-                Job Overview / Core Duties <span className="text-gov-muted font-normal">(Optional)</span>
+            <div className="md:col-span-2 space-y-1.5">
+              <label className="block text-xs font-semibold text-gov-charcoal">
+                Job Overview / Detailed Duties <span className="text-gov-muted font-normal">(Article-style content with formatting)</span>
               </label>
-              <textarea
-                id="job-desc"
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter position overview and key departmental responsibilities..."
-                className="w-full px-3 py-2 text-xs bg-white border border-gray-300 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
-              />
+              <TiptapEditor value={description} onChange={setDescription} />
             </div>
           </div>
 
@@ -576,7 +596,7 @@ export function JobForm({
               </select>
             </div>
             <p className="text-[11px] text-gov-muted">
-              Select an official vacancy notice or publication bulletin uploaded via CMS Downloadable Forms.
+              Select an official vacancy notice or publication bulletin uploaded via CMS Documents.
             </p>
           </div>
         </div>
@@ -625,6 +645,19 @@ export function JobForm({
                 <Archive className="w-3.5 h-3.5" />
                 Archive
               </button>
+            )}
+
+            {/* Permanent Delete Action */}
+            {mode === "edit" && canDelete && initialData?.id && (
+              <DestructiveConfirmDialog
+                title="Permanently delete this item?"
+                description="This action cannot be undone."
+                warningText="This job vacancy announcement will be completely removed from the database and public portal. Any linked attachment document in the Document Library will NOT be deleted."
+                confirmLabel="Permanently Delete Vacancy"
+                isPending={isDeleting}
+                onConfirm={handleDelete}
+                triggerLabel="Delete"
+              />
             )}
           </div>
         </div>

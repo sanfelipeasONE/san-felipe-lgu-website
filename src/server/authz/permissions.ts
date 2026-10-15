@@ -55,6 +55,7 @@ export const PERMISSIONS = {
   JOBS_UPDATE: "jobs.update",
   JOBS_PUBLISH: "jobs.publish",
   JOBS_ARCHIVE: "jobs.archive",
+  JOBS_DELETE: "jobs.delete",
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

@@ -497,6 +497,77 @@ export async function archiveNewsArticle(
 }
 
 /**
+ * Permanently deletes a News article.
+ * - Requires posts.delete permission.
+ * - SYSTEM scope: can delete across municipal offices.
+ * - OFFICE scope: strictly restricted to own office (article.officeId === user.officeId).
+ * - STAFF: denied permanent deletion.
+ * - Cleans up associated Cloudinary featured image asset if present.
+ * - Records durable audit log (AUDIT_ACTIONS.POST_DELETED).
+ */
+export async function deleteNewsArticle(
+  user: SessionUser,
+  id: string,
+  expectedUpdatedAt?: string
+) {
+  if (!hasPermission(user, PERMISSIONS.POSTS_DELETE)) {
+    throw new NewsError("Missing required permission: posts.delete", 403);
+  }
+
+  const existing = await prisma.newsArticle.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new NewsError("News article not found.", 404);
+  }
+
+  if (!isSystemScoped(user)) {
+    if (!user.officeId || existing.officeId !== user.officeId) {
+      throw new NewsError("Access restricted: you may only delete articles belonging to your assigned office.", 403);
+    }
+  }
+
+  if (
+    expectedUpdatedAt &&
+    existing.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new NewsError(
+      "This article was modified by another user. Please refresh and review before deleting.",
+      409
+    );
+  }
+
+  const imagePublicId = existing.featuredImagePublicId;
+
+  await prisma.newsArticle.delete({
+    where: { id },
+  });
+
+  if (imagePublicId) {
+    deleteCloudinaryAsset(imagePublicId).catch((err) => {
+      console.error("[CLOUDINARY] Failed to clean up deleted news article image:", err);
+    });
+  }
+
+  await logAuditEvent({
+    action: AUDIT_ACTIONS.POST_DELETED,
+    userId: user.id,
+    officeId: existing.officeId,
+    details: {
+      articleId: existing.id,
+      title: existing.title,
+      slug: existing.slug,
+      officeId: existing.officeId,
+      previousStatus: existing.status,
+      entityType: "NewsArticle",
+    },
+  });
+
+  return { success: true, id: existing.id };
+}
+
+/**
  * Removes the featured image from a News article and cleans up the Cloudinary asset.
  */
 export async function removeNewsFeaturedImage(user: SessionUser, id: string) {
