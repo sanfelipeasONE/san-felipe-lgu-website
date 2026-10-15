@@ -128,14 +128,12 @@ export interface OfficeItem {
 export const OFFICES_DATA: OfficeItem[] = [
   {
     name: "Office of the Mayor",
-    acronym: "OM",
     description: "Executive leadership, overall municipal administration, and citizen assistance programs.",
     href: "/offices",
     iconName: "briefcase",
   },
   {
     name: "Office of the Sangguniang Bayan",
-    acronym: "OSB",
     description: "The legislative branch of the municipality, formulating municipal ordinances and resolutions.",
     href: "/offices",
     iconName: "gavel",
@@ -149,28 +147,24 @@ export const OFFICES_DATA: OfficeItem[] = [
   },
   {
     name: "Municipal Engineering Office",
-    acronym: "MEO",
     description: "Building permits, infrastructure monitoring, public works maintenance, and structural safety.",
     href: "/offices",
     iconName: "wrench",
   },
   {
     name: "Municipal Treasury Office",
-    acronym: "MTO",
     description: "Local revenue collection, business taxes, community tax certificates, and municipal treasury funds.",
     href: "/offices",
     iconName: "landmark",
   },
   {
     name: "Municipal Assessor’s Office",
-    acronym: "MAO",
     description: "Real property assessment, tax declarations, property valuation records, and cadastral mapping.",
     href: "/offices",
     iconName: "file-spreadsheet",
   },
   {
     name: "Municipal Social Welfare and Development Office",
-    acronym: "MSWDO",
     description: "Social assistance programs, senior citizen and PWD benefits, family counseling, and emergency relief.",
     href: "/offices",
     iconName: "heart",

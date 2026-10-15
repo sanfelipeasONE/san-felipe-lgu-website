@@ -22,7 +22,8 @@
     "test:offices": "tsx tests/office-administration.test.ts",
     "test:roles": "tsx tests/role-administration.test.ts",
     "test:audit": "tsx tests/audit-logs.test.ts",
-    "test:security": "tsx tests/security-hardening.test.ts"
+    "test:security": "tsx tests/security-hardening.test.ts",
+    "test:public-integration": "tsx tests/public-database-integration.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

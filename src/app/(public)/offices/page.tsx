@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
 import { PageHeader } from "@/components/layout/page-header";
 import { OfficeDirectory } from "@/components/offices/office-directory";
-import { getCanonicalOffices } from "@/config/offices-data";
+import { getPublicCanonicalOffices } from "@/server/offices/service";
+
+export const instant = false;
 
 export const metadata: Metadata = {
   title: "Municipal Offices",
@@ -10,8 +12,8 @@ export const metadata: Metadata = {
     "Directory of offices serving the Municipality of San Felipe, Zambales.",
 };
 
-export default function MunicipalOfficesPage() {
-  const offices = getCanonicalOffices();
+export default async function MunicipalOfficesPage() {
+  const offices = await getPublicCanonicalOffices();
 
   return (
     <>

@@ -17,12 +17,13 @@ export interface MunicipalOffice {
   slug: string;
   name: string;
   displayOrder: number;
-  acronym: string;
+  acronym?: string;
   head?: string;
   headTitle?: string;
   email?: string;
   location?: string;
   telephone?: string;
+  officeHours?: string;
   isVerified: boolean;
 }
 
@@ -32,7 +33,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "office-of-the-mayor",
     name: "Office of the Mayor",
     displayOrder: 1,
-    acronym: "OM",
+    acronym: "",
     head: 'Hon. Engr. Reinhard "Hart" E. Jeresano',
     headTitle: "Municipal Mayor",
     location: "2nd Floor, Municipal Hall Complex, San Felipe, Zambales",
@@ -43,7 +44,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "office-of-the-sangguniang-bayan",
     name: "Office of the Sangguniang Bayan",
     displayOrder: 2,
-    acronym: "OSB",
+    acronym: "",
     head: "Hon. Mary Ann R. Quiba",
     headTitle: "Municipal Vice Mayor / Presiding Officer",
     location: "2nd Floor, Municipal Hall Complex, San Felipe, Zambales",
@@ -81,7 +82,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-accounting-office",
     name: "Municipal Accounting Office",
     displayOrder: 6,
-    acronym: "MAO",
+    acronym: "",
     location: "Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -90,7 +91,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-treasury-office",
     name: "Municipal Treasury Office",
     displayOrder: 7,
-    acronym: "MTO",
+    acronym: "",
     location: "Ground Floor, Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -99,7 +100,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-assessors-office",
     name: "Municipal Assessor’s Office",
     displayOrder: 8,
-    acronym: "MAO",
+    acronym: "",
     location: "Ground Floor, Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -108,7 +109,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-social-welfare-and-development-office",
     name: "Municipal Social Welfare and Development Office",
     displayOrder: 9,
-    acronym: "MSWDO",
+    acronym: "",
     location: "Ground Floor, Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -117,7 +118,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "local-civil-registrars-office",
     name: "Local Civil Registrar’s Office",
     displayOrder: 10,
-    acronym: "LCRO",
+    acronym: "",
     location: "Ground Floor, Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -126,7 +127,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-engineering-office",
     name: "Municipal Engineering Office",
     displayOrder: 11,
-    acronym: "MEO",
+    acronym: "",
     location: "Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -135,7 +136,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-agriculture-office",
     name: "Municipal Agriculture Office",
     displayOrder: 12,
-    acronym: "MAO",
+    acronym: "",
     location: "Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -153,7 +154,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-tourism-and-investments-promotions-office",
     name: "Municipal Tourism and Investments Promotions Office",
     displayOrder: 14,
-    acronym: "MTIPO",
+    acronym: "",
     location: "Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },
@@ -171,7 +172,7 @@ export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [
     slug: "municipal-ecological-and-natural-resources-office",
     name: "Municipal Ecological and Natural Resources Office",
     displayOrder: 16,
-    acronym: "MENRO",
+    acronym: "",
     location: "Municipal Hall Complex, San Felipe, Zambales",
     isVerified: true,
   },

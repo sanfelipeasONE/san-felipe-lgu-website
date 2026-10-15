@@ -7,6 +7,10 @@ import { recordAuditEvent } from "@/server/audit/service";
 import { AUDIT_ACTIONS } from "@/server/audit/constants";
 import type { UpdateOfficeInput } from "@/lib/validation/offices";
 import { OfficeStatus } from "@prisma/client";
+import {
+  getCanonicalOffices,
+  type MunicipalOffice,
+} from "@/config/offices-data";
 
 export class OfficeError extends Error {
   constructor(
@@ -216,3 +220,65 @@ export async function updateOffice(
 
   return updated;
 }
+
+/**
+ * Public directory query: Returns the 18 canonical municipal offices with
+ * database-backed mutable metadata merged onto the canonical order and identity.
+ *
+ * Strict constraints:
+ * - Exactly the 18 canonical offices are returned.
+ * - Legacy ICTO is strictly excluded.
+ * - Noncanonical / arbitrary test rows in the database are strictly excluded.
+ * - Canonical displayOrder (1 to 18) is strictly preserved.
+ * - Canonical verified acronym is 100% authoritative; database shortName cannot invent or override acronyms.
+ * - Safe fallback: if database query encounters an error, returns the canonical baseline.
+ */
+export async function getPublicCanonicalOffices(): Promise<MunicipalOffice[]> {
+  const canonicalOffices = getCanonicalOffices();
+  const canonicalSlugs = canonicalOffices.map((o) => o.slug);
+
+  try {
+    const dbOffices = await prisma.office.findMany({
+      where: {
+        slug: { in: canonicalSlugs },
+      },
+      select: {
+        slug: true,
+        officeHead: true,
+        location: true,
+        officeHours: true,
+        email: true,
+        phone: true,
+      },
+    });
+
+    const dbMap = new Map(dbOffices.map((o) => [o.slug, o]));
+
+    return canonicalOffices.map((canonical) => {
+      const db = dbMap.get(canonical.slug);
+      if (!db) return canonical;
+
+      return {
+        ...canonical,
+        // Canonical configuration is strictly authoritative for public acronym
+        acronym: canonical.acronym ?? "",
+        // Database officeHead takes precedence if non-null
+        head: db.officeHead ?? canonical.head,
+        // Database location takes precedence if non-null
+        location: db.location ?? canonical.location,
+        // Database email takes precedence if non-null
+        email: db.email ?? canonical.email,
+        // Database phone takes precedence if non-null
+        telephone: db.phone ?? canonical.telephone,
+        // Office operating hours
+        officeHours: db.officeHours ?? canonical.officeHours ?? undefined,
+      };
+    });
+  } catch (error) {
+    // Fail safely without exposing database credentials or stack traces
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Failed to load database office metadata for public directory:", message);
+    return canonicalOffices;
+  }
+}
+

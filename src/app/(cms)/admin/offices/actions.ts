@@ -34,6 +34,7 @@ export async function updateOfficeAction(
 
     revalidatePath("/admin/offices");
     revalidatePath(`/admin/offices/${id}/edit`);
+    revalidatePath("/offices");
     return {
       success: true,
       data: { id: updated.id },
