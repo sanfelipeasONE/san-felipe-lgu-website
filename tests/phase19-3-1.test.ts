@@ -39,6 +39,8 @@ async function runPhase1931TestSuite() {
     removeCharterDocumentAssociation,
     attachExistingCharterDocument,
     getPublishedServicePage,
+    getAdminServicePage,
+    updateServicePage,
     ServiceError,
   } = await import("../src/server/services/service");
   const {
@@ -749,6 +751,143 @@ async function runPhase1931TestSuite() {
     assert(
       nextConfigContent.includes("object-src 'none'"),
       "next.config.ts preserves object-src 'none'"
+    );
+
+    // -------------------------------------------------------------------------
+    // TEST GROUP 10: Hotfix Concurrency Synchronization & Real Conflict Tests (Section 15)
+    // -------------------------------------------------------------------------
+    console.log("\nTEST GROUP 10: Hotfix Concurrency Synchronization & Real Conflict Tests (Section 15)");
+
+    // TEST 1: Load T1 -> Upload PDF updates ServicePage to T2 -> Subsequent save using synchronized version succeeds
+    const uploadRes = await uploadAndAttachCharterPdf(superAdminUser, "citizens-charter", {
+      fileBuffer: authenticPdfBuffer,
+      filename: "test-concurrency-upload.pdf",
+      mimeType: "application/pdf",
+      size: authenticPdfBuffer.length,
+      title: "Citizen's Charter Concurrency Test Doc 1",
+    });
+    createdDocumentIds.push(uploadRes.id);
+    createdCloudinaryPublicIds.push(uploadRes.storagePublicId);
+
+    assert(
+      typeof uploadRes.servicePageUpdatedAt === "string" && uploadRes.servicePageUpdatedAt.length > 0,
+      "uploadAndAttachCharterPdf returns authoritative servicePageUpdatedAt string"
+    );
+
+    const saveAfterUpload = await updateServicePage(superAdminUser, "citizens-charter", {
+      title: "Citizen's Charter (Synchronized After Upload)",
+      sections: [],
+      expectedUpdatedAt: uploadRes.servicePageUpdatedAt,
+    });
+    assert(
+      Boolean(saveAfterUpload && saveAfterUpload.title === "Citizen's Charter (Synchronized After Upload)"),
+      "TEST 1: Subsequent save using synchronized version T2 after PDF upload succeeds without conflict"
+    );
+
+    // TEST 2: Load T1 -> Replace PDF -> T2 -> Subsequent save using synchronized state succeeds
+    const replacePdfBuffer = Buffer.from(
+      "%PDF-1.4\n%San Felipe Zambales Concurrency Replacement PDF\n1 0 obj\n<< /Type /Catalog >>\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000010 00000 n \ntrailer\n<< /Root 1 0 R >>\nstartxref\n100\n%%EOF"
+    );
+    const replaceRes = await uploadAndAttachCharterPdf(superAdminUser, "citizens-charter", {
+      fileBuffer: replacePdfBuffer,
+      filename: "test-concurrency-replace.pdf",
+      mimeType: "application/pdf",
+      size: replacePdfBuffer.length,
+      title: "Citizen's Charter Concurrency Test Doc 2",
+    });
+    createdDocumentIds.push(replaceRes.id);
+    createdCloudinaryPublicIds.push(replaceRes.storagePublicId);
+
+    const saveAfterReplace = await updateServicePage(superAdminUser, "citizens-charter", {
+      title: "Citizen's Charter (Synchronized After Replace)",
+      sections: [],
+      expectedUpdatedAt: replaceRes.servicePageUpdatedAt,
+    });
+    assert(
+      Boolean(saveAfterReplace && saveAfterReplace.title === "Citizen's Charter (Synchronized After Replace)"),
+      "TEST 2: Subsequent save using synchronized version T2 after PDF replacement succeeds without conflict"
+    );
+
+    // TEST 3: Load T1 -> Link existing Charter Document -> T2 -> Subsequent save succeeds
+    const linkRes = await attachExistingCharterDocument(superAdminUser, "citizens-charter", uploadRes.id);
+    const saveAfterLink = await updateServicePage(superAdminUser, "citizens-charter", {
+      title: "Citizen's Charter (Synchronized After Link Existing)",
+      sections: [],
+      expectedUpdatedAt: linkRes.updatedAt.toISOString(),
+    });
+    assert(
+      Boolean(saveAfterLink && saveAfterLink.title === "Citizen's Charter (Synchronized After Link Existing)"),
+      "TEST 3: Subsequent save using synchronized version T2 after Link Existing Document succeeds"
+    );
+
+    // TEST 4: Load T1 -> Remove association -> T2 -> Subsequent save succeeds
+    const removeRes = await removeCharterDocumentAssociation(superAdminUser, "citizens-charter");
+    const saveAfterRemove = await updateServicePage(superAdminUser, "citizens-charter", {
+      title: "Citizen's Charter (Synchronized After Remove Association)",
+      sections: [],
+      expectedUpdatedAt: removeRes.updatedAt.toISOString(),
+    });
+    assert(
+      Boolean(saveAfterRemove && saveAfterRemove.title === "Citizen's Charter (Synchronized After Remove Association)"),
+      "TEST 4: Subsequent save using synchronized version T2 after Remove Association succeeds"
+    );
+
+    // TEST 5 — MANDATORY REAL CONCURRENT EDIT PROTECTION:
+    // Admin A loads T1. Admin B performs an independent ServicePage edit -> T2. Admin A submits stale T1 -> Conflict MUST be rejected.
+    const adminALoad = await getAdminServicePage(superAdminUser, "citizens-charter");
+    const adminAStaleToken = adminALoad.updatedAt.toISOString();
+
+    // Admin B modifies the page in the background
+    await updateServicePage(superAdminUser, "citizens-charter", {
+      title: "Citizen's Charter (Admin B Independent Concurrent Edit)",
+      sections: [],
+      expectedUpdatedAt: adminAStaleToken,
+    });
+
+    // Admin A now submits their stale token
+    let realConflictRejected = false;
+    try {
+      await updateServicePage(superAdminUser, "citizens-charter", {
+        title: "Citizen's Charter (Admin A Attempted Stale Overwrite)",
+        sections: [],
+        expectedUpdatedAt: adminAStaleToken,
+      });
+    } catch (e: unknown) {
+      if (e instanceof ServiceError && e.statusCode === 409) {
+        realConflictRejected = true;
+      }
+    }
+    assert(
+      realConflictRejected,
+      "TEST 5: MANDATORY: Real concurrent edit by another user is strictly rejected with 409 Conflict"
+    );
+
+    // TEST 6: Next.js Route Segment instant = false exports (Defect B Verification)
+    const editPageSource = fs.readFileSync(
+      path.resolve(process.cwd(), "src/app/(cms)/admin/services/[serviceKey]/edit/page.tsx"),
+      "utf-8"
+    );
+    assert(
+      editPageSource.includes("export const instant = false;"),
+      "admin/services/[serviceKey]/edit/page.tsx exports instant = false to exempt route from uncached prerender check"
+    );
+
+    const listPageSource = fs.readFileSync(
+      path.resolve(process.cwd(), "src/app/(cms)/admin/services/page.tsx"),
+      "utf-8"
+    );
+    assert(
+      listPageSource.includes("export const instant = false;"),
+      "admin/services/page.tsx exports instant = false"
+    );
+
+    const previewPageSource = fs.readFileSync(
+      path.resolve(process.cwd(), "src/app/(cms)/admin/services/[serviceKey]/preview/page.tsx"),
+      "utf-8"
+    );
+    assert(
+      previewPageSource.includes("export const instant = false;"),
+      "admin/services/[serviceKey]/preview/page.tsx exports instant = false"
     );
 
   } catch (err) {

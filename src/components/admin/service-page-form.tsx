@@ -185,6 +185,9 @@ export function ServicePageForm({
       return;
     }
 
+    if (res.data.servicePageUpdatedAt) {
+      setExpectedUpdatedAt(res.data.servicePageUpdatedAt);
+    }
     setActiveCharterDoc({
       id: res.data.documentId,
       title: res.data.title,
@@ -219,6 +222,9 @@ export function ServicePageForm({
       return;
     }
 
+    if (res.data?.servicePageUpdatedAt) {
+      setExpectedUpdatedAt(res.data.servicePageUpdatedAt);
+    }
     setActiveCharterDoc(null);
     setCharterDocumentId("");
     setUploadSuccess(
@@ -242,6 +248,9 @@ export function ServicePageForm({
       return;
     }
 
+    if (res.data?.servicePageUpdatedAt) {
+      setExpectedUpdatedAt(res.data.servicePageUpdatedAt);
+    }
     const found = charterDocuments.find((d) => d.id === docId);
     if (found) {
       setActiveCharterDoc({
@@ -371,7 +380,9 @@ export function ServicePageForm({
         setHasUnsavedChanges(false);
         setStatus("PUBLISHED");
         setSuccessMessage("Service page published successfully to the public portal.");
-        if (result.data?.publishedAt) {
+        if (result.data?.updatedAt) {
+          setExpectedUpdatedAt(result.data.updatedAt);
+        } else if (result.data?.publishedAt) {
           setExpectedUpdatedAt(result.data.publishedAt);
         }
         router.refresh();
@@ -396,6 +407,9 @@ export function ServicePageForm({
       } else {
         setStatus("DRAFT");
         setSuccessMessage("Service page unpublished. Content reverted to draft status.");
+        if (result.data?.updatedAt) {
+          setExpectedUpdatedAt(result.data.updatedAt);
+        }
         router.refresh();
       }
     } catch {

@@ -73,7 +73,7 @@ export async function saveServiceDraftAction(
 export async function publishServiceAction(
   serviceKey: string,
   rawInput?: ServicePageDraftInput
-): Promise<ActionResult<{ serviceKey: string; publishedAt: string }>> {
+): Promise<ActionResult<{ serviceKey: string; publishedAt: string; updatedAt: string }>> {
   try {
     const user = await requireUser();
 
@@ -109,6 +109,7 @@ export async function publishServiceAction(
       data: {
         serviceKey: published.serviceKey,
         publishedAt: published.publishedAt?.toISOString() || new Date().toISOString(),
+        updatedAt: published.updatedAt.toISOString(),
       },
     };
   } catch (err: unknown) {
@@ -123,7 +124,7 @@ export async function publishServiceAction(
 export async function unpublishServiceAction(
   serviceKey: string,
   expectedUpdatedAt?: string
-): Promise<ActionResult<{ serviceKey: string }>> {
+): Promise<ActionResult<{ serviceKey: string; updatedAt: string }>> {
   try {
     const user = await requireUser();
 
@@ -145,6 +146,7 @@ export async function unpublishServiceAction(
       success: true,
       data: {
         serviceKey: unpublished.serviceKey,
+        updatedAt: unpublished.updatedAt.toISOString(),
       },
     };
   } catch (err: unknown) {
@@ -167,6 +169,7 @@ export async function uploadCharterPdfAction(
     storageUrl: string;
     downloadUrl: string;
     bytes: number;
+    servicePageUpdatedAt?: string;
   }>
 > {
   try {
@@ -211,6 +214,7 @@ export async function uploadCharterPdfAction(
         storageUrl: doc.storageUrl,
         downloadUrl: doc.downloadUrl,
         bytes: doc.bytes,
+        servicePageUpdatedAt: doc.servicePageUpdatedAt,
       },
     };
   } catch (err: unknown) {
@@ -224,7 +228,7 @@ export async function uploadCharterPdfAction(
  */
 export async function removeCharterAssociationAction(
   serviceKey: string
-): Promise<ActionResult<{ serviceKey: string }>> {
+): Promise<ActionResult<{ serviceKey: string; servicePageUpdatedAt: string }>> {
   try {
     const user = await requireUser();
 
@@ -232,7 +236,7 @@ export async function removeCharterAssociationAction(
       return { success: false, error: "Invalid canonical service key." };
     }
 
-    await removeCharterDocumentAssociation(user, serviceKey);
+    const updated = await removeCharterDocumentAssociation(user, serviceKey);
 
     revalidatePath("/admin/services");
     revalidatePath(`/admin/services/${serviceKey}/edit`);
@@ -242,7 +246,10 @@ export async function removeCharterAssociationAction(
 
     return {
       success: true,
-      data: { serviceKey },
+      data: {
+        serviceKey,
+        servicePageUpdatedAt: updated.updatedAt.toISOString(),
+      },
     };
   } catch (err: unknown) {
     const message = err instanceof ServiceError ? err.message : "Failed to remove Charter association.";
@@ -256,7 +263,7 @@ export async function removeCharterAssociationAction(
 export async function linkExistingCharterDocumentAction(
   serviceKey: string,
   documentId: string
-): Promise<ActionResult<{ serviceKey: string; documentId: string }>> {
+): Promise<ActionResult<{ serviceKey: string; documentId: string; servicePageUpdatedAt: string }>> {
   try {
     const user = await requireUser();
 
@@ -268,7 +275,7 @@ export async function linkExistingCharterDocumentAction(
       return { success: false, error: "A valid document ID must be provided." };
     }
 
-    await attachExistingCharterDocument(user, serviceKey, documentId.trim());
+    const updated = await attachExistingCharterDocument(user, serviceKey, documentId.trim());
 
     revalidatePath("/admin/services");
     revalidatePath(`/admin/services/${serviceKey}/edit`);
@@ -278,7 +285,11 @@ export async function linkExistingCharterDocumentAction(
 
     return {
       success: true,
-      data: { serviceKey, documentId },
+      data: {
+        serviceKey,
+        documentId,
+        servicePageUpdatedAt: updated.updatedAt.toISOString(),
+      },
     };
   } catch (err: unknown) {
     const message = err instanceof ServiceError ? err.message : "Failed to link existing document.";

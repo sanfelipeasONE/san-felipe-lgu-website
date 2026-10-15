@@ -12,6 +12,8 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { ServicePageForm } from "@/components/admin/service-page-form";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Edit Service Page | San Felipe LGU CMS",
   description: "Edit canonical municipal service page guidelines and structured content sections",

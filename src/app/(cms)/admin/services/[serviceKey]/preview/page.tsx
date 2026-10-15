@@ -16,6 +16,8 @@ import { isCanonicalServiceKey } from "@/config/services-canonical";
 import { Container } from "@/components/layout/container";
 import { PageHeader } from "@/components/layout/page-header";
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Service Page CMS Preview | San Felipe LGU CMS",
   description: "Internal authenticated preview of draft service page content",

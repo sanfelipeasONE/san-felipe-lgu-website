@@ -759,8 +759,9 @@ export async function uploadAndAttachCharterPdf(
 
   // Automatically associate new document to ServicePage
   // Safe replacement: does NOT delete previous Document or Cloudinary asset
+  let updatedPage;
   try {
-    await prisma.servicePage.update({
+    updatedPage = await prisma.servicePage.update({
       where: { serviceKey: "citizens-charter" },
       data: {
         charterDocumentId: createdDocument.id,
@@ -824,6 +825,7 @@ export async function uploadAndAttachCharterPdf(
       createdDocument.storagePublicId,
       createdDocument.originalFilename
     ),
+    servicePageUpdatedAt: updatedPage.updatedAt.toISOString(),
   };
 }
 
