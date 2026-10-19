@@ -21,11 +21,17 @@ async function runCitizensCharterViewerTests() {
   const { prisma } = await import("../src/server/db/client");
   const { GET: getViewRoute } = await import("../src/app/documents/[id]/view/route");
   const { GET: getDownloadRoute } = await import("../src/app/documents/[id]/download/route");
+  const {
+    attachExistingCharterDocument,
+    removeCharterDocumentAssociation,
+    getPublishedServicePage,
+    ServiceError,
+  } = await import("../src/server/services/service");
 
   // Find or verify test municipal office and admin user for test fixtures
   const adminUser = await prisma.user.findFirst({
     where: { role: { isSystemScope: true } },
-    select: { id: true },
+    include: { role: true },
   });
   const office = await prisma.office.findFirst({
     where: { status: "ACTIVE" },
@@ -90,6 +96,32 @@ async function runCitizensCharterViewerTests() {
 
   // Track temporary documents for cleanup
   const cleanupDocIds: string[] = [];
+
+  const testSessionUser: import("../src/server/auth/session").SessionUser = {
+    id: adminUser.id,
+    name: adminUser.name || "Test Super Admin",
+    email: adminUser.email,
+    status: adminUser.status,
+    officeId: null,
+    office: null,
+    roleId: adminUser.roleId,
+    role: {
+      id: adminUser.role.id,
+      name: adminUser.role.name,
+      slug: adminUser.role.slug,
+      isSystemScope: true,
+    },
+    isSystemScope: true,
+    permissions: [
+      "services.view",
+      "services.update",
+      "services.publish",
+      "documents.create",
+      "documents.publish",
+      "documents.view",
+    ],
+    sessionId: "test-charter-session",
+  };
 
   try {
     // -------------------------------------------------------------------------
@@ -359,8 +391,150 @@ async function runCitizensCharterViewerTests() {
     );
     console.log("  ✓ PASS: Authoritative neutral unavailable state exactly preserved with zero workflow claims\n");
 
+    // -------------------------------------------------------------------------
+    // TEST 12: attachExistingCharterDocument sets ServicePage.status to PUBLISHED
+    // -------------------------------------------------------------------------
+    console.log("TEST 12: attachExistingCharterDocument automatically sets ServicePage.status to PUBLISHED");
+    await prisma.servicePage.update({
+      where: { serviceKey: "citizens-charter" },
+      data: {
+        status: "DRAFT",
+        charterDocumentId: null,
+      },
+    });
+
+    const attachResult = await attachExistingCharterDocument(
+      testSessionUser,
+      "citizens-charter",
+      publishedCharterDoc.id
+    );
+    assert.strictEqual(
+      attachResult.status,
+      "PUBLISHED",
+      "attachExistingCharterDocument returns ServicePage in PUBLISHED status"
+    );
+    assert.strictEqual(
+      attachResult.charterDocumentId,
+      publishedCharterDoc.id,
+      "attachExistingCharterDocument associates charterDocumentId"
+    );
+
+    const dbPageAfterAttach = await prisma.servicePage.findUnique({
+      where: { serviceKey: "citizens-charter" },
+    });
+    assert.strictEqual(
+      dbPageAfterAttach?.status,
+      "PUBLISHED",
+      "Database confirms ServicePage is transitioned to PUBLISHED"
+    );
+    console.log("  ✓ PASS: attachExistingCharterDocument transitions ServicePage to PUBLISHED\n");
+
+    // -------------------------------------------------------------------------
+    // TEST 13: Public getPublishedServicePage returns associated document and enables viewer
+    // -------------------------------------------------------------------------
+    console.log("TEST 13: Public getPublishedServicePage query returns attached charter document");
+    const publishedServicePageWithDoc = await getPublishedServicePage("citizens-charter");
+    assert(publishedServicePageWithDoc, "Published service page is found by public query");
+    assert.strictEqual(
+      publishedServicePageWithDoc?.status,
+      "PUBLISHED",
+      "Public service page status is PUBLISHED"
+    );
+    assert.strictEqual(
+      publishedServicePageWithDoc?.charterDocument?.id,
+      publishedCharterDoc.id,
+      "Public query returns the attached charter document, activating native PDF viewer"
+    );
+    console.log("  ✓ PASS: getPublishedServicePage returns published page with charter document for viewer\n");
+
+    // -------------------------------------------------------------------------
+    // TEST 14: removeCharterDocumentAssociation preserves ServicePage.status as PUBLISHED
+    // -------------------------------------------------------------------------
+    console.log("TEST 14: removeCharterDocumentAssociation sets charterDocumentId to null while preserving PUBLISHED status");
+    const removeResult = await removeCharterDocumentAssociation(
+      testSessionUser,
+      "citizens-charter"
+    );
+    assert.strictEqual(
+      removeResult.charterDocumentId,
+      null,
+      "removeCharterDocumentAssociation sets charterDocumentId to null"
+    );
+
+    const dbPageAfterRemove = await prisma.servicePage.findUnique({
+      where: { serviceKey: "citizens-charter" },
+    });
+    assert.strictEqual(
+      dbPageAfterRemove?.charterDocumentId,
+      null,
+      "Database confirms charterDocumentId is null"
+    );
+    assert.strictEqual(
+      dbPageAfterRemove?.status,
+      "PUBLISHED",
+      "Database confirms ServicePage status is PRESERVED as PUBLISHED (not reverted to DRAFT)"
+    );
+
+    // Verify document was not deleted
+    const docStillExists = await prisma.document.findUnique({
+      where: { id: publishedCharterDoc.id },
+    });
+    assert(docStillExists, "Document record is NOT deleted on removal of association");
+    console.log("  ✓ PASS: removeCharterDocumentAssociation unlinks document while preserving PUBLISHED status\n");
+
+    // -------------------------------------------------------------------------
+    // TEST 15: Public getPublishedServicePage returns null charter document to render neutral fallback
+    // -------------------------------------------------------------------------
+    console.log("TEST 15: Public getPublishedServicePage returns charterDocument: null to render neutral fallback");
+    const publishedServicePageWithoutDoc = await getPublishedServicePage("citizens-charter");
+    assert(publishedServicePageWithoutDoc, "Published service page remains accessible publicly");
+    assert.strictEqual(
+      publishedServicePageWithoutDoc?.charterDocument,
+      null,
+      "charterDocument is null, allowing the public route to render the neutral fallback"
+    );
+    console.log("  ✓ PASS: getPublishedServicePage returns null charterDocument for clean neutral fallback display\n");
+
+    // -------------------------------------------------------------------------
+    // TEST 16: attachExistingCharterDocument rejects DRAFT documents
+    // -------------------------------------------------------------------------
+    console.log("TEST 16: attachExistingCharterDocument rejects DRAFT documents with 400");
+    let draftRejected = false;
+    try {
+      await attachExistingCharterDocument(
+        testSessionUser,
+        "citizens-charter",
+        draftDoc.id
+      );
+    } catch (e: unknown) {
+      if (e instanceof ServiceError && e.statusCode === 400) {
+        draftRejected = true;
+      }
+    }
+    assert(draftRejected, "DRAFT document cannot be attached as Citizen's Charter");
+    console.log("  ✓ PASS: DRAFT document rejected with 400\n");
+
+    // -------------------------------------------------------------------------
+    // TEST 17: attachExistingCharterDocument rejects wrong-purpose documents
+    // -------------------------------------------------------------------------
+    console.log("TEST 17: attachExistingCharterDocument rejects wrong-purpose documents with 400");
+    let wrongPurposeRejected = false;
+    try {
+      await attachExistingCharterDocument(
+        testSessionUser,
+        "citizens-charter",
+        wrongPurposeDoc.id
+      );
+    } catch (e: unknown) {
+      if (e instanceof ServiceError && e.statusCode === 400) {
+        wrongPurposeRejected = true;
+      }
+    }
+    assert(wrongPurposeRejected, "Wrong-purpose document cannot be attached as Citizen's Charter");
+    console.log("  ✓ PASS: Wrong-purpose document rejected with 400\n");
+
     console.log("=====================================================================");
-    console.log("ALL 11 CITIZEN'S CHARTER PUBLIC VIEWER TESTS PASSED SUCCESSFULLY");
+    console.log("ALL 17 CITIZEN'S CHARTER PUBLIC VIEWER & PUBLICATION TESTS PASSED SUCCESSFULLY");
     console.log("=====================================================================");
   } finally {
     // Cleanup temporary test documents

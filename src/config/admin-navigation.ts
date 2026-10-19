@@ -3,7 +3,6 @@ import {
   Newspaper,
   FileText,
   Users2,
-  Building2,
   Users,
   ShieldCheck,
   History,
@@ -124,23 +123,12 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
     title: "Administration",
     items: [
       {
-        id: "offices",
-        label: "Municipal Offices",
-        href: "/admin/offices",
-        icon: Building2,
-        section: "administration",
-        description: "Department profiles, office heads, and operational directory",
-        requiredPermission: "offices.view",
-        requiredScope: "system",
-        isImplemented: true,
-      },
-      {
         id: "users",
-        label: "Staff Accounts",
+        label: "Accounts",
         href: "/admin/users",
         icon: Users,
         section: "administration",
-        description: "Municipal staff accounts and office assignments",
+        description: "Municipal administrator accounts and operational identity",
         requiredPermission: "users.view",
         // Available to Super Admin (all offices) AND Office Admin (own office)
         isImplemented: true,

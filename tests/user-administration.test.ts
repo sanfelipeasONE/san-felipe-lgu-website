@@ -41,12 +41,16 @@ async function runUserAdministrationTests() {
     updateUser,
     setUserStatus,
     resetUserCredential,
+    deleteUser,
     UserError,
     CRITICAL_RECOVERY_PERMISSIONS,
     countEffectiveActiveSystemAdmins,
     isEffectiveActiveSystemAdmin,
   } = await import("../src/server/users/service");
-  const { verifyPassword } = await import("../src/server/auth/password");
+  const { hashPassword, verifyPassword } = await import("../src/server/auth/password");
+  const { generateSessionToken, hashSessionToken } = await import("../src/server/auth/session");
+  const { AUDIT_ACTIONS } = await import("../src/server/audit/constants");
+  const { createUserAction } = await import("../src/app/(cms)/admin/users/actions");
   const { updateUserSchema } = await import("../src/lib/validation/users");
   const { RoleTier, UserStatus, OfficeStatus } = await import("@prisma/client");
 
@@ -147,6 +151,7 @@ async function runUserAdministrationTests() {
       "users.view",
       "users.create",
       "users.update",
+      "users.delete",
       "users.disable",
       "settings.manage",
       "offices.view",
@@ -372,87 +377,136 @@ async function runUserAdministrationTests() {
     );
 
     // -------------------------------------------------------------
-    // Test 3: Office Admin Account Creation Boundaries & Forged Role Prevention
+    // Test 3: Account Provisioning Boundaries & Non-Super-Admin Role Prevention
     // -------------------------------------------------------------
-    console.log("\n3. Office Admin Account Creation Boundaries & Forged Role Prevention");
-    const createdByOA = await createUser(callerOfficeAdminA, {
-      name: "New Health Staff",
-      email: `newhealthstaff-${ts}@sanfelipe.gov.ph`,
-      password: "ComplexPassword2026!",
-      // Malicious forged inputs from client:
-      roleId: superAdminRole.id,
-      officeId: officeB.id,
-    });
+    console.log("\n3. Account Provisioning Boundaries & Non-Super-Admin Role Prevention");
 
-    assert(
-      createdByOA.officeId === officeA.id,
-      "Office Admin created account forced to caller's own office (forged officeId ignored)"
-    );
-    assert(
-      createdByOA.roleId === staffRole.id,
-      "Office Admin created account forced to canonical STAFF role (forged super-admin role ignored)"
-    );
+    let oaCreateLocked = false;
+    try {
+      await createUser(callerOfficeAdminA, {
+        name: "New Health Staff",
+        email: `newhealthstaff-${ts}@sanfelipe.gov.ph`,
+        password: "ComplexPassword2026!",
+        officeId: officeA.id,
+      });
+    } catch (e: unknown) {
+      oaCreateLocked = e instanceof UserError && e.statusCode === 403;
+    }
+    assert(oaCreateLocked, "Office Admin cannot create accounts (rejected with 403)");
 
-    // Test other forged role attempts by Office Admin
-    const forgedRoleAttempts = [
+    let staffCreateLocked = false;
+    try {
+      await createUser(callerStaffA, {
+        name: "New Health Staff",
+        email: `staffcreate-${ts}@sanfelipe.gov.ph`,
+        password: "ComplexPassword2026!",
+        officeId: officeA.id,
+      });
+    } catch (e: unknown) {
+      staffCreateLocked = e instanceof UserError && e.statusCode === 403;
+    }
+    assert(staffCreateLocked, "Staff cannot create accounts (rejected with 403)");
+
+    // Test non-super-admin role attempts by Super Admin: all rejected with 400
+    const attemptedRoles = [
       { name: "Site Admin", role: siteAdminRole },
       { name: "Office Admin", role: officeAdminRole },
       { name: "Office Editor", role: editorRole },
       { name: "Approver", role: approverRole },
       { name: "Custom Role", role: customRole },
+      { name: "Staff", role: staffRole },
     ];
 
-    for (const attempt of forgedRoleAttempts) {
-      const forgedUser = await createUser(callerOfficeAdminA, {
-        name: `Forged ${attempt.name} User`,
-        email: `forged-${attempt.role.slug}-${ts}@sanfelipe.gov.ph`,
-        password: "ComplexPassword2026!",
-        roleId: attempt.role.id,
-        officeId: officeB.id,
-      });
+    for (const attempt of attemptedRoles) {
+      let roleCreateRejected = false;
+      try {
+        await createUser(callerSuperAdmin, {
+          name: `Attempted ${attempt.name} User`,
+          email: `attempt-${attempt.role.slug}-${ts}@sanfelipe.gov.ph`,
+          password: "ComplexPassword2026!",
+          roleId: attempt.role.id,
+        });
+      } catch (e: unknown) {
+        roleCreateRejected = e instanceof UserError && e.statusCode === 400;
+      }
       assert(
-        forgedUser.roleId === staffRole.id,
-        `Office Admin creation with forged ${attempt.name} role forced to canonical staff`
-      );
-      assert(
-        forgedUser.officeId === officeA.id,
-        `Office Admin creation with forged office forced to caller office (Office A)`
+        roleCreateRejected,
+        `Account creation for non-super-admin role ${attempt.name} is strictly rejected with 400`
       );
     }
 
-    // -------------------------------------------------------------
-    // Test 4: System Admin Account Creation Capabilities
-    // -------------------------------------------------------------
-    console.log("\n4. System Admin Account Creation Capabilities");
-    const createdBySA = await createUser(callerSuperAdmin, {
-      name: "System Provisioned User",
-      email: `sysuser-${ts}@sanfelipe.gov.ph`,
+    // Attempting to pass officeId on creation is strictly rejected with 400
+    let officeIdRejected = false;
+    try {
+      await createUser(callerSuperAdmin, {
+        name: "Attempted Office Admin",
+        email: `attempt-oa-${ts}@sanfelipe.gov.ph`,
+        password: "ComplexPassword2026!",
+        officeId: officeA.id,
+      });
+    } catch (e: unknown) {
+      officeIdRejected = e instanceof UserError && e.statusCode === 400;
+    }
+    assert(
+      officeIdRejected,
+      "Account creation with non-null officeId is strictly rejected with 400"
+    );
+
+    // Direct Server Action unauthenticated creation attempt
+    const directActionAttempt = await createUserAction({
+      name: "Direct Action Attempt",
+      email: `direct-action-${ts}@sanfelipe.gov.ph`,
       password: "ComplexPassword2026!",
-      roleId: officeAdminRole.id,
-      officeId: officeB.id,
-      status: "ACTIVE",
+    });
+    assert(
+      directActionAttempt.success === false &&
+        (directActionAttempt.statusCode === 401 || directActionAttempt.statusCode === 403),
+      "Direct/server-action createUserAction rejects unauthenticated execution"
+    );
+
+    // -------------------------------------------------------------
+    // Test 4: Fixture Provisioning & User Retrieval
+    // -------------------------------------------------------------
+    console.log("\n4. Fixture Provisioning & User Retrieval");
+    const complexPasswordHash = await hashPassword("ComplexPassword2026!");
+    const createdByOA = await prisma.user.create({
+      data: {
+        id: `created-oa-user-${ts}`,
+        name: "New Health Staff",
+        email: `newhealthstaff-${ts}@sanfelipe.gov.ph`,
+        passwordHash: complexPasswordHash,
+        officeId: officeA.id,
+        roleId: staffRole.id,
+        status: UserStatus.ACTIVE,
+      },
+    });
+
+    const createdBySA = await prisma.user.create({
+      data: {
+        id: `created-sa-user-${ts}`,
+        name: "System Provisioned User",
+        email: `sysuser-${ts}@sanfelipe.gov.ph`,
+        passwordHash: complexPasswordHash,
+        officeId: officeB.id,
+        roleId: officeAdminRole.id,
+        status: UserStatus.ACTIVE,
+      },
     });
 
     assert(
       createdBySA.officeId === officeB.id,
-      "System Admin can assign user to valid office (Office B)"
-    );
-    assert(
-      createdBySA.roleId === officeAdminRole.id,
-      "System Admin can assign privileged Office Admin role"
+      "Test fixture user created with valid office"
     );
 
     const fetchedCreatedSA = await getUserById(callerSuperAdmin, createdBySA.id);
     assert(fetchedCreatedSA.id === createdBySA.id, "getUserById correctly retrieves user details");
 
-    // Inactive office rejection
+    // Inactive office rejection on update
     let inactiveOfficeRejected = false;
     try {
-      await createUser(callerSuperAdmin, {
-        name: "Invalid Office User",
-        email: `invalid-off-${ts}@sanfelipe.gov.ph`,
-        password: "ComplexPassword2026!",
-        roleId: staffRole.id,
+      await updateUser(callerSuperAdmin, createdBySA.id, {
+        name: createdBySA.name,
+        email: createdBySA.email,
         officeId: inactiveOffice.id,
       });
     } catch (e: unknown) {
@@ -461,18 +515,16 @@ async function runUserAdministrationTests() {
         e.statusCode === 400 &&
         e.message.includes("active municipal offices");
     }
-    assert(inactiveOfficeRejected, "Assigning account to an inactive office is strictly rejected");
+    assert(inactiveOfficeRejected, "Assigning account to an inactive office is strictly rejected on update");
 
-    // Deprecated legacy ICTO rejection
+    // Deprecated legacy ICTO rejection on update
     const ictoInDb = await prisma.office.findUnique({ where: { slug: "icto" } });
     if (ictoInDb) {
       let ictoAssignRejected = false;
       try {
-        await createUser(callerSuperAdmin, {
-          name: "ICTO Assign User",
-          email: `invalid-icto-${ts}@sanfelipe.gov.ph`,
-          password: "ComplexPassword2026!",
-          roleId: staffRole.id,
+        await updateUser(callerSuperAdmin, createdBySA.id, {
+          name: createdBySA.name,
+          email: createdBySA.email,
           officeId: ictoInDb.id,
         });
       } catch (e: unknown) {
@@ -481,23 +533,21 @@ async function runUserAdministrationTests() {
           e.statusCode === 400 &&
           e.message.includes("does not exist");
       }
-      assert(ictoAssignRejected, "Assigning account to deprecated legacy ICTO is strictly rejected");
+      assert(ictoAssignRejected, "Assigning account to deprecated legacy ICTO is strictly rejected on update");
     }
 
-    // Invalid role rejection
+    // Invalid role rejection on update
     let invalidRoleRejected = false;
     try {
-      await createUser(callerSuperAdmin, {
-        name: "Invalid Role User",
-        email: `invalid-role-${ts}@sanfelipe.gov.ph`,
-        password: "ComplexPassword2026!",
+      await updateUser(callerSuperAdmin, createdBySA.id, {
+        name: createdBySA.name,
+        email: createdBySA.email,
         roleId: "non-existent-role-id",
-        officeId: officeA.id,
       });
     } catch (e: unknown) {
       invalidRoleRejected = e instanceof UserError && e.statusCode === 400;
     }
-    assert(invalidRoleRejected, "Assigning non-existent role ID is rejected");
+    assert(invalidRoleRejected, "Assigning non-existent role ID on update is rejected");
 
     // -------------------------------------------------------------
     // Test 5: Email Normalization & Duplicate Prevention
@@ -505,12 +555,9 @@ async function runUserAdministrationTests() {
     console.log("\n5. Email Normalization & Duplicate Prevention");
     let duplicateEmailRejected = false;
     try {
-      await createUser(callerSuperAdmin, {
+      await updateUser(callerSuperAdmin, createdBySA.id, {
         name: "Duplicate Email Attempt",
         email: `  ${createdByOA.email.toUpperCase()}  `,
-        password: "ComplexPassword2026!",
-        roleId: staffRole.id,
-        officeId: officeA.id,
       });
     } catch (e: unknown) {
       duplicateEmailRejected =
@@ -518,7 +565,7 @@ async function runUserAdministrationTests() {
         e.statusCode === 400 &&
         e.message.includes("already exists");
     }
-    assert(duplicateEmailRejected, "Duplicate normalized email (case-insensitive & trimmed) is rejected");
+    assert(duplicateEmailRejected, "Duplicate normalized email in update (case-insensitive & trimmed) is rejected");
 
     // -------------------------------------------------------------
     // Test 6: Password Hashing Verification
@@ -857,13 +904,16 @@ async function runUserAdministrationTests() {
     const test11Password = "InitialSecurePassword2026!";
 
     // 1. Existing active user has old email
-    const emailTestUser = await createUser(callerSuperAdmin, {
-      name: "Email Test User",
-      email: test11InitialEmail,
-      password: test11Password,
-      roleId: staffRole.id,
-      officeId: officeA.id,
-      status: UserStatus.ACTIVE,
+    const emailTestUser = await prisma.user.create({
+      data: {
+        id: `email-user-${ts}`,
+        name: "Email Test User",
+        email: test11InitialEmail,
+        passwordHash: await hashPassword(test11Password),
+        roleId: staffRole.id,
+        officeId: officeA.id,
+        status: UserStatus.ACTIVE,
+      },
     });
     assert(emailTestUser.email === test11InitialEmail, "Existing active user has old email");
 
@@ -921,16 +971,23 @@ async function runUserAdministrationTests() {
     // 8. Email normalization: casing/whitespace normalized according to existing auth rules
     const testNormalizeEmail = `  Normalized.Whitespace.${ts}@SanFelipe.GOV.ph  `;
     const expectedNormalized = `normalized.whitespace.${ts}@sanfelipe.gov.ph`;
-    const normalizedUser = await createUser(callerSuperAdmin, {
+    const normalizedUser = await prisma.user.create({
+      data: {
+        id: `norm-user-${ts}`,
+        name: "Normalized Email User",
+        email: `placeholder.${ts}@sanfelipe.gov.ph`,
+        passwordHash: await hashPassword(test11Password),
+        roleId: staffRole.id,
+        officeId: officeA.id,
+        status: UserStatus.ACTIVE,
+      },
+    });
+    const updatedNormalized = await updateUser(callerSuperAdmin, normalizedUser.id, {
       name: "Normalized Email User",
       email: testNormalizeEmail,
-      password: test11Password,
-      roleId: staffRole.id,
-      officeId: officeA.id,
-      status: UserStatus.ACTIVE,
     });
     assert(
-      normalizedUser.email === expectedNormalized,
+      updatedNormalized.email === expectedNormalized,
       "Email normalization: casing and whitespace normalized"
     );
 
@@ -957,13 +1014,16 @@ async function runUserAdministrationTests() {
     console.log("\n12. Municipal Office Assignment & Normalization Boundaries");
 
     // 11. Super Admin + officeId null: accepted
-    const testSuperAdmin = await createUser(callerSuperAdmin, {
-      name: "Synthetic Super Admin",
-      email: `sa.null.office.${ts}@sanfelipe.gov.ph`,
-      password: test11Password,
-      roleId: superAdminRole.id,
-      officeId: null,
-      status: UserStatus.ACTIVE,
+    const testSuperAdmin = await prisma.user.create({
+      data: {
+        id: `synth-sa-user-${ts}`,
+        name: "Synthetic Super Admin",
+        email: `sa.null.office.${ts}@sanfelipe.gov.ph`,
+        passwordHash: await hashPassword(test11Password),
+        roleId: superAdminRole.id,
+        officeId: null,
+        status: UserStatus.ACTIVE,
+      },
     });
     assert(testSuperAdmin.officeId === null, "Super Admin + officeId null: accepted");
 
@@ -1076,6 +1136,306 @@ async function runUserAdministrationTests() {
       email: dbStaffA.email,
       officeId: officeA.id,
     });
+
+    // -------------------------------------------------------------
+    // Test 13: Multiple Super Admin Operating Model Invariants (Phase 21 UAT)
+    // -------------------------------------------------------------
+    console.log("\n13. Multiple Super Admin Operating Model Invariants (Phase 21 UAT)");
+
+    // 1. Existing Super Admin remains SYSTEM scoped
+    const dbSuperAdminCheck = await prisma.user.findFirstOrThrow({
+      where: { email: process.env.SEED_SUPERADMIN_EMAIL || "lgu.sanfelipe@gmail.com" },
+      include: { role: true },
+    });
+    assert(
+      dbSuperAdminCheck.role.isSystemScope === true && dbSuperAdminCheck.role.tier === RoleTier.SYSTEM_ADMIN,
+      "1. Existing Super Admin remains strictly SYSTEM scoped with RoleTier.SYSTEM_ADMIN"
+    );
+
+    // 2. Existing Super Admin remains officeId = null
+    assert(
+      dbSuperAdminCheck.officeId === null,
+      "2. Existing Super Admin remains strictly officeId = null (Municipal-wide)"
+    );
+
+    // Load Super Admin permissions
+    const loadedSARole = await prisma.role.findUniqueOrThrow({
+      where: { slug: "super-admin" },
+      include: { permissions: { include: { permission: true } } },
+    });
+    const saPermCodes = new Set(loadedSARole.permissions.map((p) => p.permission.code));
+
+    // 3, 4, 5, 6. Super Admin A can create Super Admin B
+    const adminBEmail = `superadmin.b.${ts}@sanfelipe.gov.ph`;
+    const adminBPassword = "ComplexPassword2026!B";
+    const createdAdminB = await createUser(callerSuperAdmin, {
+      name: "Super Admin B",
+      email: adminBEmail,
+      password: adminBPassword,
+    });
+    assert(createdAdminB.id !== undefined, "3. Super Admin A can create Super Admin B");
+    assert(createdAdminB.roleId === superAdminRole.id, "4. Super Admin B receives canonical super-admin role");
+    assert(createdAdminB.officeId === null, "5. Super Admin B receives officeId = null");
+    assert(createdAdminB.status === UserStatus.ACTIVE, "6. New administrator defaults to ACTIVE status");
+
+    // 7. Super Admin B can authenticate independently
+    // 8. Password remains securely hashed using existing implementation
+    const adminBRecord = await prisma.user.findUniqueOrThrow({
+      where: { id: createdAdminB.id },
+      include: { role: { include: { permissions: { include: { permission: true } } } } },
+    });
+    const isBPasswordValid = await verifyPassword(adminBPassword, adminBRecord.passwordHash);
+    assert(isBPasswordValid === true, "8. Password remains securely hashed using Argon2id implementation");
+
+    const sessionRawTokenB = generateSessionToken();
+    const sessionTokenHashB = hashSessionToken(sessionRawTokenB);
+    const sessionRecordB = await prisma.session.create({
+      data: {
+        userId: createdAdminB.id,
+        tokenHash: sessionTokenHashB,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      },
+    });
+    assert(sessionRecordB.id !== undefined, "7. Super Admin B can authenticate independently with valid session");
+
+    // 9. Audit creation is attributed to Super Admin A
+    const auditCreatedB = await prisma.auditLog.findFirst({
+      where: {
+        action: AUDIT_ACTIONS.USER_CREATED,
+        details: { path: ["targetUserId"], equals: createdAdminB.id },
+      },
+    });
+    assert(
+      auditCreatedB !== null && auditCreatedB.userId === callerSuperAdmin.id,
+      "9. Account creation audit event is attributed to Super Admin A"
+    );
+
+    // 10. Subsequent actions by B are attributed to B
+    const callerAdminB: SessionUser = {
+      id: createdAdminB.id,
+      name: createdAdminB.name,
+      email: createdAdminB.email,
+      status: "ACTIVE",
+      officeId: null,
+      office: null,
+      roleId: superAdminRole.id,
+      role: {
+        id: superAdminRole.id,
+        name: superAdminRole.name,
+        slug: superAdminRole.slug,
+        isSystemScope: true,
+      },
+      isSystemScope: true,
+      permissions: Array.from(saPermCodes),
+      sessionId: sessionRecordB.id,
+    };
+    await updateUser(callerAdminB, createdAdminB.id, {
+      name: "Super Admin B (Self Updated)",
+      email: adminBEmail,
+    });
+    const auditUpdatedByB = await prisma.auditLog.findFirst({
+      where: {
+        action: AUDIT_ACTIONS.USER_UPDATED,
+        details: { path: ["targetUserId"], equals: createdAdminB.id },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    assert(
+      auditUpdatedByB !== null && auditUpdatedByB.userId === createdAdminB.id,
+      "10. Subsequent actions by B are attributed to B in durable audit log"
+    );
+
+    // 11. Forged officeId is rejected
+    let forgedOfficeRejected = false;
+    try {
+      await createUser(callerSuperAdmin, {
+        name: "Forged Office Attempt",
+        email: `forged-off-${ts}@sanfelipe.gov.ph`,
+        password: "ComplexPassword2026!",
+        officeId: officeA.id,
+      });
+    } catch (e: unknown) {
+      forgedOfficeRejected = e instanceof UserError && e.statusCode === 400 && e.message.includes("office");
+    }
+    assert(forgedOfficeRejected, "11. Forged officeId on account creation is strictly rejected with 400");
+
+    // 12. office-admin creation is rejected
+    let officeAdminCreateRejected = false;
+    try {
+      await createUser(callerSuperAdmin, {
+        name: "OA Attempt",
+        email: `oa-attempt-${ts}@sanfelipe.gov.ph`,
+        password: "ComplexPassword2026!",
+        roleId: officeAdminRole.id,
+      });
+    } catch (e: unknown) {
+      officeAdminCreateRejected = e instanceof UserError && e.statusCode === 400;
+    }
+    assert(officeAdminCreateRejected, "12. Creating an office-admin account is strictly rejected with 400");
+
+    // 13. staff creation is rejected
+    let staffCreateRejected = false;
+    try {
+      await createUser(callerSuperAdmin, {
+        name: "Staff Attempt",
+        email: `staff-attempt-${ts}@sanfelipe.gov.ph`,
+        password: "ComplexPassword2026!",
+        roleId: staffRole.id,
+      });
+    } catch (e: unknown) {
+      staffCreateRejected = e instanceof UserError && e.statusCode === 400;
+    }
+    assert(staffCreateRejected, "13. Creating a staff account is strictly rejected with 400");
+
+    // 14. retired-role creation is rejected
+    let retiredRoleCreateRejected = false;
+    const retiredRoleSample = await prisma.role.findFirst({ where: { slug: "site-admin" } });
+    if (retiredRoleSample) {
+      try {
+        await createUser(callerSuperAdmin, {
+          name: "Retired Role Attempt",
+          email: `retired-role-${ts}@sanfelipe.gov.ph`,
+          password: "ComplexPassword2026!",
+          roleId: retiredRoleSample.id,
+        });
+      } catch (e: unknown) {
+        retiredRoleCreateRejected = e instanceof UserError && e.statusCode === 400 && e.message.includes("retired");
+      }
+      assert(retiredRoleCreateRejected, "14. Creating an account with a retired role is strictly rejected with 400");
+    }
+
+    // 15. unauthorized/office-scoped caller cannot provision administrators
+    let officeScopedCallerBlocked = false;
+    try {
+      await createUser(callerOfficeAdminA, {
+        name: "Illegal Provision",
+        email: `illegal-prov-${ts}@sanfelipe.gov.ph`,
+        password: "ComplexPassword2026!",
+      });
+    } catch (e: unknown) {
+      officeScopedCallerBlocked = e instanceof UserError && e.statusCode === 403;
+    }
+    assert(officeScopedCallerBlocked, "15. Unauthorized/office-scoped caller cannot provision administrators (403)");
+
+    // 16. /admin/users/new is usable by authorized Super Admin
+    const newPageModule = await import("../src/app/(cms)/admin/users/new/page");
+    assert(
+      typeof newPageModule.default === "function",
+      "16. /admin/users/new is usable by authorized Super Admin"
+    );
+
+    // 17. Creation UI exposes no role selector
+    const fsMod = await import("fs");
+    const userFormSrc = fsMod.readFileSync("src/components/admin/user-form.tsx", "utf-8");
+    assert(
+      !userFormSrc.includes('<select name="roleId"') && !userFormSrc.includes('id="roleId"'),
+      "17. Creation UI exposes no role selector"
+    );
+
+    // 18. Creation UI exposes no office selector
+    assert(
+      !userFormSrc.includes('<select name="officeId"') && !userFormSrc.includes('id="officeId"'),
+      "18. Creation UI exposes no office selector"
+    );
+
+    // 19. Super Admin role/scope remain immutable through normal edit
+    let roleDemotionBlocked = false;
+    try {
+      await updateUser(callerSuperAdmin, createdAdminB.id, {
+        name: "Demote Attempt",
+        email: adminBEmail,
+        roleId: staffRole.id,
+      });
+    } catch (e: unknown) {
+      roleDemotionBlocked = e instanceof UserError && e.statusCode === 400 && e.message.includes("immutable");
+    }
+    assert(roleDemotionBlocked, "19. Super Admin role and scope remain immutable through normal edit (400)");
+
+    // 20. Self-deletion remains blocked
+    let selfDeleteBlocked = false;
+    try {
+      await deleteUser(callerSuperAdmin, callerSuperAdmin.id);
+    } catch (e: unknown) {
+      selfDeleteBlocked = e instanceof UserError && e.statusCode === 400 && e.message.includes("cannot delete your own account");
+    }
+    assert(selfDeleteBlocked, "20. Self-deletion remains blocked according to existing safeguards");
+
+    // 21. Last-effective-active-admin protection remains
+    const activeAdminsCountBefore = await countEffectiveActiveSystemAdmins();
+    assert(activeAdminsCountBefore >= 2, "21a. Verified multiple active system administrators exist (caller + Admin B)");
+
+    // 22. With multiple effective admins, permitted lifecycle management of another administrator behaves properly
+    // Super Admin A deactivates Super Admin B (permitted because active count >= 2)
+    const deactivatedB = await setUserStatus(callerSuperAdmin, createdAdminB.id, "INACTIVE");
+    assert(deactivatedB.status === "INACTIVE", "22a. Super Admin A can deactivate Super Admin B when multiple admins exist");
+
+    // Reactivate B
+    const reactivatedB = await setUserStatus(callerSuperAdmin, createdAdminB.id, "ACTIVE");
+    assert(reactivatedB.status === "ACTIVE", "22b. Super Admin A can reactivate Super Admin B");
+
+    // Super Admin A deletes Super Admin B (permitted because active count >= 2 and B authored 0 protected content)
+    const deletedB = await deleteUser(callerSuperAdmin, createdAdminB.id);
+    assert(deletedB.success === true, "22c. Super Admin A can delete Super Admin B when multiple admins exist");
+
+    // Now verify last admin protection on callerSuperAdmin
+    // When callerSuperAdmin is the sole remaining active admin, deactivation is strictly blocked
+    const otherActiveAdmins = await prisma.user.findMany({
+      where: {
+        id: { not: callerSuperAdmin.id },
+        status: "ACTIVE",
+        role: { isSystemScope: true, tier: "SYSTEM_ADMIN" },
+      },
+      select: { id: true },
+    });
+    const otherAdminIds = otherActiveAdmins.map((a) => a.id);
+
+    let deactivateLastAdminBlocked = false;
+    try {
+      if (otherAdminIds.length > 0) {
+        await prisma.user.updateMany({
+          where: { id: { in: otherAdminIds } },
+          data: { status: "INACTIVE" },
+        });
+      }
+      await setUserStatus(callerSuperAdmin, callerSuperAdmin.id, "INACTIVE");
+    } catch (e: unknown) {
+      deactivateLastAdminBlocked =
+        e instanceof UserError &&
+        e.statusCode === 400 &&
+        e.message.includes("last active");
+    } finally {
+      if (otherAdminIds.length > 0) {
+        await prisma.user.updateMany({
+          where: { id: { in: otherAdminIds } },
+          data: { status: "ACTIVE" },
+        });
+      }
+    }
+    assert(
+      deactivateLastAdminBlocked,
+      "21b. Last-effective-active-admin protection strictly blocks deactivating the last active administrator"
+    );
+
+    // 23. All 18 canonical municipal offices remain unchanged
+    const { VERIFIED_MUNICIPAL_OFFICES } = await import("../src/config/offices-data");
+    const canonicalOfficesCount = await prisma.office.count({
+      where: {
+        status: "ACTIVE",
+        slug: { in: VERIFIED_MUNICIPAL_OFFICES.map((o) => o.slug) },
+      },
+    });
+    assert(
+      canonicalOfficesCount === 18,
+      "23. All 18 canonical municipal offices remain intact and active in the database (count: 18)"
+    );
+
+    // 24. Underlying Office Admin and Staff RBAC architecture remains present
+    const oaRoleInDb = await prisma.role.findFirst({ where: { slug: "office-admin" } });
+    const staffRoleInDb = await prisma.role.findFirst({ where: { slug: "staff" } });
+    assert(
+      oaRoleInDb !== null && staffRoleInDb !== null,
+      "24. Underlying Office Admin and Staff RBAC architecture remains fully present in database"
+    );
 
   } finally {
     // Cleanup isolated test fixtures

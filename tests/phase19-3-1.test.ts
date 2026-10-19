@@ -677,8 +677,12 @@ async function runPhase1931TestSuite() {
     const implementedItems = allConfigItems.filter((i) => i.isImplemented);
 
     assert(
-      implementedItems.length === 9,
-      "Primary implemented navigation routes remain exactly 9 (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/offices, /admin/users, /admin/roles, /admin/audit-logs)"
+      implementedItems.length === 8,
+      "Primary implemented navigation routes remain exactly 8 (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/users, /admin/roles, /admin/audit-logs)"
+    );
+    assert(
+      !implementedItems.some((i) => i.href === "/admin/offices"),
+      "Municipal Offices (/admin/offices) is removed from CMS navigation per client UAT requirement"
     );
 
     const servicesNavItem = allConfigItems.find((i) => i.id === "services");

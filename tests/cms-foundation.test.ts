@@ -187,7 +187,7 @@ async function runCMSFoundationTests() {
   assert(!superItemIds.includes("citizens-charter"), "Citizen's Charter removed from direct navigation (managed under Services)");
   assert(!superItemIds.includes("business-permits"), "Business Permits removed from direct navigation (managed under Services)");
   assert(!superItemIds.includes("emergency-hotlines"), "Emergency Hotlines removed from CMS navigation");
-  assert(superItemIds.includes("offices"), "Super Admin has Municipal Offices item");
+  assert(!superItemIds.includes("offices"), "Municipal Offices removed from CMS navigation per client UAT requirement");
   assert(superItemIds.includes("users"), "Super Admin has Staff Accounts item");
   assert(superItemIds.includes("roles"), "Super Admin has Roles & Permissions item");
   assert(superItemIds.includes("audit-logs"), "Super Admin has Audit Logs item");
@@ -243,8 +243,8 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 9,
-    "Exactly 9 routes are marked isImplemented: true in Phase 18 (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/offices, /admin/users, /admin/roles, /admin/audit-logs)"
+    implementedItems.length === 8,
+    "Exactly 8 routes are marked isImplemented: true (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/users, /admin/roles, /admin/audit-logs)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
@@ -253,10 +253,13 @@ async function runCMSFoundationTests() {
       implementedItems.some((i) => i.href === "/admin/documents") &&
       implementedItems.some((i) => i.href === "/admin/jobs") &&
       implementedItems.some((i) => i.href === "/admin/users") &&
-      implementedItems.some((i) => i.href === "/admin/offices") &&
       implementedItems.some((i) => i.href === "/admin/roles") &&
       implementedItems.some((i) => i.href === "/admin/audit-logs"),
-    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/users, /admin/offices, /admin/roles, and /admin/audit-logs"
+    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/users, /admin/roles, and /admin/audit-logs"
+  );
+  assert(
+    !implementedItems.some((i) => i.href === "/admin/offices"),
+    "Municipal Offices (/admin/offices) is removed from CMS navigation per client UAT requirement"
   );
 
   const newsItem = allConfigItems.find((i) => i.id === "news");
@@ -275,7 +278,7 @@ async function runCMSFoundationTests() {
   assert(usersItem?.isImplemented === true, "Users item is activated with isImplemented: true in Phase 17");
 
   const officesItem = allConfigItems.find((i) => i.id === "offices");
-  assert(officesItem?.isImplemented === true, "Offices item is activated with isImplemented: true in Phase 17");
+  assert(officesItem === undefined, "Offices item is completely removed from CMS navigation");
 
   const rolesItem = allConfigItems.find((i) => i.id === "roles");
   assert(rolesItem?.isImplemented === true, "Roles item is activated with isImplemented: true in Phase 17");

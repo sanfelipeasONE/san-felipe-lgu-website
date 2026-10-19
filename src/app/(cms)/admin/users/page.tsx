@@ -17,8 +17,8 @@ import type { UserStatus } from "@prisma/client";
 export const instant = false;
 
 export const metadata: Metadata = {
-  title: "Staff Accounts | San Felipe LGU CMS",
-  description: "Municipal staff accounts and office assignments management",
+  title: "Accounts | San Felipe LGU CMS",
+  description: "Municipal administrator accounts and operational identity management",
 };
 
 interface UsersPageProps {
@@ -31,10 +31,10 @@ interface UsersPageProps {
 }
 
 const USER_COLUMNS: DataTableColumn[] = [
-  { key: "name", header: "Staff Member", width: "26%" },
+  { key: "name", header: "Administrator", width: "26%" },
   { key: "email", header: "Official Email", width: "22%" },
   { key: "role", header: "Role & Authority", width: "18%" },
-  { key: "office", header: "Municipal Office", width: "16%" },
+  { key: "office", header: "Scope & Custody", width: "16%" },
   { key: "status", header: "Status", width: "10%" },
   { key: "actions", header: "Actions", width: "8%", align: "right" },
 ];
@@ -80,21 +80,16 @@ export default async function AdminUsersListPage({ searchParams }: UsersPageProp
     });
   }
 
-  const canCreate = hasPermission(user, PERMISSIONS.USERS_CREATE);
   const canUpdate = hasPermission(user, PERMISSIONS.USERS_UPDATE);
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
-        title="Staff Accounts"
-        description={
-          isSystemScoped(user)
-            ? "Manage municipal personnel, office assignments, and role authorities across all municipal departments."
-            : `Manage ordinary staff accounts and access within the ${user.office?.name || "assigned office"}.`
-        }
-        breadcrumbs={[{ label: "Staff Accounts" }]}
+        title="Administrative Accounts"
+        description="Authorized municipal administrator accounts under the operational custody of the Municipal Tourism and Investments Promotions Office."
+        breadcrumbs={[{ label: "Accounts" }]}
         actions={
-          canCreate ? (
+          hasPermission(user, PERMISSIONS.USERS_CREATE) ? (
             <Link
               href="/admin/users/new"
               className="inline-flex items-center justify-center font-medium transition-colors rounded-lg bg-burgundy-700 hover:bg-burgundy-800 text-white text-xs h-9 px-4 shadow-2xs tracking-wide cursor-pointer gap-1.5"
@@ -107,6 +102,16 @@ export default async function AdminUsersListPage({ searchParams }: UsersPageProp
       />
 
       <AdminContent>
+        {/* Approved Operating Model Banner */}
+        <div className="p-4 mb-4 rounded-xl border border-slate-200 bg-white shadow-2xs flex items-start gap-3">
+          <Shield className="h-4 w-4 text-burgundy-700 shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-700">
+            <p className="font-semibold text-slate-800">Municipal Administrator Accounts</p>
+            <p className="mt-0.5 text-slate-600">
+              CMS administration is operated under the organizational custody of the Municipal Tourism and Investments Promotions Office. All administrator accounts hold municipal-wide system authority across all 18 canonical offices.
+            </p>
+          </div>
+        </div>
         {/* Filters bar */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 shadow-2xs">
           <form method="GET" className="flex flex-wrap items-center gap-3">
@@ -228,7 +233,7 @@ export default async function AdminUsersListPage({ searchParams }: UsersPageProp
                     </span>
                   </div>
                 ) : (
-                  <span className="text-slate-400 italic">None (System Admin)</span>
+                  <span className="font-medium text-slate-800">Municipal-wide (Tourism Custody)</span>
                 )}
               </td>
 

@@ -909,12 +909,15 @@ export async function uploadAndAttachCharterPdf(
 
   // Automatically associate new document to ServicePage
   // Safe replacement: does NOT delete previous Document or Cloudinary asset
+  // Automatically transitions Citizen's Charter service page to PUBLISHED
   let updatedPage;
   try {
     updatedPage = await prisma.servicePage.update({
       where: { serviceKey: "citizens-charter" },
       data: {
         charterDocumentId: createdDocument.id,
+        status: "PUBLISHED",
+        publishedAt: servicePage.publishedAt || new Date(),
         updatedById: user.id,
       },
     });
@@ -968,6 +971,23 @@ export async function uploadAndAttachCharterPdf(
       operation: "ATTACH_CHARTER_PDF",
     },
   });
+
+  if (servicePage.status !== "PUBLISHED") {
+    await logAuditEvent({
+      action: AUDIT_ACTIONS.SERVICE_CONTENT_PUBLISHED,
+      userId: user.id,
+      officeId: targetOfficeId,
+      details: {
+        servicePageId: updatedPage.id,
+        serviceKey: "citizens-charter",
+        title: updatedPage.title,
+        previousStatus: servicePage.status,
+        newStatus: "PUBLISHED",
+        operation: "ATTACH_CHARTER_PDF_AUTO_PUBLISH",
+        publishedAt: updatedPage.publishedAt,
+      },
+    });
+  }
 
   return {
     ...createdDocument,
@@ -1116,6 +1136,8 @@ export async function attachExistingCharterDocument(
     where: { serviceKey: "citizens-charter" },
     data: {
       charterDocumentId: doc.id,
+      status: "PUBLISHED",
+      publishedAt: existing.publishedAt || new Date(),
       updatedById: user.id,
     },
     include: {
@@ -1135,6 +1157,23 @@ export async function attachExistingCharterDocument(
       operation: "ATTACH_EXISTING_CHARTER_DOCUMENT",
     },
   });
+
+  if (existing.status !== "PUBLISHED") {
+    await logAuditEvent({
+      action: AUDIT_ACTIONS.SERVICE_CONTENT_PUBLISHED,
+      userId: user.id,
+      officeId: existing.officeId || user.officeId,
+      details: {
+        servicePageId: updated.id,
+        serviceKey: "citizens-charter",
+        title: updated.title,
+        previousStatus: existing.status,
+        newStatus: "PUBLISHED",
+        operation: "ATTACH_EXISTING_CHARTER_DOCUMENT_AUTO_PUBLISH",
+        publishedAt: updated.publishedAt,
+      },
+    });
+  }
 
   return updated;
 }

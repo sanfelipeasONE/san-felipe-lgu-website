@@ -4,13 +4,12 @@ import {
   Newspaper,
   Upload,
   Briefcase,
-  Building2,
   Users,
   UserPlus,
   ChevronRight,
 } from "lucide-react";
 import type { SessionUser } from "@/server/auth/session";
-import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
+import { hasPermission } from "@/lib/authz/scope";
 
 interface QuickActionsPanelProps {
   user: SessionUser;
@@ -37,19 +36,13 @@ export function QuickActionsPanel({ user }: QuickActionsPanelProps) {
       allowed: hasPermission(user, "jobs.create"),
     },
     {
-      label: "Create Staff Account",
+      label: "Create Account",
       href: "/admin/users/new",
       icon: UserPlus,
       allowed: hasPermission(user, "users.create"),
     },
     {
-      label: "Manage Municipal Offices",
-      href: "/admin/offices",
-      icon: Building2,
-      allowed: isSystemScoped(user) && hasPermission(user, "offices.view"),
-    },
-    {
-      label: "Manage Staff Accounts",
+      label: "Manage Accounts",
       href: "/admin/users",
       icon: Users,
       allowed: hasPermission(user, "users.view"),

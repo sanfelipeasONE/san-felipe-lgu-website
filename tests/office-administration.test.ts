@@ -588,6 +588,73 @@ async function runOfficeAdministrationTests() {
       "Zero noncanonical agency rows (DILG, BPLO, POPCOM, DTI, SENIOR CITIZEN, MAT, MTC, PDAO, PNP, BFP) exist in Office table"
     );
 
+    // -------------------------------------------------------------
+    // Test 10: CMS Navigation Removal & Direct Route Redirection
+    // -------------------------------------------------------------
+    console.log("\n10. CMS Navigation Removal & Direct Route Redirection");
+    const { ADMIN_NAV_CONFIG } = await import("../src/config/admin-navigation");
+    const allNavItems = ADMIN_NAV_CONFIG.flatMap((section) => section.items);
+    const officeNavItem = allNavItems.find(
+      (item) => item.id === "offices" || item.href === "/admin/offices"
+    );
+    assert(
+      !officeNavItem,
+      "Municipal Offices is completely absent from admin sidebar navigation"
+    );
+
+    // Verify Dashboard Quick Actions panel no longer contains "Manage Municipal Offices"
+    const quickActionsPath = path.resolve(
+      process.cwd(),
+      "src/components/admin/dashboard/quick-actions-panel.tsx"
+    );
+    const quickActionsSource = fs.readFileSync(quickActionsPath, "utf-8");
+    assert(
+      !quickActionsSource.includes("Manage Municipal Offices"),
+      "Quick Actions panel does not contain 'Manage Municipal Offices'"
+    );
+    assert(
+      !quickActionsSource.includes("/admin/offices"),
+      "Quick Actions panel does not contain links to /admin/offices"
+    );
+
+    // Verify /admin/offices and /admin/offices/[id]/edit contain direct redirects to /admin
+    const officesListPagePath = path.resolve(
+      process.cwd(),
+      "src/app/(cms)/admin/offices/page.tsx"
+    );
+    const officesListPageSource = fs.readFileSync(officesListPagePath, "utf-8");
+    assert(
+      officesListPageSource.includes('redirect("/admin")'),
+      "Admin offices list page contains redirect to /admin"
+    );
+    assert(
+      officesListPageSource.includes('redirect("/staff/login")'),
+      "Admin offices list page redirects unauthenticated requests to /staff/login"
+    );
+
+    const editOfficePagePath = path.resolve(
+      process.cwd(),
+      "src/app/(cms)/admin/offices/[id]/edit/page.tsx"
+    );
+    const editOfficePageSource = fs.readFileSync(editOfficePagePath, "utf-8");
+    assert(
+      editOfficePageSource.includes('redirect("/admin")'),
+      "Edit office page contains redirect to /admin"
+    );
+    assert(
+      editOfficePageSource.includes('redirect("/staff/login")'),
+      "Edit office page redirects unauthenticated requests to /staff/login"
+    );
+
+    // Verify canonical offices data remains 100% intact
+    const canonicalCount = await prisma.office.count({
+      where: { status: "ACTIVE" },
+    });
+    assert(
+      canonicalCount >= 18,
+      `All 18 canonical municipal offices remain intact in the database (found: ${canonicalCount})`
+    );
+
   } finally {
     console.log("\nCleaning up test records...");
     await prisma.session.deleteMany({

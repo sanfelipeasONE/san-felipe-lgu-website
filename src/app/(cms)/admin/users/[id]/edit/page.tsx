@@ -14,8 +14,8 @@ import { UserForm, type RoleOption, type OfficeOption } from "@/components/admin
 export const instant = false;
 
 export const metadata: Metadata = {
-  title: "Edit Staff Account | San Felipe LGU CMS",
-  description: "Update municipal staff account details and operational status",
+  title: "Edit Account | San Felipe LGU CMS",
+  description: "Update municipal administrator account details and operational credentials",
 };
 
 interface EditUserPageProps {
@@ -89,10 +89,10 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
-        title={`Edit Staff Account: ${targetUser.name}`}
-        description={`Manage identity details, office affiliation, and active credentials for ${targetUser.email}.`}
+        title={`Edit Account: ${targetUser.name}`}
+        description={`Manage identity details and operational credentials for ${targetUser.email}.`}
         breadcrumbs={[
-          { label: "Staff Accounts", href: "/admin/users" },
+          { label: "Accounts", href: "/admin/users" },
           { label: targetUser.name },
         ]}
       />

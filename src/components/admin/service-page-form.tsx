@@ -286,10 +286,11 @@ export function ServicePageForm({
       status: "PUBLISHED",
     });
     setCharterDocumentId(res.data.documentId);
+    setStatus("PUBLISHED");
     setIsReplacing(false);
     setSelectedFile(null);
     setPdfTitle("");
-    toast.success("Citizen's Charter PDF uploaded.");
+    toast.success("Citizen's Charter PDF uploaded and published.");
     router.refresh();
   };
 
@@ -348,8 +349,9 @@ export function ServicePageForm({
         status: found.status,
       });
       setCharterDocumentId(found.id);
+      setStatus("PUBLISHED");
     }
-    toast.success("Citizen's Charter document associated.");
+    toast.success("Citizen's Charter document associated and published.");
     router.refresh();
   };
 

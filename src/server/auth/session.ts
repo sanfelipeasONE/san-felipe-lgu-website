@@ -88,8 +88,13 @@ export async function createSession(
  * User + Office + Role + Permissions.
  */
 export async function getCurrentUser(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(AUTH_CONFIG.cookieName);
+  let sessionCookie: { value: string } | undefined;
+  try {
+    const cookieStore = await cookies();
+    sessionCookie = cookieStore.get(AUTH_CONFIG.cookieName);
+  } catch {
+    return null;
+  }
 
   if (!sessionCookie?.value) {
     return null;

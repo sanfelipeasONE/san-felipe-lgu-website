@@ -213,6 +213,8 @@ export async function uploadCharterPdfAction(
     revalidatePath("/admin/services/citizens-charter/edit");
     revalidatePath("/admin/services/citizens-charter/preview");
     revalidatePath("/services/citizens-charter");
+    revalidatePath("/services");
+    revalidatePath("/");
     revalidatePath("/admin/documents");
 
     return {
@@ -291,6 +293,8 @@ export async function linkExistingCharterDocumentAction(
     revalidatePath(`/admin/services/${serviceKey}/edit`);
     revalidatePath(`/admin/services/${serviceKey}/preview`);
     revalidatePath(`/services/${serviceKey}`);
+    revalidatePath("/services");
+    revalidatePath("/");
     revalidatePath("/admin/documents");
 
     return {

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/server/authz/guard";
+import { requireUser, AuthError } from "@/server/authz/guard";
 import {
   createUser,
   updateUser,
@@ -43,16 +43,17 @@ export async function createUserAction(
     const created = await createUser(caller, parsed.data);
 
     revalidatePath("/admin/users");
+    revalidatePath("/admin");
     return {
       success: true,
       data: { id: created.id, email: created.email },
     };
   } catch (error) {
-    if (error instanceof UserError) {
+    if (error instanceof UserError || error instanceof AuthError) {
       return { success: false, error: error.message, statusCode: error.statusCode };
     }
-    const message = error instanceof Error ? error.message : "Failed to create user account.";
-    return { success: false, error: message, statusCode: 500 };
+    console.error("Failed to create user account:", error);
+    return { success: false, error: "An unexpected error occurred while creating the account.", statusCode: 500 };
   }
 }
 

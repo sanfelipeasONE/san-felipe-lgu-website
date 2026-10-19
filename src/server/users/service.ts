@@ -24,6 +24,11 @@ export const RETIRED_ROLE_SLUGS = [
   "approver",
 ] as const;
 
+/**
+ * Phase 21 UAT Municipal Policy: Multiple Super Admin Accounts Operating Model.
+ * Every administrator account holds system-wide authority (role: super-admin, scope: SYSTEM, officeId: null).
+ */
+
 export class UserError extends Error {
   constructor(
     message: string,
@@ -271,16 +276,68 @@ export async function getUserById(caller: SessionUser, targetId: string) {
 
 /**
  * Creates a new municipal user account.
- * - SYSTEM scope: can create accounts across offices, validating active office and assignable role.
- * - OFFICE scope: strictly creates an ordinary Staff account in caller's own office.
+ * Phase 21 UAT Municipal Policy: Multiple Super Admin Accounts Model.
+ * Every provisioned account must be:
+ * - Canonical role: super-admin
+ * - Scope: SYSTEM
+ * - officeId: null
+ * - Status: ACTIVE (default)
+ * - Forged officeId, office-admin, staff, retired roles, or unauthorized/office-scoped callers are rejected.
  */
 export async function createUser(
   caller: SessionUser,
   input: CreateUserInput,
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
-) {
+): Promise<{
+  id: string;
+  name: string;
+  email: string;
+  status: UserStatus;
+  officeId: string | null;
+  roleId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}> {
   if (!hasPermission(caller, PERMISSIONS.USERS_CREATE)) {
     throw new UserError("Missing required permission: users.create", 403);
+  }
+
+  // Only SYSTEM-scoped administrators may provision accounts in this release
+  if (!caller.isSystemScope) {
+    throw new UserError("Access restricted: Only system administrators may provision user accounts.", 403);
+  }
+
+  // Reject forged office assignments
+  if (input.officeId !== undefined && input.officeId !== null) {
+    if (typeof input.officeId === "string" && input.officeId.trim() !== "") {
+      throw new UserError("Super Admin accounts must not be assigned to a municipal office.", 400);
+    }
+  }
+
+  // Resolve canonical Super Admin role
+  const superAdminRole = await prisma.role.findFirst({
+    where: {
+      slug: "super-admin",
+      isSystemScope: true,
+      tier: RoleTier.SYSTEM_ADMIN,
+    },
+    select: { id: true, slug: true },
+  });
+
+  if (!superAdminRole) {
+    throw new UserError("System configuration error: Canonical Super Admin role not found.", 500);
+  }
+
+  // If roleId was supplied in the contract, validate that it strictly matches canonical Super Admin
+  if (input.roleId && input.roleId !== superAdminRole.id) {
+    const requestedRole = await prisma.role.findUnique({
+      where: { id: input.roleId },
+      select: { slug: true },
+    });
+    if (requestedRole && (RETIRED_ROLE_SLUGS as readonly string[]).includes(requestedRole.slug)) {
+      throw new UserError("The selected role is retired and cannot be assigned to user accounts.", 400);
+    }
+    throw new UserError("Only Super Admin accounts may be created under the approved municipal operating model.", 400);
   }
 
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -294,108 +351,19 @@ export async function createUser(
     throw new UserError("A user account with this municipal email address already exists.", 400);
   }
 
-  let targetOfficeId: string | null = null;
-  let targetRoleId: string;
-
-  if (caller.isSystemScope) {
-    if (!input.roleId) {
-      throw new UserError("A role must be selected for the new user account.", 400);
-    }
-
-    const role = await prisma.role.findUnique({
-      where: { id: input.roleId },
-      select: { id: true, isSystemScope: true, tier: true, slug: true },
-    });
-    if (!role) {
-      throw new UserError("The selected role does not exist.", 400);
-    }
-    if ((RETIRED_ROLE_SLUGS as readonly string[]).includes(role.slug)) {
-      throw new UserError("The selected role is retired and cannot be assigned to user accounts.", 400);
-    }
-
-    if (!role.isSystemScope) {
-      // Office-scoped role requires an active municipal office
-      if (!input.officeId) {
-        throw new UserError("An assigned municipal office is required for office-scoped roles.", 400);
-      }
-      const office = await prisma.office.findUnique({
-        where: { id: input.officeId },
-        select: { id: true, slug: true, status: true },
-      });
-      if (!office || office.slug === "icto") {
-        throw new UserError("The selected municipal office does not exist.", 400);
-      }
-      if (office.status !== "ACTIVE") {
-        throw new UserError("User accounts can only be assigned to active municipal offices.", 400);
-      }
-      targetOfficeId = office.id;
-    } else {
-      // System-scoped role: office affiliation is optional (system-wide by default)
-      if (input.officeId) {
-        const office = await prisma.office.findUnique({
-          where: { id: input.officeId },
-          select: { id: true, slug: true, status: true },
-        });
-        if (!office || office.slug === "icto") {
-          throw new UserError("The selected municipal office does not exist.", 400);
-        }
-        if (office.status !== "ACTIVE") {
-          throw new UserError("User accounts can only be assigned to active municipal offices.", 400);
-        }
-        targetOfficeId = office.id;
-      }
-    }
-
-    targetRoleId = role.id;
-  } else {
-    // OFFICE Admin: strictly own office, strictly canonical ordinary STAFF role
-    if (!caller.officeId) {
-      throw new UserError("Your account is not assigned to a municipal office.", 403);
-    }
-    const callerOffice = await prisma.office.findUnique({
-      where: { id: caller.officeId },
-      select: { id: true, status: true },
-    });
-    if (!callerOffice || callerOffice.status !== "ACTIVE") {
-      throw new UserError("Cannot create staff accounts for an inactive municipal office.", 400);
-    }
-    targetOfficeId = caller.officeId;
-
-    // Find canonical Staff role
-    const staffRole = await prisma.role.findFirst({
-      where: {
-        tier: RoleTier.STAFF,
-        isBuiltIn: true,
-        slug: "staff",
-      },
-      select: { id: true },
-    });
-    if (!staffRole) {
-      // Fallback to any built-in staff role
-      const fallbackStaff = await prisma.role.findFirst({
-        where: { tier: RoleTier.STAFF, isBuiltIn: true },
-        select: { id: true },
-      });
-      if (!fallbackStaff) {
-        throw new UserError("System configuration error: Canonical Staff role not found.", 500);
-      }
-      targetRoleId = fallbackStaff.id;
-    } else {
-      targetRoleId = staffRole.id;
-    }
-  }
-
   // Hash password with Argon2id (never store plaintext)
   const passwordHash = await hashPassword(input.password);
+
+  const targetStatus = input.status ? (input.status as UserStatus) : UserStatus.ACTIVE;
 
   const newUser = await prisma.user.create({
     data: {
       name: input.name.trim(),
       email: normalizedEmail,
       passwordHash,
-      officeId: targetOfficeId,
-      roleId: targetRoleId,
-      status: caller.isSystemScope ? (input.status ?? "ACTIVE") : "ACTIVE",
+      officeId: null,
+      roleId: superAdminRole.id,
+      status: targetStatus,
     },
     select: {
       id: true,
@@ -412,12 +380,12 @@ export async function createUser(
   await recordAuditEvent({
     action: AUDIT_ACTIONS.USER_CREATED,
     userId: caller.id,
-    officeId: targetOfficeId,
+    officeId: null,
     details: {
       targetUserId: newUser.id,
       targetEmail: newUser.email,
-      targetRoleId: newUser.roleId,
-      targetOfficeId: newUser.officeId,
+      targetRoleSlug: "super-admin",
+      isSystemScope: true,
     },
     ipAddress: clientMeta?.ipAddress,
     userAgent: clientMeta?.userAgent,
@@ -450,6 +418,7 @@ export async function updateUser(
       role: {
         select: {
           id: true,
+          slug: true,
           isSystemScope: true,
           tier: true,
           name: true,
@@ -508,6 +477,10 @@ export async function updateUser(
   if (caller.isSystemScope) {
     // Role change validation
     if (input.roleId && input.roleId !== target.roleId) {
+      if (target.role.slug === "super-admin") {
+        throw new UserError("Super Admin role and scope are immutable under the approved municipal operating model.", 400);
+      }
+
       const targetRole = await prisma.role.findUnique({
         where: { id: input.roleId },
         select: { id: true, isSystemScope: true, tier: true, slug: true },
@@ -537,6 +510,9 @@ export async function updateUser(
 
     // Office change validation
     if (input.officeId !== undefined && input.officeId !== target.officeId) {
+      if (target.role.slug === "super-admin" && input.officeId !== null) {
+        throw new UserError("Super Admin role and scope are immutable under the approved municipal operating model.", 400);
+      }
       if (input.officeId !== null) {
         const office = await prisma.office.findUnique({
           where: { id: input.officeId },
@@ -555,12 +531,27 @@ export async function updateUser(
       officeChanged = true;
     }
 
-    // Role-aware validation: Office-scoped roles MUST have an assigned active municipal office
-    if (!nextRoleIsSystemScope && !nextOfficeId) {
-      throw new UserError("An assigned municipal office is required for office-scoped roles.", 400);
+    // Role-aware validation:
+    // System-scoped users (Super Admin) must remain system-wide with officeId = null
+    if (nextRoleIsSystemScope) {
+      nextOfficeId = null;
+    } else {
+      // Office-scoped roles MUST have an assigned active municipal office
+      if (!nextOfficeId) {
+        throw new UserError("An assigned municipal office is required for office-scoped roles.", 400);
+      }
     }
 
     if (input.status) {
+      if (
+        input.status !== UserStatus.ACTIVE &&
+        isEffectiveActiveSystemAdmin(target)
+      ) {
+        const otherAdmins = await countEffectiveActiveSystemAdmins(target.id);
+        if (otherAdmins === 0) {
+          throw new UserError("Cannot disable or suspend the last active system administrator.", 400);
+        }
+      }
       nextStatus = input.status;
     }
   } else {
