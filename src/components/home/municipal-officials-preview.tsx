@@ -35,8 +35,8 @@ export function MunicipalOfficialsPreview() {
           <div className="bg-white border border-slate-200/90 rounded-xs shadow-2xs overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
               {/* 1. Office of the Municipal Mayor (Executive) */}
-              <article className="p-7 sm:p-9 group">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              <article className="p-7 sm:p-9 group flex flex-col justify-center">
+                <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6 justify-center mx-auto w-fit max-w-full">
                   {/* Formal Photographic Frame */}
                   <Link
                     href="/government/officials#mayor"
@@ -58,7 +58,7 @@ export function MunicipalOfficialsPreview() {
                   </Link>
 
                   {/* Official Details */}
-                  <div className="flex-1 text-center sm:text-left">
+                  <div className="text-center sm:text-left">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block">
                       Municipal Mayor
                     </span>
@@ -67,26 +67,19 @@ export function MunicipalOfficialsPreview() {
                         href="/government/officials#mayor"
                         className="hover:text-burgundy-800 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-burgundy-700 focus-visible:outline-offset-2 rounded-xs"
                       >
-                        HON. ENGR. REINHARD &ldquo;HART&rdquo; E. JERESANO
+                        {mayor.name}
                       </Link>
                     </h3>
                     <p className="text-xs text-slate-500 font-medium mt-1">
                       Municipality of San Felipe, Zambales
                     </p>
-
-                    {/* Quotation without motto heading */}
-                    {mayor.quote && (
-                      <p className="mt-3.5 pt-2.5 border-t border-slate-100 text-xs font-serif italic text-slate-700 leading-relaxed pl-3 border-l-2 border-gold-500/60">
-                        &ldquo;{mayor.quote}&rdquo;
-                      </p>
-                    )}
                   </div>
                 </div>
               </article>
 
               {/* 2. Office of the Sangguniang Bayan (Legislative) */}
-              <article className="p-7 sm:p-9 group">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              <article className="p-7 sm:p-9 group flex flex-col justify-center">
+                <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6 justify-center mx-auto w-fit max-w-full">
                   {/* Formal Photographic Frame */}
                   <Link
                     href="/government/officials#vice-mayor"
@@ -108,7 +101,7 @@ export function MunicipalOfficialsPreview() {
                   </Link>
 
                   {/* Official Details */}
-                  <div className="flex-1 text-center sm:text-left">
+                  <div className="text-center sm:text-left">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block">
                       Municipal Vice Mayor &amp; SB Presiding Officer
                     </span>
@@ -123,13 +116,6 @@ export function MunicipalOfficialsPreview() {
                     {viceMayor.committee && (
                       <p className="text-[11px] text-slate-600 font-medium mt-1">
                         {viceMayor.committee}
-                      </p>
-                    )}
-
-                    {/* Quotation without motto heading */}
-                    {viceMayor.quote && (
-                      <p className="mt-3.5 pt-2.5 border-t border-slate-100 text-xs font-serif italic text-slate-700 leading-relaxed pl-3 border-l-2 border-gold-500/60">
-                        &ldquo;{viceMayor.quote}&rdquo;
                       </p>
                     )}
                   </div>

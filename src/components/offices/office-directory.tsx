@@ -28,25 +28,19 @@ export function OfficeDirectory({ offices }: OfficeDirectoryProps) {
               <tr className="bg-burgundy-900 text-white border-b-2 border-gold-500 divide-x divide-burgundy-800/80">
                 <th
                   scope="col"
-                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[35%]"
+                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[40%]"
                 >
                   Office / Department
                 </th>
                 <th
                   scope="col"
-                  className="py-3 px-4 text-xs font-bold uppercase tracking-wider text-white w-[15%]"
-                >
-                  Abbreviation
-                </th>
-                <th
-                  scope="col"
-                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[25%]"
+                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[30%]"
                 >
                   Office Head / OIC
                 </th>
                 <th
                   scope="col"
-                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[25%]"
+                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[30%]"
                 >
                   Contact Details
                 </th>
@@ -73,20 +67,7 @@ export function OfficeDirectory({ offices }: OfficeDirectoryProps) {
                       </div>
                     </td>
 
-                    {/* 2. Abbreviation */}
-                    <td className="py-3.5 px-4 align-top">
-                      {office.acronym ? (
-                        <span className="inline-flex items-center text-[11px] font-bold text-burgundy-800 bg-burgundy-50 border border-burgundy-200 px-2 py-0.5 rounded-xs font-mono">
-                          {office.acronym}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 font-mono text-xs select-none">
-                          —
-                        </span>
-                      )}
-                    </td>
-
-                    {/* 3. Office Head / OIC */}
+                    {/* 2. Office Head / OIC */}
                     <td className="py-3.5 px-5 align-top">
                       {office.head ? (
                         <div>

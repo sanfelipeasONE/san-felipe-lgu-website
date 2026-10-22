@@ -12,15 +12,34 @@ import { ASSETS } from "@/config/assets";
 export function MobileNavigation() {
   const [isOpen, setIsOpen] = React.useState(false);
   const pathname = usePathname();
-  const isServicesRoute = pathname.startsWith("/services");
-  const [userExpanded, setUserExpanded] = React.useState<boolean | null>(null);
-  const servicesExpanded = userExpanded ?? isServicesRoute;
+
+  // User toggle overrides: key is menu title, value is boolean
+  const [userOverrides, setUserOverrides] = React.useState<Record<string, boolean>>({});
+
+  const isMenuExpanded = (title: string): boolean => {
+    if (userOverrides[title] !== undefined) {
+      return userOverrides[title];
+    }
+    if (title === "Government") return pathname.startsWith("/government");
+    if (title === "Services") return pathname.startsWith("/services");
+    if (title === "Tourism") return pathname.startsWith("/tourism");
+    if (title === "Transparency") return pathname.startsWith("/transparency");
+    return false;
+  };
+
+  const toggleMenu = (title: string) => {
+    setUserOverrides((prev) => ({
+      ...prev,
+      [title]: !isMenuExpanded(title),
+    }));
+  };
 
   // Handle escape key to close menu
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && isOpen) {
         setIsOpen(false);
+        setUserOverrides({});
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -41,7 +60,7 @@ export function MobileNavigation() {
 
   const handleLinkClick = (href?: string) => {
     setIsOpen(false);
-    setUserExpanded(null);
+    setUserOverrides({});
 
     if (href === "/#emergency-hotlines" && pathname === "/") {
       const el = document.getElementById("emergency-hotlines");
@@ -58,7 +77,12 @@ export function MobileNavigation() {
     <div className="lg:hidden">
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (isOpen) {
+            setUserOverrides({});
+          }
+          setIsOpen(!isOpen);
+        }}
         aria-expanded={isOpen}
         aria-controls="mobile-navigation-menu"
         aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
@@ -73,7 +97,7 @@ export function MobileNavigation() {
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs transition-opacity"
           onClick={() => {
             setIsOpen(false);
-            setUserExpanded(null);
+            setUserOverrides({});
           }}
           aria-hidden="true"
         />
@@ -106,7 +130,7 @@ export function MobileNavigation() {
             type="button"
             onClick={() => {
               setIsOpen(false);
-              setUserExpanded(null);
+              setUserOverrides({});
             }}
             aria-label="Close menu"
             className="p-1.5 text-gov-muted hover:text-gov-charcoal hover:bg-gray-100 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
@@ -122,14 +146,20 @@ export function MobileNavigation() {
                 ? pathname === "/"
                 : pathname.startsWith(item.href);
 
-            if (item.title === "Services") {
+            const dropdownLinks = NAV_DROPDOWN_ITEMS[item.title];
+            const hasDropdown = Boolean(dropdownLinks);
+            const isExpanded = isMenuExpanded(item.title);
+
+            if (hasDropdown && dropdownLinks) {
+              const menuId = `mobile-${item.title.toLowerCase().replace(/\s+/g, "-")}-menu`;
+
               return (
                 <div key={item.title} className="space-y-1">
                   <button
                     type="button"
-                    onClick={() => setUserExpanded((prev) => !(prev ?? isServicesRoute))}
-                    aria-expanded={servicesExpanded}
-                    aria-controls="mobile-services-menu"
+                    onClick={() => toggleMenu(item.title)}
+                    aria-expanded={isExpanded}
+                    aria-controls={menuId}
                     className={cn(
                       "w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left min-h-[44px]",
                       isActive
@@ -141,20 +171,20 @@ export function MobileNavigation() {
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 transition-transform duration-200 text-gov-muted",
-                        servicesExpanded && "rotate-180 text-burgundy-700"
+                        isExpanded && "rotate-180 text-burgundy-700"
                       )}
                       aria-hidden="true"
                     />
                   </button>
 
-                  {servicesExpanded && (
+                  {isExpanded && (
                     <div
-                      id="mobile-services-menu"
+                      id={menuId}
                       className="pl-3.5 pr-2 py-1 space-y-1 ml-2 border-l-2 border-burgundy-200 bg-gray-50/70 rounded-xs"
                     >
-                      {NAV_DROPDOWN_ITEMS.Services.map((subItem) => {
+                      {dropdownLinks.map((subItem) => {
                         const isSubActive =
-                          subItem.href === "/#emergency-hotlines"
+                          subItem.href === "/#emergency-hotlines" || subItem.href === "/#contact-us"
                             ? false
                             : pathname === subItem.href || pathname.startsWith(subItem.href + "/");
 
@@ -198,6 +228,15 @@ export function MobileNavigation() {
               </Link>
             );
           })}
+
+          {/* Standalone Mobile Contact Us link per Section 26 */}
+          <Link
+            href="/#contact-us"
+            onClick={() => handleLinkClick("/#contact-us")}
+            className="flex items-center min-h-[44px] px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-gov-charcoal hover:bg-gray-100 hover:text-burgundy-700"
+          >
+            Contact Us
+          </Link>
         </nav>
       </div>
     </div>

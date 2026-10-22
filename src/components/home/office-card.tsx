@@ -18,12 +18,7 @@ export function OfficeCard({ office }: OfficeCardProps) {
       )}
     >
       <h3 className="text-sm sm:text-base font-bold text-gov-charcoal tracking-tight leading-snug group-hover:text-burgundy-800 group-focus-visible:text-burgundy-800 transition-colors duration-200">
-        {office.name}{" "}
-        {office.acronym && (
-          <span className="text-burgundy-700 font-semibold">
-            ({office.acronym})
-          </span>
-        )}
+        {office.name}
       </h3>
     </Link>
   );

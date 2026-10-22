@@ -112,11 +112,21 @@ export function OrganizationalTree() {
             Sectoral representatives serving as ex-officio members of the Sangguniang Bayan.
           </p>
 
-          {/* 2 Ex-Officio Cards (LNB & SK Federation) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl w-full mx-auto">
-            {legislative.exOfficioMembers.map((exOfficio) => (
-              <ExOfficioCard key={exOfficio.id} official={exOfficio} />
-            ))}
+          {/* Ex-Officio Cards: Row 1 (LNB & SK Federation), Row 2 (IPMR centered) */}
+          <div className="flex flex-col gap-6 max-w-3xl w-full mx-auto">
+            {/* Row 1: LNB President & SK Federation President */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+              {legislative.exOfficioMembers.slice(0, 2).map((exOfficio) => (
+                <ExOfficioCard key={exOfficio.id} official={exOfficio} />
+              ))}
+            </div>
+
+            {/* Row 2: IPMR centered below on desktop, stacked on mobile */}
+            {legislative.exOfficioMembers[2] && (
+              <div className="w-full md:w-[calc(50%-0.75rem)] md:mx-auto">
+                <ExOfficioCard official={legislative.exOfficioMembers[2]} />
+              </div>
+            )}
           </div>
         </div>
       </Container>

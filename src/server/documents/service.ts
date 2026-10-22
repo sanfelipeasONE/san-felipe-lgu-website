@@ -896,4 +896,73 @@ export async function getEligiblePublicCharterDocument(id: string) {
   return document;
 }
 
+/**
+ * Resolves an eligible public document for managed public view or download.
+ * Security enforcement:
+ * - Document must exist in DB.
+ * - Document status must be strictly PUBLISHED.
+ * - If purpose is CITIZENS_CHARTER:
+ *     Must be associated with the published canonical "citizens-charter" ServicePage.
+ * - If purpose is OTHER_PUBLIC_DOCUMENT (e.g. Procurement disclosures):
+ *     Must belong to an ACTIVE municipal office.
+ * - All other document purposes or unassociated records are strictly denied (null -> 404).
+ */
+export async function getEligiblePublicDocument(id: string) {
+  if (!id || typeof id !== "string") {
+    return null;
+  }
+
+  const document = await prisma.document.findUnique({
+    where: { id },
+    include: {
+      office: {
+        select: {
+          id: true,
+          status: true,
+        },
+      },
+      charterServicePages: {
+        where: {
+          serviceKey: "citizens-charter",
+          status: "PUBLISHED",
+        },
+        select: {
+          id: true,
+          serviceKey: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  if (!document) {
+    return null;
+  }
+
+  // 1. Must be strictly PUBLISHED
+  if (document.status !== "PUBLISHED") {
+    return null;
+  }
+
+  // 2. Citizen's Charter Handbook: must be associated with published charter page
+  if (document.purpose === "CITIZENS_CHARTER") {
+    if (!document.charterServicePages || document.charterServicePages.length === 0) {
+      return null;
+    }
+    return document;
+  }
+
+  // 3. Other Public Documents (Procurement & Civic Transparency Disclosures):
+  //    Must belong to an active municipal office
+  if (document.purpose === "OTHER_PUBLIC_DOCUMENT") {
+    if (!document.office || document.office.status !== "ACTIVE") {
+      return null;
+    }
+    return document;
+  }
+
+  // All other purposes (e.g. DOWNLOADABLE_FORM, JOB_ATTACHMENT) are not served via these managed routes
+  return null;
+}
+
 export { formatBytes } from "@/lib/validation/documents";

@@ -549,7 +549,7 @@ async function runPublicDatabaseIntegrationTestSuite() {
 
     // Officials
     assert(
-      MUNICIPAL_OFFICIALS_DATA.executive.mayor.name === 'HON. ENGR. REINHARD "HART" E. JERESANO',
+      MUNICIPAL_OFFICIALS_DATA.executive.mayor.name === "HON. REINHARD E. JERESANO",
       "Mayor remains verified static civic record"
     );
     assert(
@@ -561,8 +561,8 @@ async function runPublicDatabaseIntegrationTestSuite() {
       "8 regular Sangguniang Bayan councilors remain verified static civic records"
     );
     assert(
-      MUNICIPAL_OFFICIALS_DATA.legislative.exOfficioMembers.length === 2,
-      "2 ex-officio council members remain verified static civic records"
+      MUNICIPAL_OFFICIALS_DATA.legislative.exOfficioMembers.length === 3,
+      "3 ex-officio council members remain verified static civic records (including IPMR)"
     );
 
     // Verify no 'official' table in Prisma

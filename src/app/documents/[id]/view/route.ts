@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getEligiblePublicCharterDocument } from "@/server/documents/service";
+import { getEligiblePublicDocument } from "@/server/documents/service";
 
 export const instant = false;
 
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const doc = await getEligiblePublicCharterDocument(id);
+  const doc = await getEligiblePublicDocument(id);
 
   if (!doc) {
     return new Response("Document not found or unavailable.", {

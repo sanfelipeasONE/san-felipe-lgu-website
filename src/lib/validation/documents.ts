@@ -21,6 +21,7 @@ export const DOCUMENT_CATEGORIES = [
   "Taxation & Revenue",
   "Social Services",
   "General Administration",
+  "Procurement",
 ] as const;
 
 export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];

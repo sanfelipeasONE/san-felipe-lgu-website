@@ -25,13 +25,13 @@ export const ASSETS = {
   },
   officials: {
     mayor: {
-      src: "/images/portrait-mayor.jpg",
-      alt: "Hon. Engr. Reinhard E. Jeresano, Municipal Mayor",
+      src: "/images/Hon. Reinhard E. Jeresano.jpg",
+      alt: "Hon. Reinhard E. Jeresano, Municipal Mayor",
       provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
     },
     viceMayor: {
-      src: "/images/portrait-vice-mayor.jpg",
-      alt: "Hon. Vice-Mayor Mary Ann R. Quiba, Municipal Vice Mayor",
+      src: "/images/Hon. Mary Ann R. Quiba.jpg",
+      alt: "Hon. Mary Ann R. Quiba, Municipal Vice Mayor & SB Presiding Officer",
       provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
     },
     placeholder: {

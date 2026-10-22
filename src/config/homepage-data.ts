@@ -69,28 +69,26 @@ export interface OfficialItem {
   name: string;
   role: string;
   officeTitle: string;
-  quote: string;
+  quote?: string;
   imageAlt: string;
   isMayor?: boolean;
 }
 
 export const OFFICIALS_DATA = {
   mayor: {
-    name: 'HON. ENGR. REINHARD "HART" E. JERESANO',
+    name: "HON. REINHARD E. JERESANO",
     role: "Municipal Mayor",
     officeTitle: "OFFICE OF THE MUNICIPAL MAYOR",
     subtitle: "Municipal Mayor, San Felipe, Zambales",
-    quote: "Serbisyong May Puso",
-    imageAlt: "Hon. Engr. Reinhard Hart E. Jeresano, Municipal Mayor of San Felipe, Zambales",
+    imageAlt: "Hon. Reinhard E. Jeresano, Municipal Mayor of San Felipe, Zambales",
   },
   viceMayor: {
-    name: "HON. VICE-MAYOR MARY ANN R. QUIBA",
+    name: "HON. MARY ANN R. QUIBA",
     role: "Municipal Vice Mayor",
     officeTitle: "OFFICE OF THE SANGGUNIANG BAYAN",
     subtitle: "Municipal Vice Mayor & SB Presiding Officer",
     committee: "Chairwoman, ADHOC Committee on Legislative and Executive Affairs",
-    quote: "Serbisyong Todo-Todo Mula Noon Hanggang Ngayon",
-    imageAlt: "Hon. Vice-Mayor Mary Ann R. Quiba, Municipal Vice Mayor of San Felipe, Zambales",
+    imageAlt: "Hon. Mary Ann R. Quiba, Municipal Vice Mayor & SB Presiding Officer",
   },
 };
 

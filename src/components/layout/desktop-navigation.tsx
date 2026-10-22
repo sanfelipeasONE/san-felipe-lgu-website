@@ -20,18 +20,14 @@ export function DesktopNavigation() {
 
         const dropdownLinks = NAV_DROPDOWN_ITEMS[item.title];
         const hasDropdown = Boolean(dropdownLinks);
+        const isRightAligned = item.title === "Transparency";
 
         return (
           <div key={item.href} className="relative group">
             <Link
               href={item.href}
-              onClick={(e) => {
-                if (item.href === "/services") {
-                  e.preventDefault();
-                }
-              }}
               className={cn(
-                "relative px-3.5 py-2 text-sm font-medium rounded-xs flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                "relative px-3 py-2 text-sm font-medium rounded-xs flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
                 isActive
                   ? "text-burgundy-800 font-semibold"
                   : "text-gov-charcoal hover:text-burgundy-800"
@@ -65,11 +61,14 @@ export function DesktopNavigation() {
             {/* Dropdown: fades and drops 6px in 150ms */}
             {hasDropdown && dropdownLinks && (
               <div
-                className="absolute top-full left-0 mt-1 min-w-[13.5rem] bg-white border border-gray-200 shadow-md rounded-xs py-1.5 z-40 opacity-0 -translate-y-1.5 invisible pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:visible group-focus-within:pointer-events-auto transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                className={cn(
+                  "absolute top-full mt-1 min-w-[13.5rem] bg-white border border-gray-200 shadow-md rounded-xs py-1.5 z-40 opacity-0 -translate-y-1.5 invisible pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:visible group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:visible group-focus-within:pointer-events-auto transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  isRightAligned ? "right-0" : "left-0"
+                )}
               >
                 {dropdownLinks.map((subItem) => {
                   const isSubActive =
-                    subItem.href === "/#emergency-hotlines"
+                    subItem.href === "/#emergency-hotlines" || subItem.href === "/#contact-us"
                       ? false
                       : pathname === subItem.href || pathname.startsWith(subItem.href + "/");
 

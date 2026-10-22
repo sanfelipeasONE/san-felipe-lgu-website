@@ -12,8 +12,6 @@ export interface SubNavItem {
 export const NAV_DROPDOWN_ITEMS: Record<string, SubNavItem[]> = {
   Government: [
     { title: "Municipal Officials", href: "/government/officials" },
-  ],
-  Offices: [
     { title: "All Municipal Offices", href: "/offices" },
   ],
   Services: [
@@ -23,15 +21,26 @@ export const NAV_DROPDOWN_ITEMS: Record<string, SubNavItem[]> = {
     { title: "Job Opportunities", href: "/services/job-opportunities" },
     { title: "Emergency Hotlines", href: "/#emergency-hotlines" },
   ],
+  Tourism: [
+    { title: "Attractions", href: "/tourism/attractions" },
+    { title: "Resorts", href: "/tourism/resorts" },
+    { title: "Culture and Arts", href: "/tourism/culture-and-arts" },
+    { title: "Products", href: "/tourism/products" },
+  ],
+  Transparency: [
+    { title: "Procurement", href: "/transparency/procurement" },
+    { title: "Contact Us", href: "/#contact-us" },
+    { title: "Journal and News", href: "/news" },
+  ],
 };
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
   { title: "Home", href: "/" },
   { title: "About", href: "/about" },
   { title: "Government", href: "/government" },
-  { title: "Offices", href: "/offices" },
   { title: "Services", href: "/services" },
-  { title: "News", href: "/news" },
+  { title: "Tourism", href: "/tourism" },
+  { title: "Transparency", href: "/transparency" },
 ];
 
 export const SITE_CONFIG = {

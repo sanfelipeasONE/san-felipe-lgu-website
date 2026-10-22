@@ -17,7 +17,7 @@ import { MunicipalMap } from "@/components/home/municipal-map";
 
 export function MunicipalContactSection() {
   return (
-    <section className="py-14 sm:py-18 bg-white border-b border-gray-200">
+    <section id="contact-us" className="scroll-mt-20 py-14 sm:py-18 bg-white border-b border-gray-200">
       <Container>
         {/* Section Header */}
         <div className="mb-10 max-w-2xl">

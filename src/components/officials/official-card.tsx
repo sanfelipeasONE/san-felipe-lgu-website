@@ -197,9 +197,11 @@ export function CouncilorCard({
             {official.position}
           </p>
 
-          <p className="text-[11px] text-slate-400 italic pt-1">
-            Committee assignment pending gazette
-          </p>
+          {official.committeeAssignments && official.committeeAssignments.length > 0 && (
+            <p className="text-[11px] text-slate-600 pt-1">
+              {official.committeeAssignments[0]}
+            </p>
+          )}
         </div>
       </div>
     </article>
