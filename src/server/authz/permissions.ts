@@ -57,6 +57,14 @@ export const PERMISSIONS = {
   JOBS_PUBLISH: "jobs.publish",
   JOBS_ARCHIVE: "jobs.archive",
   JOBS_DELETE: "jobs.delete",
+
+  // Municipal Tourism Management (Phase 23)
+  TOURISM_VIEW: "tourism.view",
+  TOURISM_CREATE: "tourism.create",
+  TOURISM_UPDATE: "tourism.update",
+  TOURISM_PUBLISH: "tourism.publish",
+  TOURISM_ARCHIVE: "tourism.archive",
+  TOURISM_DELETE: "tourism.delete",
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

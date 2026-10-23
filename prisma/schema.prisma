@@ -86,6 +86,10 @@ model User {
   jobsCreated JobOpportunity[] @relation("JobsCreated")
   jobsUpdated JobOpportunity[] @relation("JobsUpdated")
 
+  // Tourism Entries authorship (Phase 23)
+  tourismCreated TourismEntry[] @relation("TourismCreated")
+  tourismUpdated TourismEntry[] @relation("TourismUpdated")
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -444,4 +448,63 @@ model JobOpportunity {
   @@map("job_opportunities")
 }
 
+enum TourismCategory {
+  ATTRACTIONS
+  RESORTS
+  CULTURE_AND_ARTS
+  PRODUCTS
+}
+
+enum TourismStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Official municipal tourism entries across attractions, resorts, culture/arts, and local products (Phase 23).
+model TourismEntry {
+  id                    String          @id @default(cuid())
+  category              TourismCategory
+  title                 String
+  slug                  String          @unique
+  summary               String          @db.Text
+  body                  String          @db.Text // Sanitized HTML content from rich-text editor
+
+  // Optional visitor and establishment details
+  location              String?         // Physical address / Barangay
+  mapUrl                String?         // External verified map URL
+  contactNumber         String?         // Inquiries phone/mobile
+  email                 String?         // Contact email
+  websiteUrl            String?         // Website / Link
+  operatingHours        String?         // Visiting or business hours
+
+  // Publication lifecycle
+  status                TourismStatus   @default(DRAFT)
+  publishedAt           DateTime?
+  archivedAt            DateTime?
+
+  // Featured Image metadata (Cloudinary)
+  featuredImagePublicId String?
+  featuredImageUrl      String?
+  featuredImageAlt      String?
+  featuredImageWidth    Int?
+  featuredImageHeight   Int?
+  featuredImageFormat   String?
+  featuredImageBytes    Int?
+
+  // Authorship & audit tracking
+  createdById           String
+  createdBy             User            @relation("TourismCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedById           String?
+  updatedBy             User?           @relation("TourismUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([status, category])
+  @@index([status, publishedAt])
+  @@map("tourism_entries")
+}
 

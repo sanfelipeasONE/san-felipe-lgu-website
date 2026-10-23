@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Info, Phone, Mail } from "lucide-react";
+import { Info } from "lucide-react";
 import type { MunicipalOffice } from "@/config/offices-data";
 
 export interface OfficeDirectoryProps {
@@ -42,7 +42,7 @@ export function OfficeDirectory({ offices }: OfficeDirectoryProps) {
                   scope="col"
                   className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[30%]"
                 >
-                  Contact Details
+                  Facebook Page
                 </th>
               </tr>
             </thead>
@@ -87,33 +87,17 @@ export function OfficeDirectory({ offices }: OfficeDirectoryProps) {
                       )}
                     </td>
 
-                    {/* 4. Contact Details */}
+                    {/* 3. Facebook Page */}
                     <td className="py-3.5 px-5 align-top">
-                      {office.telephone || office.email ? (
-                        <div className="space-y-1.5">
-                          {office.telephone && (
-                            <div className="flex items-start gap-1.5 text-xs text-slate-700">
-                              <Phone className="h-3.5 w-3.5 text-burgundy-700 shrink-0 mt-0.5" aria-hidden="true" />
-                              <a
-                                href={`tel:${office.telephone.split('/')[0].trim().replace(/[^0-9+]/g, '')}`}
-                                className="hover:text-burgundy-800 hover:underline font-mono"
-                              >
-                                {office.telephone}
-                              </a>
-                            </div>
-                          )}
-                          {office.email && (
-                            <div className="flex items-start gap-1.5 text-xs text-slate-700">
-                              <Mail className="h-3.5 w-3.5 text-burgundy-700 shrink-0 mt-0.5" aria-hidden="true" />
-                              <a
-                                href={`mailto:${office.email}`}
-                                className="hover:text-burgundy-800 hover:underline break-all"
-                              >
-                                {office.email}
-                              </a>
-                            </div>
-                          )}
-                        </div>
+                      {office.facebookUrl ? (
+                        <a
+                          href={office.facebookUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-burgundy-800 hover:underline text-xs text-burgundy-700 font-semibold"
+                        >
+                          Visit Facebook Page
+                        </a>
                       ) : (
                         <span className="text-slate-400 font-mono text-xs select-none">
                           —

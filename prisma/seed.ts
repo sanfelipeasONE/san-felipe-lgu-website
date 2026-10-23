@@ -61,6 +61,14 @@ const BASELINE_PERMISSIONS = [
   { code: "jobs.publish", name: "Publish Job Opportunities", module: "jobs", description: "Publish official job vacancies directly to the portal" },
   { code: "jobs.archive", name: "Archive Job Opportunities", module: "jobs", description: "Archive municipal job opportunities" },
   { code: "jobs.delete", name: "Delete Job Opportunities", module: "jobs", description: "Permanently delete municipal job opportunities" },
+
+  // Municipal Tourism Management (Phase 23)
+  { code: "tourism.view", name: "View Tourism Entries", module: "tourism", description: "View municipal tourism attractions, resorts, culture, and products" },
+  { code: "tourism.create", name: "Create Tourism Entries", module: "tourism", description: "Draft municipal tourism entries" },
+  { code: "tourism.update", name: "Update Tourism Entries", module: "tourism", description: "Edit municipal tourism entry details" },
+  { code: "tourism.publish", name: "Publish Tourism Entries", module: "tourism", description: "Publish official tourism entries directly to the portal" },
+  { code: "tourism.archive", name: "Archive Tourism Entries", module: "tourism", description: "Archive municipal tourism entries" },
+  { code: "tourism.delete", name: "Delete Tourism Entries", module: "tourism", description: "Permanently delete municipal tourism entries" },
 ];
 
 const BASELINE_ROLES = [

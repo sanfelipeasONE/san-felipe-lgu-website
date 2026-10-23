@@ -752,14 +752,12 @@ async function runPhase20Tests() {
   assert(pnpHotline?.numbers.includes("0998-598-5509"), "PNP emergency number corroborated (0998-598-5509)");
   assert(bfpHotline?.numbers.includes("0946-451-2121"), "BFP emergency number corroborated (0946-451-2121)");
 
-  // Public OfficeDirectory component verifies clean contact rendering
+  // Public OfficeDirectory component verifies Facebook Page presentation
   const officeDirectoryPath = path.resolve(projectRoot, "src/components/offices/office-directory.tsx");
   const officeDirectoryContent = fs.readFileSync(officeDirectoryPath, "utf-8");
   assert(
-    officeDirectoryContent.includes("Contact Details") &&
-    officeDirectoryContent.includes("office.telephone") &&
-    officeDirectoryContent.includes("office.email"),
-    "OfficeDirectory component must render Contact Details column with phone and email"
+    officeDirectoryContent.includes("Facebook Page"),
+    "OfficeDirectory component must render Facebook Page column"
   );
   assert(
     !officeDirectoryContent.includes("Phone:") && !officeDirectoryContent.includes("Email:"),

@@ -25,6 +25,7 @@ export interface MunicipalOffice {
   telephone?: string;
   officeHours?: string;
   isVerified: boolean;
+  facebookUrl?: string;
 }
 
 export const VERIFIED_MUNICIPAL_OFFICES: MunicipalOffice[] = [

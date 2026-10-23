@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   History,
   Layers,
+  Palmtree,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
@@ -114,6 +115,16 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "content",
         description: "LGU career vacancies and application guidelines",
         requiredPermission: "jobs.view",
+        isImplemented: true,
+      },
+      {
+        id: "tourism",
+        label: "Tourism",
+        href: "/admin/tourism",
+        icon: Palmtree,
+        section: "content",
+        description: "Municipal tourism attractions, resorts, culture, and local products",
+        requiredPermission: "tourism.view",
         isImplemented: true,
       },
     ],

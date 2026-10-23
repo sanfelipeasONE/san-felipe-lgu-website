@@ -61,13 +61,14 @@ export function validateImageFile(file: {
 
 export { validateImageFile as validateNewsImageUpload };
 
-export type AllowedFeaturedImageModule = "news" | "business-permits" | "jobs";
+export type AllowedFeaturedImageModule = "news" | "business-permits" | "jobs" | "tourism";
 
 /**
  * Derives the server-controlled Cloudinary destination folder for a closed category/type.
  * - News: san-felipe-lgu/news/<year>
  * - Business Permits: san-felipe-lgu/services/business-permits/<year>
  * - Jobs: san-felipe-lgu/jobs/<year>
+ * - Tourism: san-felipe-lgu/tourism/<year>
  */
 export function getMunicipalCloudinaryFolder(
   module: AllowedFeaturedImageModule,
@@ -80,6 +81,8 @@ export function getMunicipalCloudinaryFolder(
       return `san-felipe-lgu/services/business-permits/${year}`;
     case "jobs":
       return `san-felipe-lgu/jobs/${year}`;
+    case "tourism":
+      return `san-felipe-lgu/tourism/${year}`;
   }
 }
 
@@ -206,6 +209,19 @@ export async function uploadJobFeaturedImage(
   }
 ): Promise<UploadedImageResult> {
   return uploadFeaturedImage(buffer, "jobs", options);
+}
+
+/**
+ * Uploads a tourism entry featured image.
+ */
+export async function uploadTourismFeaturedImage(
+  buffer: Buffer,
+  options?: {
+    year?: string | number;
+    filename?: string;
+  }
+): Promise<UploadedImageResult> {
+  return uploadFeaturedImage(buffer, "tourism", options);
 }
 
 /**

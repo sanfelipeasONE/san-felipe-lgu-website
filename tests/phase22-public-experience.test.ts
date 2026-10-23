@@ -444,7 +444,40 @@ async function runPhase22Tests() {
       return fs.statSync(fullPath).isDirectory();
     });
 
-    assert.strictEqual(migrationDirs.length, 10, "Migration count must remain exactly 10");
+    assert(
+      migrationDirs.length === 10 || migrationDirs.length === 11,
+      "Migration count must be 10 (Phase 22 baseline) or 11 (Phase 23 TourismEntry)"
+    );
+  });
+
+  // ============================================================================
+  // 9. PUBLIC DIRECTORY FACEBOOK PAGE PRESENTATION & PHONE PRESERVATION
+  // ============================================================================
+  console.log("\n9. Municipal Offices Directory: Facebook Page Presentation & Phone Preservation");
+
+  test("Public directory header renders Facebook Page and not Contact Details", () => {
+    const dirCode = fs.readFileSync(path.join(process.cwd(), "src/components/offices/office-directory.tsx"), "utf-8");
+    assert(dirCode.includes("Facebook Page"), "Public directory must contain 'Facebook Page' th heading");
+    assert(!dirCode.includes("Contact Details"), "Public directory must NOT contain 'Contact Details' heading");
+    assert(!dirCode.includes("office.telephone"), "Public directory table must NOT render office.telephone");
+  });
+
+  test("All 18 canonical offices have unconfigured Facebook URL and render neutral —", () => {
+    const offices = getCanonicalOffices();
+    assert.strictEqual(offices.length, 18, "Directory contains exactly 18 canonical offices");
+    for (const off of offices) {
+      assert(!off.facebookUrl, `Office ${off.slug} must not have placeholder/fake Facebook URL`);
+    }
+  });
+
+  test("Underlying office telephone and email data remains fully preserved", () => {
+    const offices = getCanonicalOffices();
+    const mayor = offices.find((o) => o.slug === "office-of-the-mayor");
+    assert(mayor?.telephone === "0976-566-0872", "Mayor telephone preserved");
+    const mdrrmo = offices.find((o) => o.slug === "municipal-disaster-risk-reduction-and-management-office");
+    assert(mdrrmo?.telephone === "0929-183-8441", "MDRRMO telephone preserved");
+    const accounting = offices.find((o) => o.slug === "municipal-accounting-office");
+    assert(accounting?.telephone === "602-5181", "Accounting landline preserved");
   });
 
   console.log(`\n================================================================================`);
