@@ -176,6 +176,7 @@ async function runCMSFoundationTests() {
 
   assert(superSectionKeys.includes("main"), "Super Admin receives Main navigation section");
   assert(superSectionKeys.includes("content"), "Super Admin receives Content navigation section");
+  assert(superSectionKeys.includes("transparency"), "Super Admin receives Transparency navigation section");
   assert(superSectionKeys.includes("administration"), "Super Admin receives Administration navigation section");
   assert(superSectionKeys.includes("system"), "Super Admin receives System navigation section");
 
@@ -243,8 +244,8 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 9,
-    "Exactly 9 routes are marked isImplemented: true (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/users, /admin/roles, /admin/audit-logs)"
+    implementedItems.length === 10,
+    "Exactly 10 routes are marked isImplemented: true (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/transparency/procurement, /admin/users, /admin/roles, /admin/audit-logs)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
@@ -253,10 +254,11 @@ async function runCMSFoundationTests() {
       implementedItems.some((i) => i.href === "/admin/documents") &&
       implementedItems.some((i) => i.href === "/admin/jobs") &&
       implementedItems.some((i) => i.href === "/admin/tourism") &&
+      implementedItems.some((i) => i.href === "/admin/transparency/procurement") &&
       implementedItems.some((i) => i.href === "/admin/users") &&
       implementedItems.some((i) => i.href === "/admin/roles") &&
       implementedItems.some((i) => i.href === "/admin/audit-logs"),
-    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/users, /admin/roles, and /admin/audit-logs"
+    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/transparency/procurement, /admin/users, /admin/roles, and /admin/audit-logs"
   );
   assert(
     !implementedItems.some((i) => i.href === "/admin/offices"),
@@ -286,6 +288,9 @@ async function runCMSFoundationTests() {
 
   const auditLogsItem = allConfigItems.find((i) => i.id === "audit-logs");
   assert(auditLogsItem?.isImplemented === true, "Audit Logs item is activated with isImplemented: true in Phase 18");
+
+  const procurementItem = allConfigItems.find((i) => i.id === "transparency-procurement");
+  assert(procurementItem?.isImplemented === true, "Procurement item is activated with isImplemented: true in Phase 23.1");
 
   assert(
     upcomingItems.every((item) => Boolean(item.phaseLabel)),

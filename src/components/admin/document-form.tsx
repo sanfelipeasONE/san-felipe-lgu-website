@@ -64,6 +64,13 @@ interface DocumentFormProps {
   canPublish?: boolean;
   canArchive?: boolean;
   canDelete?: boolean;
+  defaultPurpose?: DocumentPurpose;
+  defaultCategory?: string;
+  lockPurpose?: boolean;
+  lockCategory?: boolean;
+  backHref?: string;
+  backLabel?: string;
+  returnTo?: string;
 }
 
 export function DocumentForm({
@@ -75,15 +82,36 @@ export function DocumentForm({
   canPublish = false,
   canArchive = false,
   canDelete = false,
+  defaultPurpose,
+  defaultCategory,
+  lockPurpose,
+  lockCategory,
+  backHref,
+  backLabel,
+  returnTo,
 }: DocumentFormProps) {
   const router = useRouter();
+
+  const isProcurementFlow =
+    returnTo === "procurement" ||
+    defaultCategory === "Procurement" ||
+    (initialData?.purpose === "OTHER_PUBLIC_DOCUMENT" && initialData?.category === "Procurement");
+
+  const effectiveLockPurpose = lockPurpose ?? isProcurementFlow;
+  const effectiveLockCategory = lockCategory ?? isProcurementFlow;
+  const effectiveBackHref =
+    backHref || (isProcurementFlow ? "/admin/transparency/procurement" : "/admin/documents");
+  const effectiveBackLabel =
+    backLabel || (isProcurementFlow ? "Back to Procurement" : "Back to Documents");
 
   // Form State
   const [title, setTitle] = React.useState(initialData?.title || "");
   const [description, setDescription] = React.useState(initialData?.description || "");
-  const [category, setCategory] = React.useState(initialData?.category || "");
+  const [category, setCategory] = React.useState(
+    initialData?.category ?? (defaultCategory || "")
+  );
   const [purpose, setPurpose] = React.useState<DocumentPurpose>(
-    initialData?.purpose || "DOWNLOADABLE_FORM"
+    initialData?.purpose ?? (defaultPurpose || "DOWNLOADABLE_FORM")
   );
   const [officeId, setOfficeId] = React.useState(initialData?.officeId || offices[0]?.id || "");
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -161,7 +189,10 @@ export function DocumentForm({
           toast.error(res.error || "Failed to create document.");
         } else {
           toast.success("Document uploaded successfully.");
-          router.push(`/admin/documents/${res.data!.id}/edit`);
+          const nextEditUrl = isProcurementFlow
+            ? `/admin/documents/${res.data!.id}/edit?returnTo=procurement`
+            : `/admin/documents/${res.data!.id}/edit`;
+          router.push(nextEditUrl);
           router.refresh();
         }
       } else {
@@ -199,7 +230,7 @@ export function DocumentForm({
         setIsPending(false);
       } else {
         toast.success("Document permanently deleted.");
-        router.push("/admin/documents");
+        router.push(effectiveBackHref);
         router.refresh();
       }
     } catch (err: unknown) {
@@ -316,18 +347,32 @@ export function DocumentForm({
           <label htmlFor="doc-purpose" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
             Document Purpose <span className="text-rose-500">*</span>
           </label>
-          <select
-            id="doc-purpose"
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value as DocumentPurpose)}
-            className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
-          >
-            {DOCUMENT_PURPOSES.map((p) => (
-              <option key={p} value={p}>
-                {DOCUMENT_PURPOSE_LABELS[p]}
-              </option>
-            ))}
-          </select>
+          {effectiveLockPurpose ? (
+            <div className="px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-burgundy-700 shrink-0" />
+                <span className="font-semibold text-slate-800">
+                  {DOCUMENT_PURPOSE_LABELS[purpose] || purpose}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500 font-medium bg-slate-200/70 px-2 py-0.5 rounded">
+                Fixed for {category || "Workflow"}
+              </span>
+            </div>
+          ) : (
+            <select
+              id="doc-purpose"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value as DocumentPurpose)}
+              className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
+            >
+              {DOCUMENT_PURPOSES.map((p) => (
+                <option key={p} value={p}>
+                  {DOCUMENT_PURPOSE_LABELS[p]}
+                </option>
+              ))}
+            </select>
+          )}
           <p className="text-[11px] text-slate-500 mt-1">
             {purpose === "DOWNLOADABLE_FORM" && "Official forms and applications intended for citizen or business municipal transactions."}
             {purpose === "CITIZENS_CHARTER" && "Official Citizen's Charter guideline or frontline service standards document."}
@@ -343,19 +388,28 @@ export function DocumentForm({
             <label htmlFor="doc-category" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Category
             </label>
-            <select
-              id="doc-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
-            >
-              <option value="">-- Select Category --</option>
-              {DOCUMENT_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            {effectiveLockCategory ? (
+              <div className="px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-700 flex items-center justify-between">
+                <span className="font-semibold text-slate-800">{category || "None"}</span>
+                <span className="text-[11px] text-slate-500 font-medium bg-slate-200/70 px-2 py-0.5 rounded">
+                  Fixed
+                </span>
+              </div>
+            ) : (
+              <select
+                id="doc-category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
+              >
+                <option value="">-- Select Category --</option>
+                {DOCUMENT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Office Ownership */}
@@ -482,11 +536,11 @@ export function DocumentForm({
       <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200">
         <button
           type="button"
-          onClick={() => router.push("/admin/documents")}
+          onClick={() => router.push(effectiveBackHref)}
           className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Documents</span>
+          <span>{effectiveBackLabel}</span>
         </button>
 
         <div className="flex flex-wrap items-center gap-2.5 ml-auto">

@@ -68,7 +68,9 @@ export async function createDocumentAction(
     });
 
     revalidatePath("/admin/documents");
+    revalidatePath("/admin/transparency/procurement");
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency/procurement");
 
     return {
       success: true,
@@ -132,8 +134,10 @@ export async function updateDocumentAction(
     });
 
     revalidatePath("/admin/documents");
+    revalidatePath("/admin/transparency/procurement");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency/procurement");
 
     return {
       success: true,
@@ -157,8 +161,10 @@ export async function publishDocumentAction(
     const published = await publishDocument(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/documents");
+    revalidatePath("/admin/transparency/procurement");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency/procurement");
 
     return {
       success: true,
@@ -182,8 +188,10 @@ export async function archiveDocumentAction(
     const archived = await archiveDocument(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/documents");
+    revalidatePath("/admin/transparency/procurement");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency/procurement");
 
     return {
       success: true,
@@ -207,7 +215,9 @@ export async function deleteDocumentAction(
     const result = await deleteDocument(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/documents");
+    revalidatePath("/admin/transparency/procurement");
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency/procurement");
     revalidatePath("/services/citizens-charter");
 
     return {

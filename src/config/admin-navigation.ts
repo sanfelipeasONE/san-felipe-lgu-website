@@ -8,11 +8,12 @@ import {
   History,
   Layers,
   Palmtree,
+  FileSpreadsheet,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 
-export type NavSectionKey = "main" | "content" | "administration" | "system";
+export type NavSectionKey = "main" | "content" | "transparency" | "administration" | "system";
 
 export interface AdminNavChildItem {
   id: string;
@@ -125,6 +126,22 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "content",
         description: "Municipal tourism attractions, resorts, culture, and local products",
         requiredPermission: "tourism.view",
+        isImplemented: true,
+      },
+    ],
+  },
+  {
+    key: "transparency",
+    title: "Transparency",
+    items: [
+      {
+        id: "transparency-procurement",
+        label: "Procurement",
+        href: "/admin/transparency/procurement",
+        icon: FileSpreadsheet,
+        section: "transparency",
+        description: "Official public procurement notices, bidding opportunities, and disclosure records",
+        requiredPermission: "documents.view",
         isImplemented: true,
       },
     ],

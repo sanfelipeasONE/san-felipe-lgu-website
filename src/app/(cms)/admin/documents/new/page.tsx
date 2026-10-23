@@ -16,7 +16,15 @@ export const metadata: Metadata = {
   description: "Upload and prepare official municipal forms and documents for publication",
 };
 
-export default async function CreateDocumentPage() {
+interface CreateDocumentPageProps {
+  searchParams: Promise<{
+    purpose?: string;
+    category?: string;
+    returnTo?: string;
+  }>;
+}
+
+export default async function CreateDocumentPage({ searchParams }: CreateDocumentPageProps) {
   const user = await getCurrentUser();
 
   if (!user || user.status !== "ACTIVE") {
@@ -26,6 +34,12 @@ export default async function CreateDocumentPage() {
   if (!hasPermission(user, PERMISSIONS.DOCUMENTS_CREATE)) {
     redirect("/admin/documents");
   }
+
+  const params = await searchParams;
+  const isProcurement =
+    params.returnTo === "procurement" ||
+    params.category === "Procurement" ||
+    (params.purpose === "OTHER_PUBLIC_DOCUMENT" && params.category === "Procurement");
 
   const isSystem = isSystemScoped(user);
 
@@ -46,15 +60,28 @@ export default async function CreateDocumentPage() {
     userOfficeName = userOffice?.name;
   }
 
+  const title = isProcurement ? "Add Procurement Document" : "Upload Municipal Document";
+  const description = isProcurement
+    ? "Upload official procurement notices, invitations to bid, and public disclosures for municipal transparency."
+    : "Upload official application forms, procedural guidelines, or civic templates for citizen access.";
+
+  const breadcrumbs = isProcurement
+    ? [
+        { label: "Transparency" },
+        { label: "Procurement", href: "/admin/transparency/procurement" },
+        { label: "Add Document" },
+      ]
+    : [
+        { label: "Documents", href: "/admin/documents" },
+        { label: "Upload Document" },
+      ];
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
-        title="Upload Municipal Document"
-        description="Upload official application forms, procedural guidelines, or civic templates for citizen access."
-        breadcrumbs={[
-          { label: "Documents", href: "/admin/documents" },
-          { label: "Upload Document" },
-        ]}
+        title={title}
+        description={description}
+        breadcrumbs={breadcrumbs}
       />
 
       <AdminContent>
@@ -63,6 +90,13 @@ export default async function CreateDocumentPage() {
           isSystemScoped={isSystem}
           offices={officesList}
           userOfficeName={userOfficeName}
+          defaultPurpose={isProcurement ? "OTHER_PUBLIC_DOCUMENT" : undefined}
+          defaultCategory={isProcurement ? "Procurement" : params.category}
+          lockPurpose={isProcurement}
+          lockCategory={isProcurement}
+          backHref={isProcurement ? "/admin/transparency/procurement" : "/admin/documents"}
+          backLabel={isProcurement ? "Back to Procurement" : "Back to Documents"}
+          returnTo={isProcurement ? "procurement" : params.returnTo}
         />
       </AdminContent>
     </div>

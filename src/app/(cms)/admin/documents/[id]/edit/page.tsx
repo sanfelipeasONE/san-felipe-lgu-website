@@ -22,9 +22,15 @@ interface EditDocumentPageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{
+    returnTo?: string;
+  }>;
 }
 
-export default async function EditDocumentPage({ params }: EditDocumentPageProps) {
+export default async function EditDocumentPage({
+  params,
+  searchParams,
+}: EditDocumentPageProps) {
   const user = await getCurrentUser();
 
   if (!user || user.status !== "ACTIVE") {
@@ -36,6 +42,7 @@ export default async function EditDocumentPage({ params }: EditDocumentPageProps
   }
 
   const { id } = await params;
+  const sParams = searchParams ? await searchParams : undefined;
 
   let doc;
   try {
@@ -47,6 +54,10 @@ export default async function EditDocumentPage({ params }: EditDocumentPageProps
     // Office scope or permission failure
     redirect("/admin/documents");
   }
+
+  const isProcurement =
+    sParams?.returnTo === "procurement" ||
+    (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Procurement");
 
   const isSystem = isSystemScoped(user);
 
@@ -65,15 +76,27 @@ export default async function EditDocumentPage({ params }: EditDocumentPageProps
     hasPermission(user, PERMISSIONS.DOCUMENTS_DELETE) &&
     (isSystem || user.officeId === doc.officeId);
 
+  const breadcrumbs = isProcurement
+    ? [
+        { label: "Transparency" },
+        { label: "Procurement", href: "/admin/transparency/procurement" },
+        { label: doc.title },
+      ]
+    : [
+        { label: "Documents", href: "/admin/documents" },
+        { label: doc.title },
+      ];
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
         title={`Edit: ${doc.title}`}
-        description="Update form metadata, replace the uploaded document file, or update publication status."
-        breadcrumbs={[
-          { label: "Documents", href: "/admin/documents" },
-          { label: doc.title },
-        ]}
+        description={
+          isProcurement
+            ? "Update procurement notice details, replace document asset, or manage publication status."
+            : "Update form metadata, replace the uploaded document file, or update publication status."
+        }
+        breadcrumbs={breadcrumbs}
       />
 
       <AdminContent>
@@ -103,6 +126,11 @@ export default async function EditDocumentPage({ params }: EditDocumentPageProps
           canPublish={canPublish}
           canArchive={canArchive}
           canDelete={canDelete}
+          lockPurpose={isProcurement}
+          lockCategory={isProcurement}
+          backHref={isProcurement ? "/admin/transparency/procurement" : "/admin/documents"}
+          backLabel={isProcurement ? "Back to Procurement" : "Back to Documents"}
+          returnTo={isProcurement ? "procurement" : undefined}
         />
       </AdminContent>
     </div>
