@@ -96,8 +96,8 @@ async function runPhase194TestSuite() {
       });
 
     assert(
-      migrationEntries.length === 10,
-      `Exactly 10 migrations exist in prisma/migrations (found ${migrationEntries.length})`
+      migrationEntries.length === 11,
+      `Exactly 11 migrations exist in prisma/migrations (found ${migrationEntries.length})`
     );
 
     const migration10 = migrationEntries.find((m) =>
@@ -120,6 +120,21 @@ async function runPhase194TestSuite() {
         "Migration #10 is purely additive and does NOT alter DocumentPurpose enum"
       );
     }
+
+    const migration11 = migrationEntries.find((m) =>
+      m.includes("add_tourism_entries")
+    );
+    assert(
+      Boolean(migration11) && migrationEntries.includes("20261023061611_add_tourism_entries"),
+      "Canonical Migration #11 (20261023061611_add_tourism_entries) exists"
+    );
+
+    const sortedMigrations = [...migrationEntries].sort();
+    const latestMigration = sortedMigrations[sortedMigrations.length - 1];
+    assert(
+      latestMigration === "20261023061611_add_tourism_entries",
+      "Migration #12 is strictly absent; 20261023061611_add_tourism_entries remains latest migration"
+    );
 
     // Cloudinary Namespace Derivation Verification
     const currentYear = new Date().getFullYear();

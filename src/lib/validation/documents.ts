@@ -23,6 +23,7 @@ export const DOCUMENT_CATEGORIES = [
   "General Administration",
   "Procurement",
   "Bids and Awards Committee (BAC)",
+  "Gender and Development (GAD)",
 ] as const;
 
 export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];

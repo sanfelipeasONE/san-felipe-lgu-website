@@ -244,8 +244,8 @@ async function runCMSFoundationTests() {
   const upcomingItems = allConfigItems.filter((i) => !i.isImplemented);
 
   assert(
-    implementedItems.length === 11,
-    "Exactly 11 routes are marked isImplemented: true (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/transparency/procurement, /admin/transparency/bac, /admin/users, /admin/roles, /admin/audit-logs)"
+    implementedItems.length === 12,
+    "Exactly 12 routes are marked isImplemented: true (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/gad, /admin/transparency/procurement, /admin/transparency/bac, /admin/users, /admin/roles, /admin/audit-logs)"
   );
   assert(
     implementedItems.some((i) => i.href === "/admin") &&
@@ -254,12 +254,13 @@ async function runCMSFoundationTests() {
       implementedItems.some((i) => i.href === "/admin/documents") &&
       implementedItems.some((i) => i.href === "/admin/jobs") &&
       implementedItems.some((i) => i.href === "/admin/tourism") &&
+      implementedItems.some((i) => i.href === "/admin/gad") &&
       implementedItems.some((i) => i.href === "/admin/transparency/procurement") &&
       implementedItems.some((i) => i.href === "/admin/transparency/bac") &&
       implementedItems.some((i) => i.href === "/admin/users") &&
       implementedItems.some((i) => i.href === "/admin/roles") &&
       implementedItems.some((i) => i.href === "/admin/audit-logs"),
-    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/transparency/procurement, /admin/transparency/bac, /admin/users, /admin/roles, and /admin/audit-logs"
+    "The active implemented routes are /admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/gad, /admin/transparency/procurement, /admin/transparency/bac, /admin/users, /admin/roles, and /admin/audit-logs"
   );
   assert(
     !implementedItems.some((i) => i.href === "/admin/offices"),

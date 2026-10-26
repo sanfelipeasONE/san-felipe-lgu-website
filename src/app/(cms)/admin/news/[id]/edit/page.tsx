@@ -19,9 +19,10 @@ export const metadata: Metadata = {
 
 interface EditNewsPageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ returnTo?: string }>;
 }
 
-export default async function EditNewsPage({ params }: EditNewsPageProps) {
+export default async function EditNewsPage({ params, searchParams }: EditNewsPageProps) {
   const user = await getCurrentUser();
 
   if (!user || user.status !== "ACTIVE") {
@@ -33,6 +34,7 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
   }
 
   const { id } = await params;
+  const sParams = searchParams ? await searchParams : undefined;
 
   let article;
   try {
@@ -45,6 +47,10 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
     redirect("/admin/news");
   }
 
+  const isGad =
+    sParams?.returnTo === "gad" ||
+    article.category === "GENDER AND DEVELOPMENT (GAD)";
+
   let officesList: Array<{ id: string; name: string; shortName: string | null }> = [];
   if (isSystemScoped(user)) {
     officesList = await prisma.office.findMany({
@@ -54,15 +60,23 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
     });
   }
 
+  const breadcrumbs = isGad
+    ? [
+        { label: "Content Management" },
+        { label: "GAD Corner", href: "/admin/gad" },
+        { label: "Edit Article" },
+      ]
+    : [
+        { label: "News & Advisories", href: "/admin/news" },
+        { label: "Edit Article" },
+      ];
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
         title={`Edit: ${article.title}`}
         description="Modify editorial content, manage featured photography, and publish official announcements."
-        breadcrumbs={[
-          { label: "News & Advisories", href: "/admin/news" },
-          { label: "Edit Article" },
-        ]}
+        breadcrumbs={breadcrumbs}
       />
 
       <AdminContent>
@@ -90,6 +104,10 @@ export default async function EditNewsPage({ params }: EditNewsPageProps) {
               featuredImageBytes: article.featuredImageBytes,
               updatedAt: article.updatedAt.toISOString(),
             }}
+            lockCategory={isGad}
+            returnTo={isGad ? "gad" : undefined}
+            backHref={isGad ? "/admin/gad" : "/admin/news"}
+            backLabel={isGad ? "Back to GAD Corner" : "Back to News"}
           />
         </div>
       </AdminContent>

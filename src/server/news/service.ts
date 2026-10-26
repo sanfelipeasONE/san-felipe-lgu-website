@@ -22,6 +22,7 @@ export interface AdminNewsListQuery {
   search?: string;
   status?: NewsStatus;
   type?: string;
+  category?: string;
   officeId?: string;
   page?: number;
   pageSize?: number;
@@ -66,6 +67,9 @@ export async function getAdminNewsList(
   // 3. Type/Category filter
   if (query.type && query.type !== "all") {
     where.type = query.type;
+  }
+  if (query.category && query.category !== "all") {
+    where.category = query.category;
   }
 
   // 4. Search query
@@ -635,6 +639,7 @@ export { removeNewsFeaturedImage as removeFeaturedImage };
  */
 export async function getPublicPublishedNews(options?: {
   type?: string;
+  category?: string;
   page?: number;
   pageSize?: number;
 }) {
@@ -648,6 +653,10 @@ export async function getPublicPublishedNews(options?: {
 
   if (options?.type && options.type !== "all") {
     where.type = options.type;
+  }
+
+  if (options?.category && options.category !== "all") {
+    where.category = options.category;
   }
 
   const [articles, total] = await Promise.all([

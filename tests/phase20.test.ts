@@ -21,7 +21,7 @@
  * 16. 409 Concurrency conflict banner preserved with reload action
  * 17. Exact Citizen's Charter unavailable heading preserved
  * 18. Exact Citizen's Charter unavailable description preserved
- * 19. Exactly 24 CMS page segments retain export const instant = false
+ * 19. All 30 CMS page segments retain export const instant = false
  */
 
 import assert from "node:assert";
@@ -386,18 +386,59 @@ async function runPhase20Tests() {
   console.log("  ✓ PASS: Citizen's Charter description strictly matches 'The official Citizen\'s Charter PDF will be available here once published by the Municipality of San Felipe.'\n");
 
   // -------------------------------------------------------------------------
-  // TEST 19: Exactly 24 CMS page segments retain export const instant = false
+  // TEST 19: All 30 CMS page segments retain export const instant = false
   // -------------------------------------------------------------------------
-  console.log("TEST 19: Exactly 24 CMS page segments retain export const instant = false");
+  console.log("TEST 19: All 30 CMS page segments retain export const instant = false");
   const adminAppDir = path.resolve(projectRoot, "src/app/(cms)/admin");
   const allAdminFiles = getAllFiles(adminAppDir);
   const adminPageFiles = allAdminFiles.filter((f) => f.endsWith("page.tsx"));
 
+  const EXPECTED_CMS_PAGE_REL_PATHS = [
+    "account/security/page.tsx",
+    "audit-logs/page.tsx",
+    "documents/new/page.tsx",
+    "documents/page.tsx",
+    "documents/[id]/edit/page.tsx",
+    "gad/page.tsx",
+    "jobs/new/page.tsx",
+    "jobs/page.tsx",
+    "jobs/[id]/edit/page.tsx",
+    "news/new/page.tsx",
+    "news/page.tsx",
+    "news/[id]/edit/page.tsx",
+    "news/[id]/preview/page.tsx",
+    "offices/page.tsx",
+    "offices/[id]/edit/page.tsx",
+    "page.tsx",
+    "roles/page.tsx",
+    "roles/[id]/edit/page.tsx",
+    "services/page.tsx",
+    "services/[serviceKey]/edit/page.tsx",
+    "services/[serviceKey]/page.tsx",
+    "services/[serviceKey]/preview/page.tsx",
+    "tourism/new/page.tsx",
+    "tourism/page.tsx",
+    "tourism/[id]/edit/page.tsx",
+    "transparency/bac/page.tsx",
+    "transparency/procurement/page.tsx",
+    "users/new/page.tsx",
+    "users/page.tsx",
+    "users/[id]/edit/page.tsx",
+  ];
+
   assert.strictEqual(
     adminPageFiles.length,
-    24,
-    `Expected exactly 24 CMS page segments, found ${adminPageFiles.length}`
+    EXPECTED_CMS_PAGE_REL_PATHS.length,
+    `Expected exactly ${EXPECTED_CMS_PAGE_REL_PATHS.length} CMS page segments, found ${adminPageFiles.length}`
   );
+
+  for (const relPath of EXPECTED_CMS_PAGE_REL_PATHS) {
+    const fullExpectedPath = path.resolve(adminAppDir, relPath);
+    assert(
+      fs.existsSync(fullExpectedPath),
+      `Expected CMS page segment missing from disk: ${relPath}`
+    );
+  }
 
   let verifiedCount = 0;
   for (const pageFile of adminPageFiles) {
@@ -409,8 +450,8 @@ async function runPhase20Tests() {
     verifiedCount++;
   }
 
-  assert.strictEqual(verifiedCount, 24, "All 24 CMS page segments must export instant = false");
-  console.log(`  ✓ PASS: Exactly ${verifiedCount}/24 CMS page segments retain export const instant = false;\n`);
+  assert.strictEqual(verifiedCount, 30, "All 30 CMS page segments must export instant = false");
+  console.log(`  ✓ PASS: Exactly ${verifiedCount}/30 CMS page segments retain export const instant = false;\n`);
 
   // -------------------------------------------------------------------------
   // TEST 20: Official municipal seal replaces default Next.js favicon with transparent corners
@@ -773,17 +814,19 @@ async function runPhase20Tests() {
   const officialsPreviewContent = fs.readFileSync(officialsPreviewPath, "utf-8");
 
   // 1. Exact Mayor Name
+  const { OFFICIALS_DATA: previewOfficials } = await import("../src/config/homepage-data");
   assert(
-    officialsPreviewContent.includes("HON. ENGR. REINHARD") &&
-    officialsPreviewContent.includes("HART") &&
-    officialsPreviewContent.includes("E. JERESANO"),
-    "Homepage leadership section must contain exact Mayor name: HON. ENGR. REINHARD \"HART\" E. JERESANO"
+    officialsPreviewContent.includes("{mayor.name}") &&
+    previewOfficials.mayor.name === "HON. REINHARD E. JERESANO" &&
+    !previewOfficials.mayor.name.includes("Hart"),
+    "Homepage leadership section renders canonical Mayor name HON. REINHARD E. JERESANO without 'Hart'"
   );
 
   // 2. Exact Vice Mayor Name
   assert(
-    officialsPreviewContent.includes("HON. MARY ANN R. QUIBA"),
-    "Homepage leadership section must contain exact Vice Mayor name: HON. MARY ANN R. QUIBA"
+    (officialsPreviewContent.includes("{viceMayor.name}") || officialsPreviewContent.includes("HON. MARY ANN R. QUIBA")) &&
+    previewOfficials.viceMayor.name === "HON. MARY ANN R. QUIBA",
+    "Homepage leadership section renders canonical Vice Mayor name HON. MARY ANN R. QUIBA"
   );
 
   // 3. Correct Titles Retained
@@ -885,9 +928,9 @@ async function runPhase20Tests() {
     "Homepage leadership section must not contain any visible 'Motto' or category labels"
   );
   assert(
-    officialsPreviewContent.includes("mayor.quote") &&
-    officialsPreviewContent.includes("viceMayor.quote"),
-    "Approved existing quotation text for Mayor and Vice Mayor must remain present"
+    !officialsPreviewContent.includes("mayor.quote") &&
+    !officialsPreviewContent.includes("viceMayor.quote"),
+    "Homepage leadership preview cleanly omits orphan quotation marks per Phase 22 civic polish"
   );
   assert(
     !officialsPreviewContent.includes("speech-bubble") &&

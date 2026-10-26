@@ -4,6 +4,7 @@ import { GovernmentServices } from "@/components/home/government-services";
 import { MunicipalOfficialsPreview } from "@/components/home/municipal-officials-preview";
 import { MunicipalOfficesPreview } from "@/components/home/municipal-offices-preview";
 import { LatestNews } from "@/components/home/latest-news";
+import { GovernmentPrograms } from "@/components/home/government-programs";
 import { EmergencyHotlines } from "@/components/home/emergency-hotlines";
 import { MunicipalContactSection } from "@/components/home/municipal-contact-section";
 
@@ -27,10 +28,13 @@ export default function HomePage() {
         <LatestNews />
       </React.Suspense>
 
-      {/* 6. Emergency Hotlines (Prominent Burgundy Section) */}
+      {/* 6. Government Programs & Online Services */}
+      <GovernmentPrograms />
+
+      {/* 7. Emergency Hotlines (Prominent Burgundy Section) */}
       <EmergencyHotlines />
 
-      {/* 7. Visit the Municipal Government (Contact & Map) */}
+      {/* 8. Visit the Municipal Government (Contact & Map) */}
       <MunicipalContactSection />
     </div>
   );

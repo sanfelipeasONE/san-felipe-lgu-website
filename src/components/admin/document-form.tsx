@@ -102,18 +102,27 @@ export function DocumentForm({
     defaultCategory === "Bids and Awards Committee (BAC)" ||
     (initialData?.purpose === "OTHER_PUBLIC_DOCUMENT" && initialData?.category === "Bids and Awards Committee (BAC)");
 
-  const effectiveLockPurpose = lockPurpose ?? (isProcurementFlow || isBacFlow);
-  const effectiveLockCategory = lockCategory ?? (isProcurementFlow || isBacFlow);
+  const isGadFlow =
+    returnTo === "gad" ||
+    defaultCategory === "Gender and Development (GAD)" ||
+    (initialData?.purpose === "OTHER_PUBLIC_DOCUMENT" && initialData?.category === "Gender and Development (GAD)");
+
+  const effectiveLockPurpose = lockPurpose ?? (isProcurementFlow || isBacFlow || isGadFlow);
+  const effectiveLockCategory = lockCategory ?? (isProcurementFlow || isBacFlow || isGadFlow);
   const effectiveBackHref =
     backHref ||
-    (isBacFlow
+    (isGadFlow
+      ? "/admin/gad"
+      : isBacFlow
       ? "/admin/transparency/bac"
       : isProcurementFlow
       ? "/admin/transparency/procurement"
       : "/admin/documents");
   const effectiveBackLabel =
     backLabel ||
-    (isBacFlow
+    (isGadFlow
+      ? "Back to GAD Corner"
+      : isBacFlow
       ? "Back to Bids and Awards Committee"
       : isProcurementFlow
       ? "Back to Procurement"
@@ -190,6 +199,9 @@ export function DocumentForm({
       formData.append("description", description.trim());
       formData.append("category", category.trim());
       formData.append("purpose", purpose);
+      if (returnTo) {
+        formData.append("returnTo", returnTo);
+      }
       if (isSystemScoped) {
         formData.append("officeId", officeId);
       }
@@ -204,7 +216,9 @@ export function DocumentForm({
           toast.error(res.error || "Failed to create document.");
         } else {
           toast.success("Document uploaded successfully.");
-          const nextEditUrl = isBacFlow
+          const nextEditUrl = isGadFlow
+            ? `/admin/documents/${res.data!.id}/edit?returnTo=gad`
+            : isBacFlow
             ? `/admin/documents/${res.data!.id}/edit?returnTo=bac`
             : isProcurementFlow
             ? `/admin/documents/${res.data!.id}/edit?returnTo=procurement`

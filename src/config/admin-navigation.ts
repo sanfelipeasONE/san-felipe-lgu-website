@@ -9,6 +9,7 @@ import {
   Layers,
   Palmtree,
   FileSpreadsheet,
+  HeartHandshake,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
@@ -21,6 +22,7 @@ export interface AdminNavChildItem {
   href: string;
   description?: string;
   requiredPermission?: string;
+  requiredAnyPermission?: string[];
   requiredScope?: "system" | "office";
 }
 
@@ -32,6 +34,7 @@ export interface AdminNavItem {
   section: NavSectionKey;
   description: string;
   requiredPermission?: string;
+  requiredAnyPermission?: string[];
   requiredScope?: "system" | "office";
   isImplemented: boolean;
   phaseLabel?: string;
@@ -126,6 +129,16 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "content",
         description: "Municipal tourism attractions, resorts, culture, and local products",
         requiredPermission: "tourism.view",
+        isImplemented: true,
+      },
+      {
+        id: "gad-corner",
+        label: "GAD Corner",
+        href: "/admin/gad",
+        icon: HeartHandshake,
+        section: "content",
+        description: "Gender and Development news, publications, and official resources",
+        requiredAnyPermission: ["posts.view", "documents.view"],
         isImplemented: true,
       },
     ],
@@ -225,6 +238,14 @@ export function getVisibleNavSections(user: {
           return false;
         }
 
+        // 1b. Check required any permission (OR condition)
+        if (item.requiredAnyPermission && item.requiredAnyPermission.length > 0) {
+          const hasAny = item.requiredAnyPermission.some((perm) => hasPermission(user, perm));
+          if (!hasAny) {
+            return false;
+          }
+        }
+
         // 2. Check required scope
         if (item.requiredScope === "system" && !isSystemScoped(user)) {
           return false;
@@ -242,6 +263,12 @@ export function getVisibleNavSections(user: {
         const visibleChildren = item.children.filter((child) => {
           if (child.requiredPermission && !hasPermission(user, child.requiredPermission)) {
             return false;
+          }
+          if (child.requiredAnyPermission && child.requiredAnyPermission.length > 0) {
+            const hasAny = child.requiredAnyPermission.some((perm) => hasPermission(user, perm));
+            if (!hasAny) {
+              return false;
+            }
           }
           if (child.requiredScope === "system" && !isSystemScoped(user)) {
             return false;

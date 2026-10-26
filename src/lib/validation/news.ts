@@ -11,6 +11,7 @@ export const NEWS_CATEGORIES = [
   "HEALTH & WELLNESS",
   "EDUCATION & YOUTH",
   "GOVERNANCE & LEGISLATION",
+  "GENDER AND DEVELOPMENT (GAD)",
 ] as const;
 
 export const newsDraftSchema = z.object({

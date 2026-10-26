@@ -318,7 +318,6 @@ async function runPhase193TestSuite() {
           email: `test.retired.${Date.now()}@sanfelipe.gov.ph`,
           password: "SecurePassword123!@",
           roleId: approverRole.id,
-          officeId: mpdoOffice.id,
         });
       } catch (err: unknown) {
         if (err instanceof UserError && err.statusCode === 400 && err.message.includes("retired")) {
@@ -329,31 +328,88 @@ async function runPhase193TestSuite() {
     }
 
     // -------------------------------------------------------------------------
-    // TEST GROUP 2: Office Admin Staff Account Management Hardening
+    // TEST GROUP 2: Account Provisioning Model & Staff Management Hardening
     // -------------------------------------------------------------------------
-    console.log("\nTEST GROUP 2: Office Admin Staff Account Management");
+    console.log("\nTEST GROUP 2: Account Provisioning Model & Staff Management");
 
-    // Office Admin creates staff account: office and role are strictly derived server-side
-    const testStaffEmail = `staff.mpdo.${Date.now()}@sanfelipe.gov.ph`;
-    const createdStaff = await createUser(mpdoAdminUser, {
-      name: "MPDO New Staff",
-      email: testStaffEmail,
-      password: "StrongStaffPass123!@",
-      // Attempt to forge MHO office and super-admin role
-      officeId: mhoOffice.id,
+    // 1. Office Admin is strictly forbidden from provisioning accounts (Phase 21 municipal operating model)
+    let officeAdminCreateBlocked = false;
+    try {
+      await createUser(mpdoAdminUser, {
+        name: "MPDO New Staff",
+        email: `staff.mpdo.${Date.now()}@sanfelipe.gov.ph`,
+        password: "StrongStaffPass123!@",
+        officeId: mpdoOffice.id,
+        roleId: staffRole.id,
+      });
+    } catch (err: unknown) {
+      if (err instanceof UserError && err.statusCode === 403 && err.message.includes("Only system administrators may provision")) {
+        officeAdminCreateBlocked = true;
+      }
+    }
+    assert(
+      officeAdminCreateBlocked,
+      "createUser strictly rejects non-system-scoped Office Admin from provisioning accounts (403)"
+    );
+
+    // 2. Super Admin cannot assign an office to provisioned account
+    let officeAssignmentBlocked = false;
+    try {
+      await createUser(superAdminUser, {
+        name: "Office Assigned Admin",
+        email: `office.admin.${Date.now()}@sanfelipe.gov.ph`,
+        password: "StrongPass123!@",
+        officeId: mpdoOffice.id,
+        roleId: superAdminRole.id,
+      });
+    } catch (err: unknown) {
+      if (err instanceof UserError && err.statusCode === 400 && err.message.includes("must not be assigned to a municipal office")) {
+        officeAssignmentBlocked = true;
+      }
+    }
+    assert(
+      officeAssignmentBlocked,
+      "createUser rejects assigning an office to provisioned account (400)"
+    );
+
+    // 3. Super Admin cannot provision accounts with non-Super Admin roles (e.g. staff or office-admin)
+    let nonSuperRoleBlocked = false;
+    try {
+      await createUser(superAdminUser, {
+        name: "Staff Attempt",
+        email: `staff.attempt.${Date.now()}@sanfelipe.gov.ph`,
+        password: "StrongPass123!@",
+        roleId: staffRole.id,
+      });
+    } catch (err: unknown) {
+      if (err instanceof UserError && err.statusCode === 400 && err.message.includes("Only Super Admin accounts may be created")) {
+        nonSuperRoleBlocked = true;
+      }
+    }
+    assert(
+      nonSuperRoleBlocked,
+      "createUser rejects provisioning non-Super Admin roles under approved operating model (400)"
+    );
+
+    // 4. Super Admin provisions individual Super Admin account with system scope & null office
+    const testSuperAdminEmail = `superadmin.p193.${Date.now()}@sanfelipe.gov.ph`;
+    const createdAdmin = await createUser(superAdminUser, {
+      name: "New Super Admin P193",
+      email: testSuperAdminEmail,
+      password: "StrongSuperPass123!@",
       roleId: superAdminRole.id,
     });
 
     assert(
-      createdStaff.officeId === mpdoOffice.id,
-      "Server overrides forged officeId with Office Admin's authenticated office (MPDO)",
-      `Expected ${mpdoOffice.id}, got ${createdStaff.officeId}`
+      createdAdmin.officeId === null,
+      "Provisioned Super Admin account strictly holds null officeId (system scope)",
+      `Expected null, got ${createdAdmin.officeId}`
     );
 
     assert(
-      createdStaff.roleId === staffRole.id,
-      "Server overrides forged roleId with canonical Staff role",
-      `Expected ${staffRole.id}, got ${createdStaff.roleId}`
+      createdAdmin.roleId === superAdminRole.id,
+      "Provisioned Super Admin account holds canonical Super Admin role",
+      `Expected ${superAdminRole.id}, got ${createdAdmin.roleId}`
     );
 
     // Office Admin cannot manage system administrator
@@ -499,7 +555,7 @@ async function runPhase193TestSuite() {
     });
 
     // Cleanup test created user
-    await prisma.user.delete({ where: { id: createdStaff.id } });
+    await prisma.user.delete({ where: { id: createdAdmin.id } });
 
     // -------------------------------------------------------------------------
     // TEST GROUP 3: Controlled Permanent Delete Matrix (News, Documents, Jobs)
@@ -940,8 +996,10 @@ async function runPhase193TestSuite() {
         contentItemHrefs.includes("/admin/services") &&
         contentItemHrefs.includes("/admin/documents") &&
         contentItemHrefs.includes("/admin/jobs") &&
-        contentItemHrefs.length === 4,
-      "Content Management navigation contains exactly News, Services, Documents, and Jobs",
+        contentItemHrefs.includes("/admin/tourism") &&
+        contentItemHrefs.includes("/admin/gad") &&
+        contentItemHrefs.length === 6,
+      "Content Management navigation contains News, Services, Documents, Jobs, Tourism, and GAD Corner",
       `Got items: ${contentItemHrefs.join(", ")}`
     );
 

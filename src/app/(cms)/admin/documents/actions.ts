@@ -29,9 +29,22 @@ export async function createDocumentAction(
 
     const title = formData.get("title")?.toString() || "";
     const description = formData.get("description")?.toString() || undefined;
-    const category = formData.get("category")?.toString() || undefined;
-    const purpose = formData.get("purpose")?.toString() || undefined;
+    let category = formData.get("category")?.toString() || undefined;
+    let purpose = formData.get("purpose")?.toString() || undefined;
     const officeId = formData.get("officeId")?.toString() || undefined;
+    const returnTo = formData.get("returnTo")?.toString();
+
+    // Server-side classification locks
+    if (returnTo === "gad") {
+      category = "Gender and Development (GAD)";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
+    } else if (returnTo === "bac") {
+      category = "Bids and Awards Committee (BAC)";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
+    } else if (returnTo === "procurement") {
+      category = "Procurement";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
+    }
 
     const parsed = documentInputSchema.safeParse({
       title,
@@ -70,9 +83,11 @@ export async function createDocumentAction(
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
     revalidatePath("/admin/transparency/bac");
+    revalidatePath("/admin/gad");
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
+    revalidatePath("/gad");
 
     return {
       success: true,
@@ -96,10 +111,23 @@ export async function updateDocumentAction(
 
     const title = formData.get("title")?.toString() || "";
     const description = formData.get("description")?.toString() || undefined;
-    const category = formData.get("category")?.toString() || undefined;
-    const purpose = formData.get("purpose")?.toString() || undefined;
+    let category = formData.get("category")?.toString() || undefined;
+    let purpose = formData.get("purpose")?.toString() || undefined;
     const officeId = formData.get("officeId")?.toString() || undefined;
     const expectedUpdatedAt = formData.get("expectedUpdatedAt")?.toString() || undefined;
+    const returnTo = formData.get("returnTo")?.toString();
+
+    // Server-side classification locks
+    if (returnTo === "gad") {
+      category = "Gender and Development (GAD)";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
+    } else if (returnTo === "bac") {
+      category = "Bids and Awards Committee (BAC)";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
+    } else if (returnTo === "procurement") {
+      category = "Procurement";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
+    }
 
     const parsed = documentInputSchema.safeParse({
       title,
@@ -138,10 +166,12 @@ export async function updateDocumentAction(
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
     revalidatePath("/admin/transparency/bac");
+    revalidatePath("/admin/gad");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
+    revalidatePath("/gad");
 
     return {
       success: true,
@@ -167,10 +197,12 @@ export async function publishDocumentAction(
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
     revalidatePath("/admin/transparency/bac");
+    revalidatePath("/admin/gad");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
+    revalidatePath("/gad");
 
     return {
       success: true,
@@ -196,10 +228,12 @@ export async function archiveDocumentAction(
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
     revalidatePath("/admin/transparency/bac");
+    revalidatePath("/admin/gad");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
+    revalidatePath("/gad");
 
     return {
       success: true,
@@ -225,9 +259,11 @@ export async function deleteDocumentAction(
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
     revalidatePath("/admin/transparency/bac");
+    revalidatePath("/admin/gad");
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
+    revalidatePath("/gad");
     revalidatePath("/services/citizens-charter");
 
     return {

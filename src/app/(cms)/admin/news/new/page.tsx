@@ -16,7 +16,14 @@ export const metadata: Metadata = {
   description: "Draft a new municipal publication or department advisory",
 };
 
-export default async function CreateNewsPage() {
+interface CreateNewsPageProps {
+  searchParams?: Promise<{
+    category?: string;
+    returnTo?: string;
+  }>;
+}
+
+export default async function CreateNewsPage({ searchParams }: CreateNewsPageProps) {
   const user = await getCurrentUser();
 
   if (!user || user.status !== "ACTIVE") {
@@ -27,6 +34,11 @@ export default async function CreateNewsPage() {
     redirect("/admin/news");
   }
 
+  const params = searchParams ? await searchParams : undefined;
+  const isGad =
+    params?.returnTo === "gad" ||
+    params?.category === "GENDER AND DEVELOPMENT (GAD)";
+
   let officesList: Array<{ id: string; name: string; shortName: string | null }> = [];
   if (isSystemScoped(user)) {
     officesList = await prisma.office.findMany({
@@ -36,20 +48,40 @@ export default async function CreateNewsPage() {
     });
   }
 
+  const title = isGad ? "Draft GAD Article" : "Draft New Article";
+  const description = isGad
+    ? "Compose and prepare official announcements, releases, or advisories for the Gender and Development (GAD) Corner."
+    : "Compose and prepare official announcements, department press releases, or emergency advisories.";
+  const breadcrumbs = isGad
+    ? [
+        { label: "Content Management" },
+        { label: "GAD Corner", href: "/admin/gad" },
+        { label: "Draft Article" },
+      ]
+    : [
+        { label: "News & Advisories", href: "/admin/news" },
+        { label: "Draft Article" },
+      ];
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
-        title="Draft New Article"
-        description="Compose and prepare official announcements, department press releases, or emergency advisories."
-        breadcrumbs={[
-          { label: "News & Advisories", href: "/admin/news" },
-          { label: "Draft Article" },
-        ]}
+        title={title}
+        description={description}
+        breadcrumbs={breadcrumbs}
       />
 
       <AdminContent>
         <div className="bg-white border border-gray-200 rounded-xs p-6 shadow-2xs">
-          <NewsForm user={user} offices={officesList} />
+          <NewsForm
+            user={user}
+            offices={officesList}
+            defaultCategory={isGad ? "GENDER AND DEVELOPMENT (GAD)" : params?.category}
+            lockCategory={isGad}
+            returnTo={isGad ? "gad" : params?.returnTo}
+            backHref={isGad ? "/admin/gad" : "/admin/news"}
+            backLabel={isGad ? "Back to GAD Corner" : "Back to News"}
+          />
         </div>
       </AdminContent>
     </div>

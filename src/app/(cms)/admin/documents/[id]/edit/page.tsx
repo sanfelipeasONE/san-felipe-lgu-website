@@ -63,6 +63,10 @@ export default async function EditDocumentPage({
     sParams?.returnTo === "bac" ||
     (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Bids and Awards Committee (BAC)");
 
+  const isGad =
+    sParams?.returnTo === "gad" ||
+    (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Gender and Development (GAD)");
+
   const isSystem = isSystemScoped(user);
 
   let officesList: Array<{ id: string; name: string }> = [];
@@ -80,7 +84,13 @@ export default async function EditDocumentPage({
     hasPermission(user, PERMISSIONS.DOCUMENTS_DELETE) &&
     (isSystem || user.officeId === doc.officeId);
 
-  const breadcrumbs = isBac
+  const breadcrumbs = isGad
+    ? [
+        { label: "Content Management" },
+        { label: "GAD Corner", href: "/admin/gad" },
+        { label: doc.title },
+      ]
+    : isBac
     ? [
         { label: "Transparency" },
         { label: "Bids and Awards Committee (BAC)", href: "/admin/transparency/bac" },
@@ -97,25 +107,31 @@ export default async function EditDocumentPage({
         { label: doc.title },
       ];
 
-  const description = isBac
+  const description = isGad
+    ? "Update GAD resource details, replace file asset, or manage publication status."
+    : isBac
     ? "Update BAC resolution details, replace document asset, or manage publication status."
     : isProcurement
     ? "Update procurement notice details, replace document asset, or manage publication status."
     : "Update form metadata, replace the uploaded document file, or update publication status.";
 
-  const lockPurpose = isBac || isProcurement;
-  const lockCategory = isBac || isProcurement;
+  const lockPurpose = isBac || isProcurement || isGad;
+  const lockCategory = isBac || isProcurement || isGad;
   const backHref = isBac
     ? "/admin/transparency/bac"
     : isProcurement
     ? "/admin/transparency/procurement"
+    : isGad
+    ? "/admin/gad"
     : "/admin/documents";
   const backLabel = isBac
     ? "Back to Bids and Awards Committee"
     : isProcurement
     ? "Back to Procurement"
+    : isGad
+    ? "Back to GAD Corner"
     : "Back to Documents";
-  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : undefined;
+  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : isGad ? "gad" : undefined;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">

@@ -46,6 +46,11 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     params.category === "Bids and Awards Committee (BAC)" ||
     (params.purpose === "OTHER_PUBLIC_DOCUMENT" && params.category === "Bids and Awards Committee (BAC)");
 
+  const isGad =
+    params.returnTo === "gad" ||
+    params.category === "Gender and Development (GAD)" ||
+    (params.purpose === "OTHER_PUBLIC_DOCUMENT" && params.category === "Gender and Development (GAD)");
+
   const isSystem = isSystemScoped(user);
 
   let officesList: Array<{ id: string; name: string }> = [];
@@ -65,19 +70,29 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     userOfficeName = userOffice?.name;
   }
 
-  const title = isBac
+  const title = isGad
+    ? "Upload GAD Resource"
+    : isBac
     ? "Add BAC Document"
     : isProcurement
     ? "Add Procurement Document"
     : "Upload Municipal Document";
 
-  const description = isBac
+  const description = isGad
+    ? "Upload official GAD plans, annual budgets, accomplishment narratives, and gender development public resources."
+    : isBac
     ? "Upload official resolutions, bidding invitations, and public procurement disclosures issued by the Bids and Awards Committee."
     : isProcurement
     ? "Upload official procurement notices, invitations to bid, and public disclosures for municipal transparency."
     : "Upload official application forms, procedural guidelines, or civic templates for citizen access.";
 
-  const breadcrumbs = isBac
+  const breadcrumbs = isGad
+    ? [
+        { label: "Content Management" },
+        { label: "GAD Corner", href: "/admin/gad" },
+        { label: "Add Resource" },
+      ]
+    : isBac
     ? [
         { label: "Transparency" },
         { label: "Bids and Awards Committee (BAC)", href: "/admin/transparency/bac" },
@@ -94,25 +109,31 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
         { label: "Upload Document" },
       ];
 
-  const defaultPurpose = isBac || isProcurement ? "OTHER_PUBLIC_DOCUMENT" : undefined;
+  const defaultPurpose = isBac || isProcurement || isGad ? "OTHER_PUBLIC_DOCUMENT" : undefined;
   const defaultCategory = isBac
     ? "Bids and Awards Committee (BAC)"
     : isProcurement
     ? "Procurement"
+    : isGad
+    ? "Gender and Development (GAD)"
     : params.category;
-  const lockPurpose = isBac || isProcurement;
-  const lockCategory = isBac || isProcurement;
+  const lockPurpose = isBac || isProcurement || isGad;
+  const lockCategory = isBac || isProcurement || isGad;
   const backHref = isBac
     ? "/admin/transparency/bac"
     : isProcurement
     ? "/admin/transparency/procurement"
+    : isGad
+    ? "/admin/gad"
     : "/admin/documents";
   const backLabel = isBac
     ? "Back to Bids and Awards Committee"
     : isProcurement
     ? "Back to Procurement"
+    : isGad
+    ? "Back to GAD Corner"
     : "Back to Documents";
-  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : params.returnTo;
+  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : isGad ? "gad" : params.returnTo;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">

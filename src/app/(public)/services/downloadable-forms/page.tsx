@@ -39,7 +39,7 @@ export default async function DownloadableFormsPage() {
     category: (doc.category as FormCategory) || "General Administration",
     fileType: (doc.format as FormFileType) || "PDF",
     fileSize: doc.fileSizeFormatted,
-    fileUrl: doc.downloadUrl,
+    fileUrl: `/documents/${doc.id}/download`,
     publishedAt: doc.publishedAt ? doc.publishedAt.toISOString() : undefined,
     isAvailable: true,
   }));

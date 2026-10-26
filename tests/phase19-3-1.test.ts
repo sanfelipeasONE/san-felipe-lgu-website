@@ -676,9 +676,25 @@ async function runPhase1931TestSuite() {
     const allConfigItems = ADMIN_NAV_CONFIG.flatMap((s) => s.items);
     const implementedItems = allConfigItems.filter((i) => i.isImplemented);
 
+    const canonicalImplementedHrefs = [
+      "/admin",
+      "/admin/news",
+      "/admin/services",
+      "/admin/documents",
+      "/admin/jobs",
+      "/admin/tourism",
+      "/admin/gad",
+      "/admin/transparency/procurement",
+      "/admin/transparency/bac",
+      "/admin/users",
+      "/admin/roles",
+      "/admin/audit-logs",
+    ];
+
     assert(
-      implementedItems.length === 9,
-      "Primary implemented navigation routes remain exactly 9 (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/users, /admin/roles, /admin/audit-logs)"
+      implementedItems.length === 12 &&
+        canonicalImplementedHrefs.every((href) => implementedItems.some((i) => i.href === href)),
+      "Primary implemented navigation routes match canonical 12 items (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/gad, /admin/transparency/procurement, /admin/transparency/bac, /admin/users, /admin/roles, /admin/audit-logs)"
     );
     assert(
       !implementedItems.some((i) => i.href === "/admin/offices"),

@@ -70,11 +70,34 @@ export interface NewsFormProps {
     featuredImageBytes?: number | null;
     updatedAt: string;
   };
+  defaultCategory?: string;
+  lockCategory?: boolean;
+  returnTo?: string;
+  backHref?: string;
+  backLabel?: string;
 }
 
-export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
+export function NewsForm({
+  user,
+  offices = [],
+  initialData,
+  defaultCategory,
+  lockCategory,
+  returnTo,
+  backHref,
+  backLabel,
+}: NewsFormProps) {
   const router = useRouter();
   const isEditing = Boolean(initialData?.id);
+
+  const isGadFlow =
+    returnTo === "gad" ||
+    defaultCategory === "GENDER AND DEVELOPMENT (GAD)" ||
+    initialData?.category === "GENDER AND DEVELOPMENT (GAD)";
+
+  const effectiveLockCategory = lockCategory ?? isGadFlow;
+  const effectiveBackHref = backHref || (isGadFlow ? "/admin/gad" : "/admin/news");
+  const effectiveBackLabel = backLabel || (isGadFlow ? "Back to GAD Corner" : "Back to News");
 
   // Form State
   const [title, setTitle] = React.useState(initialData?.title || "");
@@ -84,7 +107,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
     (initialData?.type as NewsType) || "news"
   );
   const [category, setCategory] = React.useState(
-    initialData?.category || NEWS_CATEGORIES[0]
+    initialData?.category || defaultCategory || (isGadFlow ? "GENDER AND DEVELOPMENT (GAD)" : NEWS_CATEGORIES[0])
   );
   const [selectedOfficeId, setSelectedOfficeId] = React.useState(
     initialData?.officeId || user.officeId || (offices[0]?.id || "")
@@ -143,7 +166,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
       const payload = buildPayload();
 
       if (isEditing && initialData?.id) {
-        const res = await updateNewsAction(initialData.id, payload);
+        const res = await updateNewsAction(initialData.id, payload, returnTo);
         if (!res.success) {
           setErrorMessage(res.error || "Failed to update draft.");
           toast.error(res.error || "Failed to update draft.");
@@ -152,13 +175,16 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
           router.refresh();
         }
       } else {
-        const res = await createNewsAction(payload);
+        const res = await createNewsAction(payload, returnTo);
         if (!res.success || !res.data) {
           setErrorMessage(res.error || "Failed to create draft.");
           toast.error(res.error || "Failed to create draft.");
         } else {
           toast.success("News article draft created.");
-          router.push(`/admin/news/${res.data.id}/edit`);
+          const nextEditUrl = isGadFlow
+            ? `/admin/news/${res.data.id}/edit?returnTo=gad`
+            : `/admin/news/${res.data.id}/edit`;
+          router.push(nextEditUrl);
         }
       }
     } catch {
@@ -179,7 +205,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
       // First save changes
       let articleId = initialData?.id;
       if (isEditing && articleId) {
-        const updateRes = await updateNewsAction(articleId, payload);
+        const updateRes = await updateNewsAction(articleId, payload, returnTo);
         if (!updateRes.success) {
           setErrorMessage(updateRes.error || "Failed to save latest changes before publishing.");
           toast.error(updateRes.error || "Failed to save latest changes before publishing.");
@@ -187,7 +213,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
           return;
         }
       } else {
-        const createRes = await createNewsAction(payload);
+        const createRes = await createNewsAction(payload, returnTo);
         if (!createRes.success || !createRes.data) {
           setErrorMessage(createRes.error || "Failed to create article for publishing.");
           toast.error(createRes.error || "Failed to create article for publishing.");
@@ -227,7 +253,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
       } else {
         setShowArchiveDialog(false);
         toast.success("News article archived.");
-        router.push("/admin/news");
+        router.push(effectiveBackHref);
       }
     } catch {
       setErrorMessage("An unexpected error occurred during archiving.");
@@ -250,7 +276,7 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
         setIsDeleting(false);
       } else {
         toast.success("News article deleted.");
-        router.push("/admin/news");
+        router.push(effectiveBackHref);
       }
     } catch {
       setErrorMessage("An unexpected error occurred during article deletion.");
@@ -265,9 +291,9 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/news"
+            href={effectiveBackHref}
             className="p-1.5 rounded-xs border border-gray-300 text-gov-muted hover:text-gov-charcoal hover:bg-slate-100 transition-colors"
-            title="Back to News List"
+            title={effectiveBackLabel}
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
@@ -486,18 +512,27 @@ export function NewsForm({ user, offices = [], initialData }: NewsFormProps) {
               <Label htmlFor="news-category" className="text-xs font-bold text-gov-charcoal">
                 Thematic Category
               </Label>
-              <select
-                id="news-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full text-xs p-2 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer"
-              >
-                {NEWS_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+              {effectiveLockCategory ? (
+                <div className="p-2 text-xs bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold flex items-center justify-between">
+                  <span>{category}</span>
+                  <span className="text-[10px] text-slate-500 font-bold bg-slate-200/70 px-2 py-0.5 rounded-xs">
+                    Fixed
+                  </span>
+                </div>
+              ) : (
+                <select
+                  id="news-category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full text-xs p-2 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer"
+                >
+                  {NEWS_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 

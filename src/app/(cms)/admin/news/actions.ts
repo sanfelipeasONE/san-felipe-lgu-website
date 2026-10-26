@@ -29,11 +29,16 @@ export interface ActionResult<T = unknown> {
  * Server Action: Creates a new News article draft.
  */
 export async function createNewsAction(
-  rawInput: NewsDraftInput
+  rawInput: NewsDraftInput,
+  returnTo?: string
 ): Promise<ActionResult<{ id: string; slug: string }>> {
   try {
     const user = await requireUser();
-    const parsed = newsDraftSchema.safeParse(rawInput);
+    const effectiveInput = { ...rawInput };
+    if (returnTo === "gad") {
+      effectiveInput.category = "GENDER AND DEVELOPMENT (GAD)";
+    }
+    const parsed = newsDraftSchema.safeParse(effectiveInput);
 
     if (!parsed.success) {
       return {
@@ -45,6 +50,8 @@ export async function createNewsAction(
     const article = await createNewsArticle(user, parsed.data);
 
     revalidatePath("/admin/news");
+    revalidatePath("/admin/gad");
+    revalidatePath("/gad");
     return {
       success: true,
       data: { id: article.id, slug: article.slug },
@@ -60,11 +67,16 @@ export async function createNewsAction(
  */
 export async function updateNewsAction(
   id: string,
-  rawInput: NewsDraftInput
+  rawInput: NewsDraftInput,
+  returnTo?: string
 ): Promise<ActionResult<{ id: string; slug: string }>> {
   try {
     const user = await requireUser();
-    const parsed = newsDraftSchema.safeParse(rawInput);
+    const effectiveInput = { ...rawInput };
+    if (returnTo === "gad") {
+      effectiveInput.category = "GENDER AND DEVELOPMENT (GAD)";
+    }
+    const parsed = newsDraftSchema.safeParse(effectiveInput);
 
     if (!parsed.success) {
       return {
@@ -76,9 +88,11 @@ export async function updateNewsAction(
     const updated = await updateNewsArticle(user, id, parsed.data);
 
     revalidatePath("/admin/news");
+    revalidatePath("/admin/gad");
     revalidatePath(`/admin/news/${id}/edit`);
     revalidatePath(`/news/${updated.slug}`);
     revalidatePath("/news");
+    revalidatePath("/gad");
     revalidatePath("/");
 
     return {
@@ -103,9 +117,11 @@ export async function publishNewsAction(
     const published = await publishNewsArticle(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/news");
+    revalidatePath("/admin/gad");
     revalidatePath(`/admin/news/${id}/edit`);
     revalidatePath(`/news/${published.slug}`);
     revalidatePath("/news");
+    revalidatePath("/gad");
     revalidatePath("/");
 
     return {
@@ -130,9 +146,11 @@ export async function archiveNewsAction(
     const archived = await archiveNewsArticle(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/news");
+    revalidatePath("/admin/gad");
     revalidatePath(`/admin/news/${id}/edit`);
     revalidatePath(`/news/${archived.slug}`);
     revalidatePath("/news");
+    revalidatePath("/gad");
     revalidatePath("/");
 
     return {
@@ -238,7 +256,9 @@ export async function deleteNewsAction(
     const result = await deleteNewsArticle(user, id, expectedUpdatedAt);
 
     revalidatePath("/admin/news");
+    revalidatePath("/admin/gad");
     revalidatePath("/news");
+    revalidatePath("/gad");
     revalidatePath("/");
 
     return {

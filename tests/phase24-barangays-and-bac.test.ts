@@ -210,11 +210,11 @@ async function runPhase24TestSuite() {
     // -------------------------------------------------------------------------
     console.log("\n--- 3. Navigation Dropdowns Integrity ---");
 
-    // 16. Government dropdown contains Barangay Emergency Hotlines
+    // 16. Government dropdown contains Barangay Emergency Hotlines & GAD Corner
     const govDropdown = NAV_DROPDOWN_ITEMS["Government"];
     assert(
-      govDropdown !== undefined && govDropdown.length === 3,
-      "Government dropdown contains exactly 3 entries"
+      govDropdown !== undefined && govDropdown.length === 4,
+      "Government dropdown contains exactly 4 entries"
     );
     assert(
       govDropdown[0].title === "Municipal Officials" &&
@@ -230,6 +230,11 @@ async function runPhase24TestSuite() {
       govDropdown[2].title === "Barangay Emergency Hotlines" &&
         govDropdown[2].href === "/emergency-hotlines/barangays",
       "Government dropdown contains 'Barangay Emergency Hotlines' -> /emergency-hotlines/barangays"
+    );
+    assert(
+      govDropdown[3].title === "GAD Corner" &&
+        govDropdown[3].href === "/gad",
+      "Government dropdown contains 'GAD Corner' -> /gad"
     );
 
     // 17. Services -> Emergency Hotlines remains /#emergency-hotlines

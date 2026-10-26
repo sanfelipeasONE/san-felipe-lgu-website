@@ -187,16 +187,18 @@ async function runPhase22Tests() {
     assert(titles.includes("About"), "About must be preserved");
   });
 
-  test("Government dropdown contains Municipal Officials, All Municipal Offices, Barangay Emergency Hotlines", () => {
+  test("Government dropdown contains Municipal Officials, All Municipal Offices, Barangay Emergency Hotlines, GAD Corner", () => {
     const govDropdown = NAV_DROPDOWN_ITEMS["Government"];
     assert(govDropdown, "Government dropdown must exist");
-    assert.strictEqual(govDropdown.length, 3);
+    assert.strictEqual(govDropdown.length, 4);
     assert.strictEqual(govDropdown[0].title, "Municipal Officials");
     assert.strictEqual(govDropdown[0].href, "/government/officials");
     assert.strictEqual(govDropdown[1].title, "All Municipal Offices");
     assert.strictEqual(govDropdown[1].href, "/offices");
     assert.strictEqual(govDropdown[2].title, "Barangay Emergency Hotlines");
     assert.strictEqual(govDropdown[2].href, "/emergency-hotlines/barangays");
+    assert.strictEqual(govDropdown[3].title, "GAD Corner");
+    assert.strictEqual(govDropdown[3].href, "/gad");
   });
 
   test("Services dropdown is preserved with all 5 approved items", () => {
