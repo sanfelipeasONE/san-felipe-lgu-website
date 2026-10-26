@@ -187,14 +187,16 @@ async function runPhase22Tests() {
     assert(titles.includes("About"), "About must be preserved");
   });
 
-  test("Government dropdown contains Municipal Officials and All Municipal Offices", () => {
+  test("Government dropdown contains Municipal Officials, All Municipal Offices, Barangay Emergency Hotlines", () => {
     const govDropdown = NAV_DROPDOWN_ITEMS["Government"];
     assert(govDropdown, "Government dropdown must exist");
-    assert.strictEqual(govDropdown.length, 2);
+    assert.strictEqual(govDropdown.length, 3);
     assert.strictEqual(govDropdown[0].title, "Municipal Officials");
     assert.strictEqual(govDropdown[0].href, "/government/officials");
     assert.strictEqual(govDropdown[1].title, "All Municipal Offices");
     assert.strictEqual(govDropdown[1].href, "/offices");
+    assert.strictEqual(govDropdown[2].title, "Barangay Emergency Hotlines");
+    assert.strictEqual(govDropdown[2].href, "/emergency-hotlines/barangays");
   });
 
   test("Services dropdown is preserved with all 5 approved items", () => {
@@ -225,13 +227,15 @@ async function runPhase22Tests() {
   test("Transparency dropdown contains Procurement, Contact Us, Journal and News (/news)", () => {
     const transparencyDropdown = NAV_DROPDOWN_ITEMS["Transparency"];
     assert(transparencyDropdown, "Transparency dropdown must exist");
-    assert.strictEqual(transparencyDropdown.length, 3);
+    assert.strictEqual(transparencyDropdown.length, 4);
     assert.strictEqual(transparencyDropdown[0].title, "Procurement");
     assert.strictEqual(transparencyDropdown[0].href, "/transparency/procurement");
-    assert.strictEqual(transparencyDropdown[1].title, "Contact Us");
-    assert.strictEqual(transparencyDropdown[1].href, "/#contact-us");
-    assert.strictEqual(transparencyDropdown[2].title, "Journal and News");
-    assert.strictEqual(transparencyDropdown[2].href, "/news");
+    assert.strictEqual(transparencyDropdown[1].title, "Bids and Awards Committee (BAC)");
+    assert.strictEqual(transparencyDropdown[1].href, "/transparency/bac");
+    assert.strictEqual(transparencyDropdown[2].title, "Contact Us");
+    assert.strictEqual(transparencyDropdown[2].href, "/#contact-us");
+    assert.strictEqual(transparencyDropdown[3].title, "Journal and News");
+    assert.strictEqual(transparencyDropdown[3].href, "/news");
   });
 
   // ============================================================================

@@ -13,6 +13,7 @@ export const NAV_DROPDOWN_ITEMS: Record<string, SubNavItem[]> = {
   Government: [
     { title: "Municipal Officials", href: "/government/officials" },
     { title: "All Municipal Offices", href: "/offices" },
+    { title: "Barangay Emergency Hotlines", href: "/emergency-hotlines/barangays" },
   ],
   Services: [
     { title: "Citizen's Charter", href: "/services/citizens-charter" },
@@ -29,6 +30,7 @@ export const NAV_DROPDOWN_ITEMS: Record<string, SubNavItem[]> = {
   ],
   Transparency: [
     { title: "Procurement", href: "/transparency/procurement" },
+    { title: "Bids and Awards Committee (BAC)", href: "/transparency/bac" },
     { title: "Contact Us", href: "/#contact-us" },
     { title: "Journal and News", href: "/news" },
   ],

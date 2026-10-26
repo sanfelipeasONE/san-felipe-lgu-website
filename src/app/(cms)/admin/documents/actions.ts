@@ -69,8 +69,10 @@ export async function createDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/bac");
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
+    revalidatePath("/transparency/bac");
 
     return {
       success: true,
@@ -135,9 +137,11 @@ export async function updateDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/bac");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
+    revalidatePath("/transparency/bac");
 
     return {
       success: true,
@@ -162,9 +166,11 @@ export async function publishDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/bac");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
+    revalidatePath("/transparency/bac");
 
     return {
       success: true,
@@ -189,9 +195,11 @@ export async function archiveDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/bac");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
+    revalidatePath("/transparency/bac");
 
     return {
       success: true,
@@ -216,8 +224,10 @@ export async function deleteDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/bac");
     revalidatePath("/services/downloadable-forms");
     revalidatePath("/transparency/procurement");
+    revalidatePath("/transparency/bac");
     revalidatePath("/services/citizens-charter");
 
     return {

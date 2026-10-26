@@ -97,12 +97,27 @@ export function DocumentForm({
     defaultCategory === "Procurement" ||
     (initialData?.purpose === "OTHER_PUBLIC_DOCUMENT" && initialData?.category === "Procurement");
 
-  const effectiveLockPurpose = lockPurpose ?? isProcurementFlow;
-  const effectiveLockCategory = lockCategory ?? isProcurementFlow;
+  const isBacFlow =
+    returnTo === "bac" ||
+    defaultCategory === "Bids and Awards Committee (BAC)" ||
+    (initialData?.purpose === "OTHER_PUBLIC_DOCUMENT" && initialData?.category === "Bids and Awards Committee (BAC)");
+
+  const effectiveLockPurpose = lockPurpose ?? (isProcurementFlow || isBacFlow);
+  const effectiveLockCategory = lockCategory ?? (isProcurementFlow || isBacFlow);
   const effectiveBackHref =
-    backHref || (isProcurementFlow ? "/admin/transparency/procurement" : "/admin/documents");
+    backHref ||
+    (isBacFlow
+      ? "/admin/transparency/bac"
+      : isProcurementFlow
+      ? "/admin/transparency/procurement"
+      : "/admin/documents");
   const effectiveBackLabel =
-    backLabel || (isProcurementFlow ? "Back to Procurement" : "Back to Documents");
+    backLabel ||
+    (isBacFlow
+      ? "Back to Bids and Awards Committee"
+      : isProcurementFlow
+      ? "Back to Procurement"
+      : "Back to Documents");
 
   // Form State
   const [title, setTitle] = React.useState(initialData?.title || "");
@@ -189,7 +204,9 @@ export function DocumentForm({
           toast.error(res.error || "Failed to create document.");
         } else {
           toast.success("Document uploaded successfully.");
-          const nextEditUrl = isProcurementFlow
+          const nextEditUrl = isBacFlow
+            ? `/admin/documents/${res.data!.id}/edit?returnTo=bac`
+            : isProcurementFlow
             ? `/admin/documents/${res.data!.id}/edit?returnTo=procurement`
             : `/admin/documents/${res.data!.id}/edit`;
           router.push(nextEditUrl);
@@ -415,8 +432,14 @@ export function DocumentForm({
           {/* Office Ownership */}
           <div>
             <label htmlFor="doc-office" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Responsible Municipal Office <span className="text-rose-500">*</span>
+              {isBacFlow ? "Underlying Administrative Office" : "Responsible Municipal Office"}{" "}
+              <span className="text-rose-500">*</span>
             </label>
+            {isBacFlow && (
+              <p className="text-[11px] text-slate-500 mb-1.5 leading-normal">
+                Select the municipal office administering this record. On public transparency pages, this document will be attributed to Bids and Awards Committee (BAC).
+              </p>
+            )}
             {isSystemScoped ? (
               <select
                 id="doc-office"

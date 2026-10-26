@@ -41,6 +41,11 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     params.category === "Procurement" ||
     (params.purpose === "OTHER_PUBLIC_DOCUMENT" && params.category === "Procurement");
 
+  const isBac =
+    params.returnTo === "bac" ||
+    params.category === "Bids and Awards Committee (BAC)" ||
+    (params.purpose === "OTHER_PUBLIC_DOCUMENT" && params.category === "Bids and Awards Committee (BAC)");
+
   const isSystem = isSystemScoped(user);
 
   let officesList: Array<{ id: string; name: string }> = [];
@@ -60,12 +65,25 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     userOfficeName = userOffice?.name;
   }
 
-  const title = isProcurement ? "Add Procurement Document" : "Upload Municipal Document";
-  const description = isProcurement
+  const title = isBac
+    ? "Add BAC Document"
+    : isProcurement
+    ? "Add Procurement Document"
+    : "Upload Municipal Document";
+
+  const description = isBac
+    ? "Upload official resolutions, bidding invitations, and public procurement disclosures issued by the Bids and Awards Committee."
+    : isProcurement
     ? "Upload official procurement notices, invitations to bid, and public disclosures for municipal transparency."
     : "Upload official application forms, procedural guidelines, or civic templates for citizen access.";
 
-  const breadcrumbs = isProcurement
+  const breadcrumbs = isBac
+    ? [
+        { label: "Transparency" },
+        { label: "Bids and Awards Committee (BAC)", href: "/admin/transparency/bac" },
+        { label: "Add Document" },
+      ]
+    : isProcurement
     ? [
         { label: "Transparency" },
         { label: "Procurement", href: "/admin/transparency/procurement" },
@@ -75,6 +93,26 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
         { label: "Documents", href: "/admin/documents" },
         { label: "Upload Document" },
       ];
+
+  const defaultPurpose = isBac || isProcurement ? "OTHER_PUBLIC_DOCUMENT" : undefined;
+  const defaultCategory = isBac
+    ? "Bids and Awards Committee (BAC)"
+    : isProcurement
+    ? "Procurement"
+    : params.category;
+  const lockPurpose = isBac || isProcurement;
+  const lockCategory = isBac || isProcurement;
+  const backHref = isBac
+    ? "/admin/transparency/bac"
+    : isProcurement
+    ? "/admin/transparency/procurement"
+    : "/admin/documents";
+  const backLabel = isBac
+    ? "Back to Bids and Awards Committee"
+    : isProcurement
+    ? "Back to Procurement"
+    : "Back to Documents";
+  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : params.returnTo;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
@@ -90,13 +128,13 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
           isSystemScoped={isSystem}
           offices={officesList}
           userOfficeName={userOfficeName}
-          defaultPurpose={isProcurement ? "OTHER_PUBLIC_DOCUMENT" : undefined}
-          defaultCategory={isProcurement ? "Procurement" : params.category}
-          lockPurpose={isProcurement}
-          lockCategory={isProcurement}
-          backHref={isProcurement ? "/admin/transparency/procurement" : "/admin/documents"}
-          backLabel={isProcurement ? "Back to Procurement" : "Back to Documents"}
-          returnTo={isProcurement ? "procurement" : params.returnTo}
+          defaultPurpose={defaultPurpose}
+          defaultCategory={defaultCategory}
+          lockPurpose={lockPurpose}
+          lockCategory={lockCategory}
+          backHref={backHref}
+          backLabel={backLabel}
+          returnTo={returnTo}
         />
       </AdminContent>
     </div>

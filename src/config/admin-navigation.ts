@@ -144,6 +144,16 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         requiredPermission: "documents.view",
         isImplemented: true,
       },
+      {
+        id: "transparency-bac",
+        label: "Bids and Awards Committee (BAC)",
+        href: "/admin/transparency/bac",
+        icon: FileText,
+        section: "transparency",
+        description: "Official BAC resolutions, bidding notices, and public disclosures",
+        requiredPermission: "documents.view",
+        isImplemented: true,
+      },
     ],
   },
   {

@@ -59,6 +59,10 @@ export default async function EditDocumentPage({
     sParams?.returnTo === "procurement" ||
     (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Procurement");
 
+  const isBac =
+    sParams?.returnTo === "bac" ||
+    (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Bids and Awards Committee (BAC)");
+
   const isSystem = isSystemScoped(user);
 
   let officesList: Array<{ id: string; name: string }> = [];
@@ -76,7 +80,13 @@ export default async function EditDocumentPage({
     hasPermission(user, PERMISSIONS.DOCUMENTS_DELETE) &&
     (isSystem || user.officeId === doc.officeId);
 
-  const breadcrumbs = isProcurement
+  const breadcrumbs = isBac
+    ? [
+        { label: "Transparency" },
+        { label: "Bids and Awards Committee (BAC)", href: "/admin/transparency/bac" },
+        { label: doc.title },
+      ]
+    : isProcurement
     ? [
         { label: "Transparency" },
         { label: "Procurement", href: "/admin/transparency/procurement" },
@@ -87,15 +97,31 @@ export default async function EditDocumentPage({
         { label: doc.title },
       ];
 
+  const description = isBac
+    ? "Update BAC resolution details, replace document asset, or manage publication status."
+    : isProcurement
+    ? "Update procurement notice details, replace document asset, or manage publication status."
+    : "Update form metadata, replace the uploaded document file, or update publication status.";
+
+  const lockPurpose = isBac || isProcurement;
+  const lockCategory = isBac || isProcurement;
+  const backHref = isBac
+    ? "/admin/transparency/bac"
+    : isProcurement
+    ? "/admin/transparency/procurement"
+    : "/admin/documents";
+  const backLabel = isBac
+    ? "Back to Bids and Awards Committee"
+    : isProcurement
+    ? "Back to Procurement"
+    : "Back to Documents";
+  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : undefined;
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
       <AdminPageHeader
         title={`Edit: ${doc.title}`}
-        description={
-          isProcurement
-            ? "Update procurement notice details, replace document asset, or manage publication status."
-            : "Update form metadata, replace the uploaded document file, or update publication status."
-        }
+        description={description}
         breadcrumbs={breadcrumbs}
       />
 
@@ -126,11 +152,11 @@ export default async function EditDocumentPage({
           canPublish={canPublish}
           canArchive={canArchive}
           canDelete={canDelete}
-          lockPurpose={isProcurement}
-          lockCategory={isProcurement}
-          backHref={isProcurement ? "/admin/transparency/procurement" : "/admin/documents"}
-          backLabel={isProcurement ? "Back to Procurement" : "Back to Documents"}
-          returnTo={isProcurement ? "procurement" : undefined}
+          lockPurpose={lockPurpose}
+          lockCategory={lockCategory}
+          backHref={backHref}
+          backLabel={backLabel}
+          returnTo={returnTo}
         />
       </AdminContent>
     </div>

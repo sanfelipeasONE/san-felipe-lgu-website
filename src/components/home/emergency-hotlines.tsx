@@ -1,5 +1,7 @@
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { EMERGENCY_DATA, type EmergencyItem } from "@/config/homepage-data";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -13,7 +15,7 @@ export function EmergencyHotlines() {
       <Container>
         {/* Section Header with zero-delay scroll reveal (never delays content) */}
         <ScrollReveal delayMs={0}>
-          <div className="mb-10 max-w-2xl">
+          <div className="mb-10">
             <span className="text-[11px] font-bold uppercase tracking-wider text-gold-400 block mb-1.5">
               24/7 EMERGENCY & DISASTER RESPONSE
             </span>
@@ -72,6 +74,20 @@ export function EmergencyHotlines() {
               </div>
             </ScrollReveal>
           ))}
+        </div>
+
+        {/* Barangay Hotlines Callout Banner */}
+        <div className="mt-10 pt-6 border-t border-burgundy-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <p className="text-xs text-slate-200 leading-relaxed max-w-xl">
+            Need emergency contacts for a specific barangay? Browse the official contact status for all 10 barangays of San Felipe.
+          </p>
+          <Link
+            href="/emergency-hotlines/barangays"
+            className="inline-flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-xs bg-gold-600 hover:bg-gold-500 text-burgundy-950 transition-colors shrink-0 shadow-2xs"
+          >
+            <span>Browse Barangay Emergency Hotlines</span>
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
         </div>
       </Container>
     </section>

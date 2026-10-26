@@ -25,7 +25,7 @@ export function MunicipalOfficialsPreview() {
             </h2>
             <div className="w-12 h-0.5 bg-gold-500 mx-auto mt-3.5 mb-3" aria-hidden="true" />
             <p className="text-sm sm:text-base text-gov-muted leading-relaxed">
-              Executive and legislative leadership dedicated to transparent governance, responsive public service, and the welfare of every resident across all 11 barangays.
+              Executive and legislative leadership dedicated to transparent governance, responsive public service, and the welfare of every resident across all 10 barangays.
             </p>
           </div>
         </ScrollReveal>
