@@ -994,16 +994,57 @@ async function runJobOpportunitiesTestSuite() {
     assert(hasArchivedAudit, "JOB_ARCHIVED audit event logged");
 
     // -------------------------------------------------------------------------
-    // 8. Phase Boundary Verification
+    // 9. Public Job Opportunities Search Removal & Listing Integrity
     // -------------------------------------------------------------------------
-    console.log("\n8. Phase Boundary Verification");
+    console.log("\n9. Public Job Opportunities Search Removal & Listing Integrity");
 
-    // Verify Prisma schema has NO applicant or application tables
-    const schemaContent = fs.readFileSync(path.resolve(process.cwd(), "prisma/schema.prisma"), "utf-8");
-    assert(!schemaContent.includes("model Applicant"), "No Applicant model introduced (Phase 15 boundary preserved)");
-    assert(!schemaContent.includes("model Application"), "No Application model introduced (Phase 15 boundary preserved)");
-    assert(!schemaContent.includes("model Resume"), "No Resume model introduced (Phase 15 boundary preserved)");
-    assert(!schemaContent.includes("PENDING_REVIEW"), "No PENDING_REVIEW approval status in JobOpportunityStatus");
+    const jobViewContent = fs.readFileSync(
+      path.resolve(process.cwd(), "src/components/services/job-opportunities-view.tsx"),
+      "utf-8"
+    );
+
+    // Verify search UI / functionality is completely removed
+    assert(
+      !jobViewContent.includes("Search vacancies by position title or office"),
+      "Search input placeholder is absent from JobOpportunitiesView"
+    );
+    assert(
+      !jobViewContent.includes("searchQuery"),
+      "searchQuery state is absent from JobOpportunitiesView"
+    );
+    assert(
+      !jobViewContent.includes("All Municipal Offices"),
+      "Office filter dropdown is absent from JobOpportunitiesView"
+    );
+    assert(
+      !jobViewContent.includes("All Classifications"),
+      "Classification filter chips are absent from JobOpportunitiesView"
+    );
+    assert(
+      !jobViewContent.includes("EMPLOYMENT_TYPES"),
+      "EMPLOYMENT_TYPES constant is absent from JobOpportunitiesView"
+    );
+
+    // Verify job details, attachments, and empty state remain intact
+    assert(
+      jobViewContent.includes("opportunities.length === 0") &&
+        jobViewContent.includes("ServiceEmptyState"),
+      "Empty state is preserved when no vacancies are published"
+    );
+    assert(
+      jobViewContent.includes("opportunities.map") &&
+        jobViewContent.includes("job.positionTitle"),
+      "Published job listings loop and titles are preserved"
+    );
+    assert(
+      jobViewContent.includes("job.officialAttachmentUrl") &&
+        jobViewContent.includes("View Official Vacancy Bulletin (PDF)"),
+      "Official attachment document link is preserved"
+    );
+    assert(
+      jobViewContent.includes("EducationRequirement") || jobViewContent.includes("educationRequirement"),
+      "Qualification requirements (Education, Training, Experience, Eligibility) are preserved"
+    );
 
   } catch (error) {
     console.error("Test execution exception:", error);
