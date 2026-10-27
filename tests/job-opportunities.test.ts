@@ -358,10 +358,10 @@ async function runJobOpportunitiesTestSuite() {
     // -------------------------------------------------------------------------
     console.log("1. Zod Validation & Content Safety");
 
-    const validParsed = jobOpportunityInputSchema.safeParse({
+    const validGovParsed = jobOpportunityInputSchema.safeParse({
       title: "Administrative Aide VI",
       itemNumber: "MHO-001",
-      employmentType: "Permanent",
+      employmentType: "Government",
       salaryGrade: "6",
       monthlySalary: "₱17,553.00",
       description: "Assists in departmental administrative tasks.",
@@ -372,7 +372,37 @@ async function runJobOpportunitiesTestSuite() {
       postingDate: "2026-10-01",
       closingDate: "2026-10-31",
     });
-    assert(validParsed.success, "Valid job opportunity input is accepted by schema");
+    assert(validGovParsed.success, "Valid job opportunity input with 'Government' is accepted by schema");
+
+    const validPrivParsed = jobOpportunityInputSchema.safeParse({
+      title: "Private Sector Liaison",
+      employmentType: "Private",
+    });
+    assert(validPrivParsed.success, "Valid job opportunity input with 'Private' is accepted by schema");
+
+    const obsoletePermanent = jobOpportunityInputSchema.safeParse({
+      title: "Obsolete Permanent Vacancy",
+      employmentType: "Permanent",
+    });
+    assert(!obsoletePermanent.success, "Obsolete classification 'Permanent' is rejected by schema for new submissions");
+
+    const obsoleteContractual = jobOpportunityInputSchema.safeParse({
+      title: "Obsolete Contractual Vacancy",
+      employmentType: "Contractual",
+    });
+    assert(!obsoleteContractual.success, "Obsolete classification 'Contractual' is rejected by schema");
+
+    const obsoleteCasual = jobOpportunityInputSchema.safeParse({
+      title: "Obsolete Casual Vacancy",
+      employmentType: "Casual",
+    });
+    assert(!obsoleteCasual.success, "Obsolete classification 'Casual' is rejected by schema");
+
+    const obsoleteCoTerminus = jobOpportunityInputSchema.safeParse({
+      title: "Obsolete Co-Terminus Vacancy",
+      employmentType: "Co-Terminus",
+    });
+    assert(!obsoleteCoTerminus.success, "Obsolete classification 'Co-Terminus' is rejected by schema");
 
     const optionalEmploymentType = jobOpportunityInputSchema.safeParse({
       title: "Valid Title Without Employment Type",
@@ -450,7 +480,7 @@ async function runJobOpportunitiesTestSuite() {
     const createdByStaff = await createJobOpportunity(bploStaffUser, {
       title: "Licensing Officer II",
       itemNumber: "BPLO-2026-02",
-      employmentType: "Permanent",
+      employmentType: "Government",
       salaryGrade: "15",
       description: "Assists in business licensing assessment and renewal.",
       education: "Bachelor's degree relevant to the job",
@@ -481,7 +511,7 @@ async function runJobOpportunitiesTestSuite() {
     const createdByAdmin = await createJobOpportunity(superAdminUser, {
       title: "Rural Health Physician",
       itemNumber: "MHO-2026-01",
-      employmentType: "Permanent",
+      employmentType: "Government",
       salaryGrade: "24",
       description: "Provides primary clinical care and maternal health services.",
       officeId: officeMHO.id,

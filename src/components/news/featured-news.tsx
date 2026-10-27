@@ -67,11 +67,15 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
             {/* Primary Content */}
             <div className="p-6">
               <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mb-2.5">
-                <div className="flex items-center gap-1.5 font-bold text-burgundy-700 uppercase tracking-wider text-[11px]">
-                  <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  <span>{primary.publishingOffice.name}</span>
-                </div>
-                <span className="text-gray-300" aria-hidden="true">&bull;</span>
+                {primary.publishingOffice && (
+                  <>
+                    <div className="flex items-center gap-1.5 font-bold text-burgundy-700 uppercase tracking-wider text-[11px]">
+                      <Building2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span>{primary.publishingOffice.name}</span>
+                    </div>
+                    <span className="text-gray-300" aria-hidden="true">&bull;</span>
+                  </>
+                )}
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <time dateTime={primary.publishedAt}>{primary.publishedAtFormatted}</time>
@@ -153,9 +157,11 @@ export function FeaturedNews({ primary, secondary }: FeaturedNewsProps) {
                       </Link>
                     </h4>
 
-                    <span className="text-[11px] font-semibold text-slate-500 block truncate">
-                      {article.publishingOffice.name}
-                    </span>
+                    {article.publishingOffice && (
+                      <span className="text-[11px] font-semibold text-slate-500 block truncate">
+                        {article.publishingOffice.name}
+                      </span>
+                    )}
                   </div>
                 </div>
 

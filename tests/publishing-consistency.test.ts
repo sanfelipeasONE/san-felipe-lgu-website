@@ -563,13 +563,17 @@ async function runPublishingConsistencyTestSuite() {
 
   let newsInactiveOfficeFailed = false;
   try {
-    await createNewsArticle(sessionSuperAdmin, {
+    const sessionInactiveStaff: SessionUser = {
+      ...sessionStaffA,
+      officeId: inactiveOffice.id,
+      office: inactiveOffice,
+    };
+    await createNewsArticle(sessionInactiveStaff, {
       title: "News for Inactive Office",
       excerpt: "Excerpt",
       body: "<p>Content</p>",
       type: "news",
       category: "GENERAL",
-      officeId: inactiveOffice.id,
     });
   } catch (err) {
     if (err instanceof NewsError && err.statusCode === 400) {
@@ -679,7 +683,12 @@ async function runPublishingConsistencyTestSuite() {
   // ---------------------------------------------------------------------------
   console.log("\nCleaning up test records...");
   await prisma.newsArticle.deleteMany({
-    where: { officeId: { in: [officeA.id, officeB.id, inactiveOffice.id] } },
+    where: {
+      OR: [
+        { officeId: { in: [officeA.id, officeB.id, inactiveOffice.id] } },
+        { createdById: { in: [userStaffA.id, userStaffB.id, userSuperAdmin.id] } },
+      ],
+    },
   });
   await prisma.jobOpportunity.deleteMany({
     where: { officeId: { in: [officeA.id, officeB.id, inactiveOffice.id] } },

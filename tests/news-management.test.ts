@@ -442,36 +442,20 @@ async function runNewsManagementTestSuite() {
     const retrievedBySuperAdmin = await getAdminNewsById(superAdminUser, staffArticle.id);
     assert(retrievedBySuperAdmin.id === staffArticle.id, "System-scoped user can retrieve cross-office article by ID");
 
-    // Super Admin can create news on behalf of any valid office
+    // Super Admin creates municipal-wide news with officeId = null
     const superAdminCreated = await createNewsArticle(superAdminUser, {
       title: "Municipal Treasury Tax Announcement",
       excerpt: "Real property tax notice from the treasury office.",
       body: "<p>Notice of payment deadline.</p>",
       type: "announcement",
       category: "Finance & Taxation",
-      officeId: treasuryOffice.id,
     });
     createdArticleIds.push(superAdminCreated.id);
 
     assert(
-      superAdminCreated.officeId === treasuryOffice.id,
-      "System-scoped user can assign target publishing office"
+      superAdminCreated.officeId === null,
+      "System-scoped user creates municipal-wide article with officeId = null"
     );
-
-    // Invalid target office for system user is rejected
-    try {
-      await createNewsArticle(superAdminUser, {
-        title: "Bogus Office Announcement",
-        excerpt: "Bogus excerpt",
-        body: "<p>Content</p>",
-        type: "notice",
-        category: "General",
-        officeId: "non-existent-office-uuid-999",
-      });
-      assert(false, "Invalid office ID must be rejected");
-    } catch (e: unknown) {
-      assert(e instanceof NewsError && e.statusCode === 400, "Invalid office selection rejected with 400");
-    }
 
     // =========================================================================
     // 4. DRAFT CONFIDENTIALITY & PUBLIC FILTERING
@@ -565,7 +549,7 @@ async function runNewsManagementTestSuite() {
 
     const publicArticleDetail = await getPublicPublishedNewsBySlug(staffArticle.slug);
     assert(publicArticleDetail !== null, "PUBLISHED article resolves by slug in public query");
-    assert(publicArticleDetail?.office.name === mhoOffice.name, "Public detail includes correct Publishing Office");
+    assert(publicArticleDetail?.office?.name === mhoOffice.name, "Public detail includes correct Publishing Office");
 
     // =========================================================================
     // 6. ARCHIVING LIFECYCLE

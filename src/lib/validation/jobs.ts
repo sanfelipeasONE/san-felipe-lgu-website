@@ -1,17 +1,26 @@
 import { z } from "zod";
 
 /**
- * Non-binding UI suggestions for employment classification inputs.
- * These are NOT enforced as a closed enum and are NOT seeded as municipal policy.
+ * Controlled employment classifications for Municipal Job Opportunities (Phase 26).
+ * Strictly restricted to Government and Private vacancies.
  */
 export const ALLOWED_EMPLOYMENT_TYPES = [
-  "Permanent",
-  "Contractual",
-  "Casual",
-  "Co-Terminous",
+  "Government",
+  "Private",
 ] as const;
 
 export type AllowedEmploymentType = (typeof ALLOWED_EMPLOYMENT_TYPES)[number];
+
+/**
+ * Historical/legacy employment classifications preserved for backward compatibility
+ * when reading existing database records.
+ */
+export const LEGACY_EMPLOYMENT_TYPES = [
+  "Permanent",
+  "Contractual",
+  "Casual",
+  "Co-Terminus",
+] as const;
 
 /**
  * Strips HTML tags and excessive whitespace from plain-text input fields.
@@ -95,6 +104,12 @@ export const jobOpportunityInputSchema = z
     employmentType: z
       .string()
       .max(50, "Employment type cannot exceed 50 characters.")
+      .refine(
+        (val) => !val || (ALLOWED_EMPLOYMENT_TYPES as readonly string[]).includes(val),
+        {
+          message: "Employment classification must be either 'Government' or 'Private'.",
+        }
+      )
       .nullish(),
     salaryGrade: z
       .string()

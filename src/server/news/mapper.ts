@@ -23,7 +23,8 @@ interface DbNewsArticle {
   publishedAt: Date | null;
   featuredImageUrl: string | null;
   featuredImageAlt: string | null;
-  office: DbOffice;
+  officeId?: string | null;
+  office?: DbOffice | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,12 +53,14 @@ export function mapDbArticleToPublicArticle(
     htmlBody: article.body,
     type: (article.type as NewsType) || "news",
     category: article.category,
-    publishingOffice: {
-      id: article.office.id,
-      name: article.office.name,
-      slug: article.office.slug,
-      acronym: article.office.shortName || undefined,
-    },
+    publishingOffice: article.office
+      ? {
+          id: article.office.id,
+          name: article.office.name,
+          slug: article.office.slug,
+          acronym: article.office.shortName || undefined,
+        }
+      : undefined,
     publishedAt: isoDate,
     publishedAtFormatted: formattedDate,
     year: String(publishedDate.getFullYear()),
@@ -92,7 +95,9 @@ export function mapDbArticleToHomepageItem(article: DbNewsArticle): NewsItem {
     id: article.id,
     title: article.title,
     category: article.category.toUpperCase(),
-    publishingOffice: article.office.shortName || article.office.name,
+    publishingOffice: article.office
+      ? (article.office.shortName || article.office.name)
+      : undefined,
     date: formattedDate,
     excerpt: article.excerpt,
     href: `/news/${article.slug}`,

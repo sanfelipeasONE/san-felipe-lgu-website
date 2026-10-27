@@ -76,12 +76,12 @@ export function isOfficeScoped(user: {
  */
 export function canAccessOffice(
   user: { isSystemScope: boolean; officeId: string | null },
-  targetOfficeId: string
+  targetOfficeId: string | null | undefined
 ): boolean {
   if (user.isSystemScope) {
     return true;
   }
-  if (!user.officeId) {
+  if (!user.officeId || !targetOfficeId) {
     return false;
   }
   return user.officeId === targetOfficeId;
@@ -97,7 +97,7 @@ export function canAccessOffice(
  */
 export function canManageOfficeContent(
   user: AuthorizableUser,
-  contentOfficeId: string,
+  contentOfficeId: string | null | undefined,
   requiredPermission: string
 ): boolean {
   if (!hasPermission(user, requiredPermission)) {

@@ -118,10 +118,8 @@ export interface DownloadableForm {
 // ============================================================
 
 export type EmploymentType =
-  | "Permanent"
-  | "Contractual"
-  | "Casual"
-  | "Co-Terminous";
+  | "Government"
+  | "Private";
 
 export type JobStatus = "open" | "closed" | "cancelled";
 

@@ -67,9 +67,11 @@ export function NewsCard({ article, className }: NewsCardProps) {
         </div>
 
         {/* Subtle Publishing Office attribution */}
-        <span className="text-[11px] font-semibold text-slate-400 block truncate pt-1">
-          {article.publishingOffice.name}
-        </span>
+        {article.publishingOffice && (
+          <span className="text-[11px] font-semibold text-slate-400 block truncate pt-1">
+            {article.publishingOffice.name}
+          </span>
+        )}
       </div>
     </article>
   );

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FileText, Download, Eye, Scale } from "lucide-react";
+import { FileText, Download, Eye } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { PageHeader } from "@/components/layout/page-header";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -33,31 +33,6 @@ export default async function BacPublicPage() {
 
       <section className="py-10 sm:py-14 bg-slate-50/50 min-h-[440px]">
         <Container>
-          {/* Neutral Institutional Introduction */}
-          <div className="max-w-4xl mx-auto mb-8 bg-white border border-gray-200 rounded-xs p-6 sm:p-7 shadow-2xs">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-burgundy-50 border border-burgundy-100 flex items-center justify-center text-burgundy-800 shrink-0 mt-0.5">
-                <Scale className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-xs bg-burgundy-50 text-burgundy-800 border border-burgundy-100 inline-block">
-                    Procurement Transparency
-                  </span>
-                  <span className="text-[11px] font-semibold text-gov-muted">
-                    Responsible Authority: Bids and Awards Committee (BAC)
-                  </span>
-                </div>
-                <h2 className="text-lg sm:text-xl font-bold text-gov-charcoal">
-                  Bids and Awards Committee (BAC)
-                </h2>
-                <p className="text-xs sm:text-sm text-gov-muted leading-relaxed">
-                  Official Bids and Awards Committee notices, invitations to bid, resolutions, minutes, and procurement disclosures will be published through this page.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Published BAC Documents List */}
           <ScrollReveal>
             {bacDocs.length === 0 ? (

@@ -25,8 +25,8 @@ export function GovernmentPrograms() {
           </div>
         </ScrollReveal>
 
-        {/* 3 Program Directory Items */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
+        {/* 4 Program Directory Items (Balanced 4-column desktop, 2x2 tablet, stacked mobile) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {/* 1. iBPLS */}
           <ScrollReveal staggerIndex={0}>
             <a
@@ -35,15 +35,15 @@ export function GovernmentPrograms() {
               rel="noopener noreferrer"
               aria-label="Open San Felipe iBPLS Business Permit Portal"
               title="Open San Felipe iBPLS Business Permit Portal"
-              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
+              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 h-full"
             >
-              <div className="h-16 flex items-center justify-center mb-4">
-                <div className="relative w-44 sm:w-48 h-12">
+              <div className="h-24 sm:h-28 flex items-center justify-center mb-4">
+                <div className="relative w-48 sm:w-56 h-14 sm:h-16">
                   <Image
                     src="/images/ibpls-500x117.png"
                     alt="Integrated Business Permits and Licensing System (iBPLS)"
                     fill
-                    sizes="192px"
+                    sizes="(max-width: 640px) 192px, 224px"
                     className="object-contain group-hover:scale-105 transition-transform duration-150"
                   />
                 </div>
@@ -66,15 +66,15 @@ export function GovernmentPrograms() {
               rel="noopener noreferrer"
               aria-label="Open Freedom of Information Philippines"
               title="Open Freedom of Information Philippines"
-              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
+              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 h-full"
             >
-              <div className="h-16 flex items-center justify-center mb-4">
-                <div className="relative w-14 h-14">
+              <div className="h-24 sm:h-28 flex items-center justify-center mb-4">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                   <Image
                     src="/images/foi-logo-160x160.png"
                     alt="Freedom of Information Philippines (FOI)"
                     fill
-                    sizes="56px"
+                    sizes="(max-width: 640px) 80px, 96px"
                     className="object-contain group-hover:scale-105 transition-transform duration-150"
                   />
                 </div>
@@ -95,15 +95,15 @@ export function GovernmentPrograms() {
               href="/gad"
               aria-label="Open Gender and Development (GAD) Corner"
               title="Open Gender and Development (GAD) Corner"
-              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
+              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 h-full"
             >
-              <div className="h-16 flex items-center justify-center mb-4">
-                <div className="relative w-14 h-14">
+              <div className="h-24 sm:h-28 flex items-center justify-center mb-4">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
                   <Image
                     src="/images/gad-logo.png"
                     alt="Gender and Development (GAD) Official Seal"
                     fill
-                    sizes="56px"
+                    sizes="(max-width: 640px) 80px, 96px"
                     className="object-contain group-hover:scale-105 transition-transform duration-150"
                   />
                 </div>
@@ -113,6 +113,34 @@ export function GovernmentPrograms() {
               </h3>
               <p className="text-xs text-gov-muted mt-1">
                 News &amp; Resources
+              </p>
+            </Link>
+          </ScrollReveal>
+
+          {/* 4. Transparency Seal */}
+          <ScrollReveal staggerIndex={3}>
+            <Link
+              href="/transparency"
+              aria-label="Open Transparency Seal and Municipal Disclosures"
+              title="Open Transparency Seal and Municipal Disclosures"
+              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 h-full"
+            >
+              <div className="h-24 sm:h-28 flex items-center justify-center mb-4">
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+                  <Image
+                    src="/images/transparency-seal.png"
+                    alt="Philippine Transparency Seal"
+                    fill
+                    sizes="(max-width: 640px) 80px, 96px"
+                    className="object-contain group-hover:scale-105 transition-transform duration-150"
+                  />
+                </div>
+              </div>
+              <h3 className="text-base font-bold text-gov-charcoal group-hover:text-burgundy-800 transition-colors">
+                Transparency Seal
+              </h3>
+              <p className="text-xs text-gov-muted mt-1">
+                Procurement &amp; BAC
               </p>
             </Link>
           </ScrollReveal>

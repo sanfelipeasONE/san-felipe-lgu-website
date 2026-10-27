@@ -220,8 +220,8 @@ model NewsArticle {
   status                NewsStatus  @default(DRAFT)
 
   // Office affiliation (security boundary)
-  officeId              String
-  office                Office      @relation(fields: [officeId], references: [id], onDelete: Restrict)
+  officeId              String?
+  office                Office?     @relation(fields: [officeId], references: [id], onDelete: Restrict)
 
   // Authorship tracking
   createdById           String

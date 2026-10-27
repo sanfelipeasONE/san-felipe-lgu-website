@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Loader2,
   AlertCircle,
-  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,7 +58,7 @@ export interface NewsFormProps {
     type: string;
     category: string;
     status: string;
-    officeId: string;
+    officeId?: string | null;
     office?: { name: string; shortName: string | null } | null;
     featuredImagePublicId?: string | null;
     featuredImageUrl?: string | null;
@@ -79,7 +78,6 @@ export interface NewsFormProps {
 
 export function NewsForm({
   user,
-  offices = [],
   initialData,
   defaultCategory,
   lockCategory,
@@ -108,9 +106,6 @@ export function NewsForm({
   );
   const [category, setCategory] = React.useState(
     initialData?.category || defaultCategory || (isGadFlow ? "GENDER AND DEVELOPMENT (GAD)" : NEWS_CATEGORIES[0])
-  );
-  const [selectedOfficeId, setSelectedOfficeId] = React.useState(
-    initialData?.officeId || user.officeId || (offices[0]?.id || "")
   );
 
   const [imageData, setImageData] = React.useState<FeaturedImageData>({
@@ -146,7 +141,6 @@ export function NewsForm({
       body,
       type,
       category,
-      officeId: user.isSystemScope ? selectedOfficeId : undefined,
       featuredImagePublicId: imageData.publicId,
       featuredImageUrl: imageData.url,
       featuredImageAlt: imageData.alt,
@@ -448,46 +442,6 @@ export function NewsForm({
 
         {/* Right Column: Metadata & Media (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Publishing Office Context Card */}
-          <div className="p-4 rounded-xs border border-gray-200 bg-white space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-gov-charcoal">
-              <Building2 className="h-4 w-4 text-burgundy-700" />
-              <span>Publishing Office</span>
-            </div>
-
-            {user.isSystemScope ? (
-              <div className="space-y-1">
-                <Label htmlFor="office-select" className="text-[11px] text-gov-muted">
-                  Select Publishing Department
-                </Label>
-                <select
-                  id="office-select"
-                  value={selectedOfficeId}
-                  onChange={(e) => setSelectedOfficeId(e.target.value)}
-                  className="w-full text-xs p-2 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-semibold cursor-pointer"
-                >
-                  {offices.map((off) => (
-                    <option key={off.id} value={off.id}>
-                      {off.name} {off.shortName ? `(${off.shortName})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-gov-muted mt-1">
-                  System administrators can assign publishing authority to any department.
-                </p>
-              </div>
-            ) : (
-              <div className="p-2.5 rounded-xs bg-slate-50 border border-gray-200">
-                <span className="block text-xs font-bold text-gov-charcoal">
-                  {user.office?.name || "Assigned Office"}
-                </span>
-                <span className="block text-[11px] text-gov-muted mt-0.5">
-                  Automatically assigned from your authenticated credentials.
-                </span>
-              </div>
-            )}
-          </div>
-
           {/* Classification & Category */}
           <div className="p-4 rounded-xs border border-gray-200 bg-white space-y-4">
             <div className="space-y-1">

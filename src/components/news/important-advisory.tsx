@@ -23,12 +23,15 @@ export function ImportantAdvisory({ advisory }: ImportantAdvisoryProps) {
               <span>IMPORTANT ADVISORY</span>
             </span>
 
-            <span className="text-gray-300 hidden sm:inline" aria-hidden="true">&bull;</span>
-
-            <div className="flex items-center gap-1.5 text-xs text-burgundy-900 font-bold uppercase tracking-wider">
-              <Building2 className="h-3.5 w-3.5 text-burgundy-700 shrink-0" aria-hidden="true" />
-              <span>{advisory.publishingOffice.name}</span>
-            </div>
+            {advisory.publishingOffice && (
+              <>
+                <span className="text-gray-300 hidden sm:inline" aria-hidden="true">&bull;</span>
+                <div className="flex items-center gap-1.5 text-xs text-burgundy-900 font-bold uppercase tracking-wider">
+                  <Building2 className="h-3.5 w-3.5 text-burgundy-700 shrink-0" aria-hidden="true" />
+                  <span>{advisory.publishingOffice.name}</span>
+                </div>
+              </>
+            )}
 
             <span className="text-gray-300 hidden sm:inline" aria-hidden="true">&bull;</span>
 

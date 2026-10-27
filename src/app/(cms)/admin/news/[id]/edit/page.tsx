@@ -2,10 +2,9 @@ import * as React from "react";
 import type { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";
-import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
+import { hasPermission } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { getAdminNewsById, NewsError } from "@/server/news/service";
-import { prisma } from "@/server/db/client";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { NewsForm } from "@/components/admin/news-form";
@@ -51,15 +50,6 @@ export default async function EditNewsPage({ params, searchParams }: EditNewsPag
     sParams?.returnTo === "gad" ||
     article.category === "GENDER AND DEVELOPMENT (GAD)";
 
-  let officesList: Array<{ id: string; name: string; shortName: string | null }> = [];
-  if (isSystemScoped(user)) {
-    officesList = await prisma.office.findMany({
-      where: { status: "ACTIVE" },
-      select: { id: true, name: true, shortName: true },
-      orderBy: { name: "asc" },
-    });
-  }
-
   const breadcrumbs = isGad
     ? [
         { label: "Content Management" },
@@ -83,7 +73,6 @@ export default async function EditNewsPage({ params, searchParams }: EditNewsPag
         <div className="bg-white border border-gray-200 rounded-xs p-6 shadow-2xs">
           <NewsForm
             user={user}
-            offices={officesList}
             initialData={{
               id: article.id,
               slug: article.slug,

@@ -33,7 +33,7 @@ export interface NewsArticle {
   body: ArticleBodyBlock[];
   type: NewsType;
   category: string;
-  publishingOffice: PublishingOffice;
+  publishingOffice?: PublishingOffice;
   publishedAt: string; // ISO date
   publishedAtFormatted: string;
   year: string;
@@ -540,15 +540,16 @@ export function getRelatedArticles(
   const others = getAllPublishedArticles().filter((a) => a.slug !== currentSlug);
 
   // Match by office first, then by type
-  const matchedOffice = others.filter(
-    (a) => a.publishingOffice.id === current.publishingOffice.id
-  );
+  const currentOfficeId = current.publishingOffice?.id;
+  const matchedOffice = currentOfficeId
+    ? others.filter((a) => a.publishingOffice?.id === currentOfficeId)
+    : [];
   const matchedType = others.filter(
-    (a) => a.type === current.type && a.publishingOffice.id !== current.publishingOffice.id
+    (a) => a.type === current.type && (!currentOfficeId || a.publishingOffice?.id !== currentOfficeId)
   );
   const remaining = others.filter(
     (a) =>
-      a.publishingOffice.id !== current.publishingOffice.id &&
+      (!currentOfficeId || a.publishingOffice?.id !== currentOfficeId) &&
       a.type !== current.type
   );
 
@@ -576,7 +577,11 @@ export function getFilterMetadata() {
   ];
 
   const officeMap = new Map<string, string>();
-  all.forEach((a) => officeMap.set(a.publishingOffice.id, a.publishingOffice.name));
+  all.forEach((a) => {
+    if (a.publishingOffice) {
+      officeMap.set(a.publishingOffice.id, a.publishingOffice.name);
+    }
+  });
   const offices: { value: string; label: string }[] = [
     { value: "all", label: "All Offices" },
     ...Array.from(officeMap.entries()).map(([id, name]) => ({

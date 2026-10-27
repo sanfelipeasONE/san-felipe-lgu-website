@@ -164,7 +164,7 @@ export interface NewsItem {
   id: string;
   title: string;
   category: string;
-  publishingOffice: string;
+  publishingOffice?: string;
   date: string;
   excerpt: string;
   href: string;

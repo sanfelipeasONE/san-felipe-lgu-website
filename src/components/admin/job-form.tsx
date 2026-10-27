@@ -425,25 +425,31 @@ export function JobForm({
               )}
             </div>
 
-            {/* Employment Type */}
+            {/* Employment Classification */}
             <div className="space-y-1">
               <label htmlFor="job-type" className="block text-xs font-semibold text-gov-charcoal">
                 Employment Classification <span className="text-gov-muted font-normal">(Optional)</span>
               </label>
-              <input
+              <select
                 id="job-type"
-                type="text"
-                list="employment-type-suggestions"
                 value={employmentType}
                 onChange={(e) => setEmploymentType(e.target.value)}
-                placeholder="e.g. Permanent, Casual, Contract of Service, or leave blank"
                 className="w-full px-3 py-2 text-xs bg-white border border-gray-300 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
-              />
-              <datalist id="employment-type-suggestions">
+              >
+                <option value="">Select classification (or leave blank)</option>
                 {ALLOWED_EMPLOYMENT_TYPES.map((type) => (
-                  <option key={type} value={type} />
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
-              </datalist>
+                {/* Backward compatibility: preserve display of legacy classification on existing records */}
+                {employmentType &&
+                  !(ALLOWED_EMPLOYMENT_TYPES as readonly string[]).includes(employmentType) && (
+                    <option value={employmentType}>
+                      {employmentType} (Legacy)
+                    </option>
+                  )}
+              </select>
             </div>
 
             {/* Salary Grade */}

@@ -41,7 +41,7 @@ export interface RecentContentItem {
   title: string;
   type: "news" | "document" | "job";
   typeLabel: "News" | "Document" | "Job Opportunity";
-  officeId: string;
+  officeId: string | null;
   officeName: string;
   status: "PUBLISHED" | "DRAFT" | "ARCHIVED";
   updatedAt: Date;
@@ -367,9 +367,11 @@ export async function getRecentContent(
             type: "news" as const,
             typeLabel: "News" as const,
             officeId: article.officeId,
-            officeName: article.office.shortName
-              ? `${article.office.name} (${article.office.shortName})`
-              : article.office.name,
+            officeName: article.office
+              ? article.office.shortName
+                ? `${article.office.name} (${article.office.shortName})`
+                : article.office.name
+              : "Municipal-Wide",
             status: article.status as "PUBLISHED" | "DRAFT" | "ARCHIVED",
             updatedAt: article.updatedAt,
             editHref: `/admin/news/${article.id}/edit`,

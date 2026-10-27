@@ -96,13 +96,17 @@ export default async function NewsArticlePage({ params }: PageProps) {
               {article.title}
             </h1>
 
-            {/* Publication Date */}
+            {/* Publication Date & Optional Office */}
             <div className="text-xs text-slate-500 font-medium mb-6">
               <time dateTime={article.publishedAt}>
                 {article.publishedAtFormatted}
               </time>
-              <span className="mx-2 text-slate-300" aria-hidden="true">&bull;</span>
-              <span className="text-slate-600 font-semibold">{article.publishingOffice.name}</span>
+              {article.publishingOffice && (
+                <>
+                  <span className="mx-2 text-slate-300" aria-hidden="true">&bull;</span>
+                  <span className="text-slate-600 font-semibold">{article.publishingOffice.name}</span>
+                </>
+              )}
             </div>
 
             {/* Featured Image directly below date matching reference */}
@@ -131,7 +135,9 @@ export default async function NewsArticlePage({ params }: PageProps) {
               <ArticleAttachments attachments={article.attachments} />
 
               {/* Publishing Office Attribution */}
-              <PublishingOfficeCard office={article.publishingOffice} />
+              {article.publishingOffice && (
+                <PublishingOfficeCard office={article.publishingOffice} />
+              )}
 
               {/* Back to All News link */}
               <div className="pt-4 border-t border-gray-100">

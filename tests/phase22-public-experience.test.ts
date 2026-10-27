@@ -451,8 +451,8 @@ async function runPhase22Tests() {
     });
 
     assert(
-      migrationDirs.length === 10 || migrationDirs.length === 11,
-      "Migration count must be 10 (Phase 22 baseline) or 11 (Phase 23 TourismEntry)"
+      migrationDirs.length === 10 || migrationDirs.length === 11 || migrationDirs.length === 12,
+      "Migration count must be 10 (Phase 22 baseline), 11 (Phase 23 TourismEntry), or 12 (Phase 26 Optional News Office)"
     );
   });
 

@@ -121,8 +121,12 @@ export default async function NewsDraftPreviewPage({ params }: PreviewPageProps)
             {/* Date & Publishing Office */}
             <div className="text-xs text-slate-500 font-medium mb-6">
               <span>{publishedDateFormatted}</span>
-              <span className="mx-2 text-slate-300" aria-hidden="true">&bull;</span>
-              <span className="text-slate-700 font-bold">{article.office.name}</span>
+              {article.office && (
+                <>
+                  <span className="mx-2 text-slate-300" aria-hidden="true">&bull;</span>
+                  <span className="text-slate-700 font-bold">{article.office.name}</span>
+                </>
+              )}
             </div>
 
             {/* Featured Image */}
@@ -149,22 +153,24 @@ export default async function NewsDraftPreviewPage({ params }: PreviewPageProps)
             />
 
             {/* Publishing Office Attribution Card */}
-            <div className="mt-10 p-5 rounded-xs bg-slate-50 border border-gray-200 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-burgundy-50 border border-burgundy-200 flex items-center justify-center text-burgundy-700 shrink-0">
-                <Building2 className="h-5 w-5" />
+            {article.office && (
+              <div className="mt-10 p-5 rounded-xs bg-slate-50 border border-gray-200 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-burgundy-50 border border-burgundy-200 flex items-center justify-center text-burgundy-700 shrink-0">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy-700 block">
+                    OFFICIAL PUBLISHING OFFICE
+                  </span>
+                  <h3 className="text-sm font-bold text-gov-charcoal mt-0.5">
+                    {article.office.name}
+                  </h3>
+                  <p className="text-xs text-gov-muted mt-0.5">
+                    Municipality of San Felipe, Zambales
+                  </p>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-burgundy-700 block">
-                  OFFICIAL PUBLISHING OFFICE
-                </span>
-                <h3 className="text-sm font-bold text-gov-charcoal mt-0.5">
-                  {article.office.name}
-                </h3>
-                <p className="text-xs text-gov-muted mt-0.5">
-                  Municipality of San Felipe, Zambales
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         </Container>
       </main>

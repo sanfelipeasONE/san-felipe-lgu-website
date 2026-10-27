@@ -249,9 +249,15 @@ export default async function AdminJobsListPage({ searchParams }: JobsPageProps)
                 {/* Classification & SG */}
                 <td className="px-4 py-3 text-xs text-gov-charcoal">
                   <div className="space-y-0.5">
-                    <span className="inline-block text-[11px] font-semibold text-burgundy-800 bg-burgundy-50 border border-burgundy-100 rounded-xs px-1.5 py-0.5">
-                      {job.employmentType || "Permanent"}
-                    </span>
+                    {job.employmentType ? (
+                      <span className="inline-block text-[11px] font-semibold text-burgundy-800 bg-burgundy-50 border border-burgundy-100 rounded-xs px-1.5 py-0.5">
+                        {job.employmentType}
+                      </span>
+                    ) : (
+                      <span className="inline-block text-[11px] font-medium text-gov-muted bg-slate-100 border border-gray-200 rounded-xs px-1.5 py-0.5">
+                        Unclassified
+                      </span>
+                    )}
                     {job.salaryGrade && (
                       <div className="text-[11px] font-mono text-gov-muted">
                         SG {job.salaryGrade}

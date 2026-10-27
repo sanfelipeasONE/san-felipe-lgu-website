@@ -4,10 +4,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Edit, Eye, Building2, Calendar } from "lucide-react";
 import { getCurrentUser } from "@/server/auth/session";
-import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
+import { hasPermission } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { getAdminNewsList } from "@/server/news/service";
-import { prisma } from "@/server/db/client";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -66,16 +65,6 @@ export default async function AdminNewsListPage({ searchParams }: NewsPageProps)
     type,
     officeId,
   });
-
-  // Load offices for filter (SYSTEM scope only)
-  let officesList: Array<{ id: string; name: string; shortName: string | null }> = [];
-  if (isSystemScoped(user)) {
-    officesList = await prisma.office.findMany({
-      where: { status: "ACTIVE" },
-      select: { id: true, name: true, shortName: true },
-      orderBy: { name: "asc" },
-    });
-  }
 
   const canCreate = hasPermission(user, PERMISSIONS.POSTS_CREATE);
 
@@ -140,23 +129,6 @@ export default async function AdminNewsListPage({ searchParams }: NewsPageProps)
                   <option value="notice">Notices</option>
                 </select>
 
-                {/* Office Filter (System Scope Only) */}
-                {isSystemScoped(user) && officesList.length > 0 && (
-                  <select
-                    name="officeId"
-                    defaultValue={officeId || ""}
-                    className="text-xs p-1.5 bg-slate-50 border border-gray-300 rounded-xs text-gov-charcoal font-medium cursor-pointer"
-                    aria-label="Filter by municipal office"
-                  >
-                    <option value="">All Offices</option>
-                    {officesList.map((off) => (
-                      <option key={off.id} value={off.id}>
-                        {off.name} {off.shortName ? `(${off.shortName})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                )}
-
                 <Button
                   type="submit"
                   variant="secondary"
@@ -198,12 +170,16 @@ export default async function AdminNewsListPage({ searchParams }: NewsPageProps)
 
               {/* Publishing Office */}
               <td className="px-4 py-3 text-xs text-gov-charcoal whitespace-nowrap">
-                <div className="flex items-center gap-1.5">
-                  <Building2 className="h-3.5 w-3.5 text-burgundy-700 shrink-0" />
-                  <span className="truncate max-w-[180px]" title={article.office.name}>
-                    {article.office.shortName || article.office.name}
-                  </span>
-                </div>
+                {article.office ? (
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-burgundy-700 shrink-0" />
+                    <span className="truncate max-w-[180px]" title={article.office.name}>
+                      {article.office.shortName || article.office.name}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-gov-muted italic">Municipal-Wide</span>
+                )}
               </td>
 
               {/* Published Date */}

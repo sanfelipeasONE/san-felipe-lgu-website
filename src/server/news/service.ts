@@ -186,26 +186,22 @@ export async function createNewsArticle(
     throw new NewsError("Missing required permission: posts.create", 403);
   }
 
-  let targetOfficeId: string;
+  let targetOfficeId: string | null = null;
 
   if (isSystemScoped(user)) {
-    if (!input.officeId) {
-      throw new NewsError("System administrators must select a Publishing Office.");
-    }
-    const officeExists = await prisma.office.findUnique({
-      where: { id: input.officeId },
-      select: { id: true, status: true },
-    });
-    if (!officeExists) {
-      throw new NewsError("Selected municipal office does not exist.");
-    }
-    if (officeExists.status !== "ACTIVE") {
-      throw new NewsError("News articles can only be assigned to active municipal offices.");
-    }
-    targetOfficeId = input.officeId;
+    // SYSTEM scope: municipal-wide publication, officeId is null (client-submitted arbitrary office ignored)
+    targetOfficeId = null;
   } else {
+    // OFFICE scope: derived strictly from authenticated user identity
     if (!user.officeId) {
       throw new NewsError("Your staff account is not assigned to a municipal office.", 403);
+    }
+    const officeExists = await prisma.office.findUnique({
+      where: { id: user.officeId },
+      select: { id: true, status: true },
+    });
+    if (!officeExists || officeExists.status !== "ACTIVE") {
+      throw new NewsError("News articles can only be assigned to active municipal offices.", 400);
     }
     targetOfficeId = user.officeId;
   }
@@ -375,7 +371,7 @@ export async function publishNewsArticle(
     throw new NewsError("Access restricted: you do not hold authorization for this office.", 403);
   }
 
-  if (existing.office.status !== "ACTIVE") {
+  if (existing.office && existing.office.status !== "ACTIVE") {
     throw new NewsError("Cannot publish news articles for an inactive municipal office.", 400);
   }
 
