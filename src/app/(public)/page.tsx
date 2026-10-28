@@ -14,22 +14,22 @@ export default function HomePage() {
       {/* 1. Hero Section */}
       <HeroSection />
 
-      {/* 2. Government Services */}
+      {/* 2. Government Programs & Online Services */}
+      <GovernmentPrograms />
+
+      {/* 3. Municipal Services */}
       <GovernmentServices />
 
-      {/* 3. Municipal Officials Leadership Preview */}
+      {/* 4. Municipal Officials Leadership Preview */}
       <MunicipalOfficialsPreview />
 
-      {/* 4. Municipal Offices Preview */}
+      {/* 5. Municipal Offices Preview */}
       <MunicipalOfficesPreview />
 
-      {/* 5. Latest News & Announcements */}
+      {/* 6. Latest News & Announcements */}
       <React.Suspense fallback={<div className="py-14 bg-slate-50/60" />}>
         <LatestNews />
       </React.Suspense>
-
-      {/* 6. Government Programs & Online Services */}
-      <GovernmentPrograms />
 
       {/* 7. Emergency Hotlines (Prominent Burgundy Section) */}
       <EmergencyHotlines />

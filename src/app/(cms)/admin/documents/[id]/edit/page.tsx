@@ -60,8 +60,9 @@ export default async function EditDocumentPage({
     (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Procurement");
 
   const isBac =
-    sParams?.returnTo === "bac" ||
-    (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Bids and Awards Committee (BAC)");
+    (sParams?.returnTo === "bac" ||
+      (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Bids and Awards Committee (BAC)")) &&
+    sParams?.returnTo !== "procurement";
 
   const isGad =
     sParams?.returnTo === "gad" ||
@@ -82,7 +83,7 @@ export default async function EditDocumentPage({
   const canArchive = hasPermission(user, PERMISSIONS.DOCUMENTS_ARCHIVE);
   const canDelete =
     hasPermission(user, PERMISSIONS.DOCUMENTS_DELETE) &&
-    (isSystem || user.officeId === doc.officeId);
+    (isSystem || (doc.officeId ? user.officeId === doc.officeId : false));
 
   const breadcrumbs = isGad
     ? [
@@ -152,10 +153,12 @@ export default async function EditDocumentPage({
             purpose: doc.purpose as DocumentPurpose,
             status: doc.status,
             officeId: doc.officeId,
-            office: {
-              id: doc.office.id,
-              name: doc.office.name,
-            },
+            office: doc.office
+              ? {
+                  id: doc.office.id,
+                  name: doc.office.name,
+                }
+              : null,
             originalFilename: doc.originalFilename,
             format: doc.format,
             bytes: doc.bytes,

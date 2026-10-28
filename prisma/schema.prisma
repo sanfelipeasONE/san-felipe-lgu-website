@@ -348,9 +348,9 @@ model Document {
   purpose          DocumentPurpose @default(DOWNLOADABLE_FORM)
   status           DocumentStatus  @default(DRAFT)
 
-  // Office ownership: every document must belong to a municipal office
-  officeId         String
-  office           Office          @relation(fields: [officeId], references: [id], onDelete: Restrict)
+  // Office ownership: municipal office attribution (optional for committee/statutory documents like BAC)
+  officeId         String?
+  office           Office?         @relation(fields: [officeId], references: [id], onDelete: Restrict)
 
   // File metadata (Cloudinary raw storage)
   originalFilename String

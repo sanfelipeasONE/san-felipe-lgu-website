@@ -50,8 +50,8 @@ interface DocumentFormProps {
     category: string | null;
     purpose?: DocumentPurpose;
     status: string;
-    officeId: string;
-    office: { id: string; name: string };
+    officeId?: string | null;
+    office?: { id: string; name: string } | null;
     originalFilename: string;
     format: string;
     bytes: number;
@@ -128,6 +128,21 @@ export function DocumentForm({
       ? "Back to Procurement"
       : "Back to Documents");
 
+  const isProcurementOrBacFlow = isProcurementFlow || isBacFlow;
+
+  const getInitialAuthority = () => {
+    if (initialData?.category === "Bids and Awards Committee (BAC)" || isBacFlow) {
+      return "__BAC__";
+    }
+    if (initialData?.officeId) {
+      return initialData.officeId;
+    }
+    if (isProcurementFlow) {
+      return "__BAC__";
+    }
+    return offices[0]?.id || "";
+  };
+
   // Form State
   const [title, setTitle] = React.useState(initialData?.title || "");
   const [description, setDescription] = React.useState(initialData?.description || "");
@@ -137,7 +152,7 @@ export function DocumentForm({
   const [purpose, setPurpose] = React.useState<DocumentPurpose>(
     initialData?.purpose ?? (defaultPurpose || "DOWNLOADABLE_FORM")
   );
-  const [officeId, setOfficeId] = React.useState(initialData?.officeId || offices[0]?.id || "");
+  const [responsibleAuthority, setResponsibleAuthority] = React.useState<string>(getInitialAuthority);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
 
   // Status & Feedback
@@ -197,14 +212,31 @@ export function DocumentForm({
       const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("description", description.trim());
-      formData.append("category", category.trim());
-      formData.append("purpose", purpose);
       if (returnTo) {
         formData.append("returnTo", returnTo);
       }
-      if (isSystemScoped) {
-        formData.append("officeId", officeId);
+
+      if (isProcurementOrBacFlow) {
+        if (responsibleAuthority === "__BAC__") {
+          formData.append("responsibleAuthority", "BAC");
+          formData.append("category", "Bids and Awards Committee (BAC)");
+          formData.append("purpose", "OTHER_PUBLIC_DOCUMENT");
+        } else {
+          formData.append("responsibleAuthority", "OFFICE");
+          formData.append("officeId", responsibleAuthority);
+          formData.append("category", "Procurement");
+          formData.append("purpose", "OTHER_PUBLIC_DOCUMENT");
+        }
+      } else {
+        formData.append("purpose", purpose);
+        if (category) {
+          formData.append("category", category.trim());
+        }
+        if (isSystemScoped && responsibleAuthority) {
+          formData.append("officeId", responsibleAuthority);
+        }
       }
+
       if (selectedFile) {
         formData.append("file", selectedFile);
       }
@@ -446,21 +478,33 @@ export function DocumentForm({
           {/* Office Ownership */}
           <div>
             <label htmlFor="doc-office" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              {isBacFlow ? "Underlying Administrative Office" : "Responsible Municipal Office"}{" "}
+              {isProcurementFlow
+                ? "Responsible Office"
+                : isBacFlow
+                ? "Responsible Authority"
+                : "Responsible Municipal Office"}{" "}
               <span className="text-rose-500">*</span>
             </label>
             {isBacFlow && (
               <p className="text-[11px] text-slate-500 mb-1.5 leading-normal">
-                Select the municipal office administering this record. On public transparency pages, this document will be attributed to Bids and Awards Committee (BAC).
+                Official documents authored by the Bids and Awards Committee (BAC) are published under BAC authority.
+              </p>
+            )}
+            {isProcurementFlow && (
+              <p className="text-[11px] text-slate-500 mb-1.5 leading-normal">
+                Select Bids and Awards Committee (BAC) or the responsible municipal office publishing this procurement notice.
               </p>
             )}
             {isSystemScoped ? (
               <select
                 id="doc-office"
-                value={officeId}
-                onChange={(e) => setOfficeId(e.target.value)}
+                value={responsibleAuthority}
+                onChange={(e) => setResponsibleAuthority(e.target.value)}
                 className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
               >
+                {isProcurementOrBacFlow && (
+                  <option value="__BAC__">Bids and Awards Committee (BAC)</option>
+                )}
                 {offices.map((off) => (
                   <option key={off.id} value={off.id}>
                     {off.name}

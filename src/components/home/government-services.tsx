@@ -6,16 +6,16 @@ import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export function GovernmentServices() {
   return (
-    <section id="services" className="py-14 sm:py-18 bg-white border-b border-gray-200">
+    <section id="services" className="pt-8 sm:pt-10 pb-14 sm:pb-16 bg-white border-b border-gray-200/80">
       <Container>
         {/* Section Header with 400ms scroll reveal */}
         <ScrollReveal>
-          <div className="mb-10 max-w-3xl">
+          <div className="mb-8 max-w-3xl">
             <span className="text-[11px] font-bold uppercase tracking-wider text-burgundy-700 block mb-1">
               PUBLIC SERVICES & ASSISTANCE
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gov-charcoal tracking-tight">
-              Government Services
+              Municipal Services
             </h2>
             <p className="mt-2 text-sm text-gov-muted leading-relaxed">
               Quick access to essential municipal public services, documents, and frontline assistance for the residents, business owners, and visitors of San Felipe, Zambales.

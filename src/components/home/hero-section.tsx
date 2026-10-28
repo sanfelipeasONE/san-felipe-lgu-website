@@ -76,7 +76,7 @@ export function HeroSection({
                 size="md"
                 className="bg-white text-burgundy-900 hover:bg-gold-50 hover:text-burgundy-950 font-medium text-xs sm:text-sm px-5 py-2.5 rounded-xs transition-all shadow-xs border border-white"
               >
-                <span>Government Services</span>
+                <span>Municipal Services</span>
                 <ArrowRight className="h-4 w-4 ml-1.5 text-burgundy-800" aria-hidden="true" />
               </Button>
             </Link>

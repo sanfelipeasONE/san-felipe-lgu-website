@@ -351,7 +351,7 @@ export async function updateServicePage(
       if (doc.purpose !== "CITIZENS_CHARTER") {
         throw new ServiceError("Only documents classified with the CITIZENS_CHARTER purpose may be associated as the official Citizen's Charter.", 400);
       }
-      if (doc.office.status !== "ACTIVE") {
+      if (doc.office && doc.office.status !== "ACTIVE") {
         throw new ServiceError("The selected document belongs to an inactive municipal office.", 400);
       }
       if (!user.isSystemScope && user.officeId && doc.officeId !== user.officeId) {
@@ -389,7 +389,7 @@ export async function updateServicePage(
           400
         );
       }
-      if (doc.office.status !== "ACTIVE") {
+      if (doc.office && doc.office.status !== "ACTIVE") {
         throw new ServiceError("The selected document belongs to an inactive municipal office.", 400);
       }
       if (!isSystemScoped(user) && user.officeId && doc.officeId !== user.officeId) {
@@ -1123,7 +1123,7 @@ export async function attachExistingCharterDocument(
   if (doc.purpose !== "CITIZENS_CHARTER") {
     throw new ServiceError("Only documents classified with the CITIZENS_CHARTER purpose may be associated as the official Citizen's Charter.", 400);
   }
-  if (doc.office.status !== "ACTIVE") {
+  if (doc.office && doc.office.status !== "ACTIVE") {
     throw new ServiceError("The selected document belongs to an inactive municipal office.", 400);
   }
   if (!isSystemScoped(user) && doc.officeId !== user.officeId) {
@@ -1510,7 +1510,7 @@ export async function attachExistingServiceDocument(
       400
     );
   }
-  if (doc.office.status !== "ACTIVE") {
+  if (doc.office && doc.office.status !== "ACTIVE") {
     throw new ServiceError("The selected document belongs to an inactive municipal office.", 400);
   }
   if (!isSystemScoped(user) && doc.officeId !== user.officeId) {

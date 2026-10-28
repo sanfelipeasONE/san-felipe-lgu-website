@@ -21,7 +21,6 @@ async function runPhase24TestSuite() {
   const {
     AUTHORITATIVE_BARANGAYS,
     AUTHORITATIVE_BARANGAY_COUNT,
-    getAuthoritativeBarangays,
   } = await import("../src/config/barangays-data");
   const {
     EMERGENCY_DATA,
@@ -62,10 +61,10 @@ async function runPhase24TestSuite() {
     // -------------------------------------------------------------------------
     console.log("\n--- 1. Barangay Authoritative Directory & Invariants ---");
 
-    // 1. exactly 10 barangays
+    // 1. exactly 11 barangays
     assert(
-      AUTHORITATIVE_BARANGAYS.length === 10 && AUTHORITATIVE_BARANGAY_COUNT === 10,
-      "AUTHORITATIVE_BARANGAYS defines exactly 10 barangays"
+      AUTHORITATIVE_BARANGAYS.length === 11 && AUTHORITATIVE_BARANGAY_COUNT === 11,
+      "AUTHORITATIVE_BARANGAYS defines exactly 11 barangays"
     );
 
     // 2. exact authoritative names
@@ -73,6 +72,7 @@ async function runPhase24TestSuite() {
       "Amagna",
       "Apostol",
       "Balincaguing",
+      "Farañal",
       "Feria",
       "Maloma",
       "Manglicmot",
@@ -87,7 +87,7 @@ async function runPhase24TestSuite() {
     );
     assert(
       allNamesMatch,
-      "All 10 barangays match exact authoritative names in alphabetical order"
+      "All 11 barangays match exact authoritative names in alphabetical order"
     );
 
     // 3. Sto. Niño spelling (strictly includes ñ)
@@ -97,19 +97,20 @@ async function runPhase24TestSuite() {
       "Sto. Niño preserves exact spelling with 'ñ'"
     );
 
-    // 4. no 11th barangay
+    // 4. Farañal spelling (strictly includes ñ)
+    const faranal = AUTHORITATIVE_BARANGAYS.find((b) => b.id === "faranal");
     assert(
-      AUTHORITATIVE_BARANGAYS.length !== 11 && getAuthoritativeBarangays().length === 10,
-      "No 11th barangay exists in authoritative configuration"
+      faranal !== undefined && faranal.name === "Farañal" && faranal.name.includes("ñ"),
+      "Farañal preserves exact spelling with 'ñ'"
     );
 
-    // 5. no fabricated contact information
-    const allContactsNotProvided = AUTHORITATIVE_BARANGAYS.every(
-      (b) => b.isContactProvided === false && !b.phone && !b.mobile && !b.alternateNumbers
+    // 5. verified contact information populated for all 11
+    const allContactsProvided = AUTHORITATIVE_BARANGAYS.every(
+      (b) => b.isContactProvided === true && Boolean(b.phone) && Boolean(b.facebook)
     );
     assert(
-      allContactsNotProvided,
-      "All 10 barangays have isContactProvided: false with zero fabricated numbers"
+      allContactsProvided,
+      "All 11 barangays have verified phone and facebook contact details"
     );
 
     // 6. Barangay directory page table structure & presentation
@@ -148,7 +149,7 @@ async function runPhase24TestSuite() {
 
     // 10. Directory notes neutral language and top callout removal
     assert(
-      barangayPageContent.includes("Barangay emergency contact information will be published here once officially provided") &&
+      barangayPageContent.includes("This directory reflects the 11 verified barangays of the Municipality of San Felipe") &&
         !barangayPageContent.includes("Liga ng mga Barangay") &&
         !barangayPageContent.includes("Barangay Councils") &&
         !barangayPageContent.includes("Immediate 24/7 Municipal Emergency Assistance") &&
@@ -268,15 +269,14 @@ async function runPhase24TestSuite() {
     // -------------------------------------------------------------------------
     console.log("\n--- 4. Public BAC Navigation & Route ---");
 
-    // 19. BAC public Transparency navigation
+    // 19. BAC public Transparency navigation removal (Phase 27 simplification)
     const transparencyDropdown = NAV_DROPDOWN_ITEMS["Transparency"];
     const bacNavItem = transparencyDropdown?.find(
       (item) => item.href === "/transparency/bac"
     );
     assert(
-      bacNavItem !== undefined &&
-        bacNavItem.title === "Bids and Awards Committee (BAC)",
-      "Public Transparency navigation includes 'Bids and Awards Committee (BAC)'"
+      bacNavItem === undefined,
+      "Public Transparency navigation strictly excludes 'Bids and Awards Committee (BAC)' (Phase 27 refinement)"
     );
 
     // 20. /transparency/bac page exists
@@ -336,18 +336,21 @@ async function runPhase24TestSuite() {
     // -------------------------------------------------------------------------
     console.log("\n--- 6. BAC CMS Navigation & Administration ---");
 
-    // 24. BAC CMS navigation
+    // 24. BAC CMS sidebar removal (Phase 27 refinement)
     const transparencySection = ADMIN_NAV_CONFIG.find(
       (sec) => sec.key === "transparency"
     );
     const bacAdminNav = transparencySection?.items.find(
       (item) => item.id === "transparency-bac"
     );
+    const procItemNav = transparencySection?.items.find(
+      (item) => item.id === "transparency-procurement"
+    );
     assert(
-      bacAdminNav !== undefined &&
-        bacAdminNav.href === "/admin/transparency/bac" &&
-        bacAdminNav.label === "Bids and Awards Committee (BAC)",
-      "CMS sidebar defines 'Bids and Awards Committee (BAC)' under Transparency"
+      bacAdminNav === undefined &&
+        procItemNav !== undefined &&
+        transparencySection?.items.length === 1,
+      "CMS sidebar Transparency section contains ONLY Procurement without standalone BAC item (Phase 27 refinement)"
     );
 
     // 25. /admin/transparency/bac page exists
@@ -361,10 +364,10 @@ async function runPhase24TestSuite() {
       "CMS route /admin/transparency/bac page is implemented and filtered"
     );
 
-    // 26. documents.view authorization
+    // 26. documents.view authorization on route
     assert(
-      bacAdminNav?.requiredPermission === "documents.view",
-      "CMS BAC navigation requires 'documents.view' permission"
+      adminBacPageContent.includes("PERMISSIONS.DOCUMENTS_VIEW"),
+      "CMS route /admin/transparency/bac preserves 'documents.view' authorization check"
     );
 
     // -------------------------------------------------------------------------

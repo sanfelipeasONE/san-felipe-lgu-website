@@ -226,18 +226,18 @@ async function runPhase22Tests() {
     assert.strictEqual(tourismDropdown[3].href, "/tourism/products");
   });
 
-  test("Transparency dropdown contains Procurement, Contact Us, Journal and News (/news)", () => {
+  test("Transparency dropdown contains Procurement and Journal and News (/news) (BAC and Contact Us removed in Phase 27)", () => {
     const transparencyDropdown = NAV_DROPDOWN_ITEMS["Transparency"];
     assert(transparencyDropdown, "Transparency dropdown must exist");
-    assert.strictEqual(transparencyDropdown.length, 4);
+    assert.strictEqual(transparencyDropdown.length, 2);
     assert.strictEqual(transparencyDropdown[0].title, "Procurement");
     assert.strictEqual(transparencyDropdown[0].href, "/transparency/procurement");
-    assert.strictEqual(transparencyDropdown[1].title, "Bids and Awards Committee (BAC)");
-    assert.strictEqual(transparencyDropdown[1].href, "/transparency/bac");
-    assert.strictEqual(transparencyDropdown[2].title, "Contact Us");
-    assert.strictEqual(transparencyDropdown[2].href, "/#contact-us");
-    assert.strictEqual(transparencyDropdown[3].title, "Journal and News");
-    assert.strictEqual(transparencyDropdown[3].href, "/news");
+    assert.strictEqual(transparencyDropdown[1].title, "Journal and News");
+    assert.strictEqual(transparencyDropdown[1].href, "/news");
+    assert(
+      !transparencyDropdown.some((item) => item.title.includes("BAC") || item.href.includes("/bac")),
+      "BAC is strictly excluded from Transparency dropdown"
+    );
   });
 
   // ============================================================================
@@ -386,7 +386,7 @@ async function runPhase22Tests() {
     const procurementPageCode = fs.readFileSync(path.join(process.cwd(), "src/app/(public)/transparency/procurement/page.tsx"), "utf-8");
 
     // Deterministic category filtering
-    assert(procurementPageCode.includes('category: "Procurement"'), "Must query strictly category: 'Procurement'");
+    assert(procurementPageCode.includes('"Procurement"') && procurementPageCode.includes('category:'), "Must query strictly category including 'Procurement'");
     assert(procurementPageCode.includes('purpose: "OTHER_PUBLIC_DOCUMENT"'), "Must query strictly purpose: 'OTHER_PUBLIC_DOCUMENT'");
     assert(!procurementPageCode.includes(".filter("), "Must not use loose keyword matching fallback filter");
 
@@ -451,8 +451,8 @@ async function runPhase22Tests() {
     });
 
     assert(
-      migrationDirs.length === 10 || migrationDirs.length === 11 || migrationDirs.length === 12,
-      "Migration count must be 10 (Phase 22 baseline), 11 (Phase 23 TourismEntry), or 12 (Phase 26 Optional News Office)"
+      [10, 11, 12, 13].includes(migrationDirs.length),
+      "Migration count must be 10 (Phase 22 baseline), 11 (Phase 23 TourismEntry), 12 (Phase 26 Optional News Office), or 13 (Phase 27 Optional Document Office)"
     );
   });
 

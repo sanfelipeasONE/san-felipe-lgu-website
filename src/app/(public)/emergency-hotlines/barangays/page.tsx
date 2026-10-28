@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
 import { PageHeader } from "@/components/layout/page-header";
 import { AUTHORITATIVE_BARANGAYS, AUTHORITATIVE_BARANGAY_COUNT } from "@/config/barangays-data";
-import { Info } from "lucide-react";
+import { Info, ExternalLink, Phone } from "lucide-react";
 
 export const instant = false;
 
 export const metadata: Metadata = {
   title: "Barangay Emergency Hotlines | Municipality of San Felipe",
   description:
-    "Authoritative emergency contact directory for the 10 barangays of the Municipality of San Felipe, Zambales.",
+    "Authoritative emergency contact directory and official communications channels for the 11 barangays of the Municipality of San Felipe, Zambales.",
 };
 
 export default function BarangayEmergencyHotlinesPage() {
@@ -19,7 +19,7 @@ export default function BarangayEmergencyHotlinesPage() {
       <PageHeader
         eyebrow="24/7 EMERGENCY & DISASTER RESPONSE"
         title="Barangay Emergency Hotlines"
-        description="Emergency and disaster response directory for the 10 barangays of San Felipe, Zambales."
+        description="Emergency response and community coordination directory for the 11 barangays of San Felipe, Zambales."
         breadcrumbs={[
           { label: "Emergency Hotlines", href: "/#emergency-hotlines" },
           { label: "Barangays" },
@@ -47,15 +47,21 @@ export default function BarangayEmergencyHotlinesPage() {
                   <tr className="bg-burgundy-900 text-white border-b-2 border-gold-500 divide-x divide-burgundy-800/80">
                     <th
                       scope="col"
-                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/2 sm:w-[50%]"
+                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/3 sm:w-[35%]"
                     >
                       Barangay
                     </th>
                     <th
                       scope="col"
-                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/2 sm:w-[50%]"
+                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/3 sm:w-[35%]"
                     >
                       Emergency Hotline
+                    </th>
+                    <th
+                      scope="col"
+                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/3 sm:w-[30%]"
+                    >
+                      Facebook Page
                     </th>
                   </tr>
                 </thead>
@@ -65,24 +71,46 @@ export default function BarangayEmergencyHotlinesPage() {
                       key={brgy.id}
                       className="odd:bg-white even:bg-slate-50/60 hover:bg-burgundy-50/30 transition-colors divide-x divide-gray-200"
                     >
+                      {/* Column 1: Barangay Name */}
                       <td className="py-3.5 px-5 align-middle">
                         <span className="font-bold text-gov-charcoal text-xs sm:text-sm leading-snug">
                           {brgy.name}
                         </span>
                       </td>
+
+                      {/* Column 2: Emergency Hotline */}
                       <td className="py-3.5 px-5 align-middle">
                         {brgy.isContactProvided && brgy.phone ? (
                           <a
                             href={`tel:${brgy.phone.replace(/\D/g, "")}`}
-                            className="font-mono text-xs sm:text-sm font-bold text-burgundy-800 hover:text-burgundy-900 hover:underline inline-block"
+                            className="inline-flex items-center gap-1.5 font-mono text-xs sm:text-sm font-bold text-burgundy-800 hover:text-burgundy-900 hover:underline"
                             aria-label={`Call Barangay ${brgy.name} at ${brgy.phone}`}
                           >
-                            {brgy.phone}
+                            <Phone className="w-3.5 h-3.5 text-burgundy-700 shrink-0" aria-hidden="true" />
+                            <span>{brgy.phone}</span>
                           </a>
                         ) : (
                           <span className="text-slate-500 text-xs sm:text-sm font-medium">
                             Not yet provided
                           </span>
+                        )}
+                      </td>
+
+                      {/* Column 3: Facebook Page */}
+                      <td className="py-3.5 px-5 align-middle">
+                        {brgy.facebook ? (
+                          <a
+                            href={brgy.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-burgundy-700 hover:text-burgundy-900 hover:underline"
+                            aria-label={`Visit Barangay ${brgy.name} Facebook page`}
+                          >
+                            <span>Visit Facebook Page</span>
+                            <ExternalLink className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 text-xs">None</span>
                         )}
                       </td>
                     </tr>
@@ -101,7 +129,7 @@ export default function BarangayEmergencyHotlinesPage() {
                   Official Barangay Directory Note
                 </strong>
                 <p className="text-slate-500">
-                  This directory reflects the 10 verified barangays of the Municipality of San Felipe, Zambales. Barangay emergency contact information will be published here once officially provided.
+                  This directory reflects the 11 verified barangays of the Municipality of San Felipe, Zambales. Official barangay emergency hotlines and verified social media links are published for public safety and community coordination.
                 </p>
               </div>
             </div>

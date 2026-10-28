@@ -226,7 +226,7 @@ async function validateAttachmentDocument(
   }
 
   // Office must be ACTIVE
-  if (doc.office.status !== "ACTIVE") {
+  if (doc.office?.status !== "ACTIVE") {
     throw new JobError(
       "Cannot attach documents belonging to an inactive office.",
       400
@@ -616,7 +616,7 @@ export async function publishJobOpportunity(
       );
     }
 
-    if (attachmentDoc.office.status !== "ACTIVE") {
+    if (attachmentDoc.office?.status !== "ACTIVE") {
       throw new JobError(
         "Cannot publish vacancy: linked attachment document belongs to an inactive office.",
         400

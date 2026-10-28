@@ -32,7 +32,7 @@ interface ProcurementPageProps {
 
 const PROCUREMENT_COLUMNS: DataTableColumn[] = [
   { key: "title", header: "Document Title", width: "35%" },
-  { key: "office", header: "Owning Office", width: "22%" },
+  { key: "office", header: "Responsible Office", width: "22%" },
   { key: "file", header: "File Asset", width: "15%" },
   { key: "status", header: "Status", width: "13%" },
   { key: "actions", header: "Actions", width: "15%", align: "right" },
@@ -55,13 +55,13 @@ export default async function AdminProcurementListPage({ searchParams }: Procure
   const status = params.status as DocumentStatus | undefined;
   const officeId = params.officeId;
 
-  // Dedicated Procurement query: strictly locked to purpose=OTHER_PUBLIC_DOCUMENT and category="Procurement"
+  // Dedicated Procurement query: includes Procurement and BAC umbrella documents
   const result = await getAdminDocumentsList(user, {
     page,
     pageSize: 10,
     search,
     status,
-    category: "Procurement",
+    category: ["Procurement", "Bids and Awards Committee (BAC)"],
     purpose: "OTHER_PUBLIC_DOCUMENT",
     officeId,
   });
@@ -194,11 +194,15 @@ export default async function AdminProcurementListPage({ searchParams }: Procure
                   </div>
                 </td>
 
-                {/* Office */}
+                {/* Responsible Office */}
                 <td className="px-4 py-3.5 align-middle">
                   <div className="flex items-center gap-1.5 text-xs text-slate-600">
                     <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate">{doc.office?.name || "General LGU"}</span>
+                    <span className="truncate">
+                      {doc.category === "Bids and Awards Committee (BAC)"
+                        ? "Bids and Awards Committee (BAC)"
+                        : doc.office?.name || "General LGU"}
+                    </span>
                   </div>
                 </td>
 

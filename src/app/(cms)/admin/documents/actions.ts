@@ -31,19 +31,26 @@ export async function createDocumentAction(
     const description = formData.get("description")?.toString() || undefined;
     let category = formData.get("category")?.toString() || undefined;
     let purpose = formData.get("purpose")?.toString() || undefined;
-    const officeId = formData.get("officeId")?.toString() || undefined;
+    let officeId: string | null | undefined = formData.get("officeId")?.toString() || undefined;
+    const responsibleAuthority = formData.get("responsibleAuthority")?.toString();
     const returnTo = formData.get("returnTo")?.toString();
 
-    // Server-side classification locks
+    // Server-side classification locks & responsible authority mapping
     if (returnTo === "gad") {
       category = "Gender and Development (GAD)";
       purpose = "OTHER_PUBLIC_DOCUMENT";
-    } else if (returnTo === "bac") {
+    } else if (returnTo === "bac" || responsibleAuthority === "BAC") {
       category = "Bids and Awards Committee (BAC)";
       purpose = "OTHER_PUBLIC_DOCUMENT";
+      officeId = null;
     } else if (returnTo === "procurement") {
-      category = "Procurement";
       purpose = "OTHER_PUBLIC_DOCUMENT";
+      if (responsibleAuthority === "BAC" || category === "Bids and Awards Committee (BAC)") {
+        category = "Bids and Awards Committee (BAC)";
+        officeId = null;
+      } else {
+        category = "Procurement";
+      }
     }
 
     const parsed = documentInputSchema.safeParse({
@@ -113,20 +120,27 @@ export async function updateDocumentAction(
     const description = formData.get("description")?.toString() || undefined;
     let category = formData.get("category")?.toString() || undefined;
     let purpose = formData.get("purpose")?.toString() || undefined;
-    const officeId = formData.get("officeId")?.toString() || undefined;
+    let officeId: string | null | undefined = formData.get("officeId")?.toString() || undefined;
+    const responsibleAuthority = formData.get("responsibleAuthority")?.toString();
     const expectedUpdatedAt = formData.get("expectedUpdatedAt")?.toString() || undefined;
     const returnTo = formData.get("returnTo")?.toString();
 
-    // Server-side classification locks
+    // Server-side classification locks & responsible authority normalization
     if (returnTo === "gad") {
       category = "Gender and Development (GAD)";
       purpose = "OTHER_PUBLIC_DOCUMENT";
-    } else if (returnTo === "bac") {
+    } else if (returnTo === "bac" || responsibleAuthority === "BAC") {
       category = "Bids and Awards Committee (BAC)";
       purpose = "OTHER_PUBLIC_DOCUMENT";
+      officeId = null; // Normalization on save
     } else if (returnTo === "procurement") {
-      category = "Procurement";
       purpose = "OTHER_PUBLIC_DOCUMENT";
+      if (responsibleAuthority === "BAC" || category === "Bids and Awards Committee (BAC)") {
+        category = "Bids and Awards Committee (BAC)";
+        officeId = null; // Normalization on save
+      } else {
+        category = "Procurement";
+      }
     }
 
     const parsed = documentInputSchema.safeParse({

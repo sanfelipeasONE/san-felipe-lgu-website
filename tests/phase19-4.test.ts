@@ -96,8 +96,8 @@ async function runPhase194TestSuite() {
       });
 
     assert(
-      migrationEntries.length === 11 || migrationEntries.length === 12,
-      `Exactly 11 or 12 migrations exist in prisma/migrations (found ${migrationEntries.length})`
+      [11, 12, 13].includes(migrationEntries.length),
+      `Authorized migrations exist in prisma/migrations (found ${migrationEntries.length})`
     );
 
     const migration10 = migrationEntries.find((m) =>
@@ -132,8 +132,10 @@ async function runPhase194TestSuite() {
     const sortedMigrations = [...migrationEntries].sort();
     const latestMigration = sortedMigrations[sortedMigrations.length - 1];
     assert(
-      latestMigration === "20261023061611_add_tourism_entries" || latestMigration === "20261028003500_make_news_article_office_optional",
-      "Latest migration is authorized (add_tourism_entries or make_news_article_office_optional)"
+      latestMigration === "20261023061611_add_tourism_entries" ||
+        latestMigration === "20261028003500_make_news_article_office_optional" ||
+        latestMigration.includes("make_document_office_optional"),
+      "Latest migration is authorized (add_tourism_entries, make_news_article_office_optional, or make_document_office_optional)"
     );
 
     // Cloudinary Namespace Derivation Verification

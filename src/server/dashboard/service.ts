@@ -397,6 +397,7 @@ export async function getRecentContent(
           select: {
             id: true,
             title: true,
+            category: true,
             status: true,
             officeId: true,
             updatedAt: true,
@@ -410,9 +411,13 @@ export async function getRecentContent(
             type: "document" as const,
             typeLabel: "Document" as const,
             officeId: doc.officeId,
-            officeName: doc.office.shortName
-              ? `${doc.office.name} (${doc.office.shortName})`
-              : doc.office.name,
+            officeName: doc.office
+              ? (doc.office.shortName
+                ? `${doc.office.name} (${doc.office.shortName})`
+                : doc.office.name)
+              : (doc.category === "Bids and Awards Committee (BAC)"
+                ? "Bids and Awards Committee (BAC)"
+                : "General LGU"),
             status: doc.status as "PUBLISHED" | "DRAFT" | "ARCHIVED",
             updatedAt: doc.updatedAt,
             editHref: `/admin/documents/${doc.id}/edit`,

@@ -9,12 +9,12 @@ export function GovernmentPrograms() {
   return (
     <section
       id="programs-services"
-      className="py-12 sm:py-16 bg-slate-50/60 border-y border-gray-200 scroll-mt-28"
+      className="py-10 sm:py-12 bg-slate-50/60 border-y border-gray-200/80 scroll-mt-28"
     >
       <Container>
         {/* Section Header */}
         <ScrollReveal>
-          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gov-charcoal tracking-tight">
               Government Programs &amp; Online Services
             </h2>
@@ -120,10 +120,10 @@ export function GovernmentPrograms() {
           {/* 4. Transparency Seal */}
           <ScrollReveal staggerIndex={3}>
             <Link
-              href="/transparency"
+              href="/transparency/procurement"
               aria-label="Open Transparency Seal and Municipal Disclosures"
               title="Open Transparency Seal and Municipal Disclosures"
-              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 h-full"
+              className="group flex flex-col items-center text-center p-6 sm:p-7 rounded-xs bg-white border border-gray-200/80 hover:border-burgundy-700 hover:shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700 h-full"
             >
               <div className="h-24 sm:h-28 flex items-center justify-center mb-4">
                 <div className="relative w-20 h-20 sm:w-24 sm:h-24">
@@ -140,7 +140,7 @@ export function GovernmentPrograms() {
                 Transparency Seal
               </h3>
               <p className="text-xs text-gov-muted mt-1">
-                Procurement &amp; BAC
+                Procurement &amp; Transparency
               </p>
             </Link>
           </ScrollReveal>

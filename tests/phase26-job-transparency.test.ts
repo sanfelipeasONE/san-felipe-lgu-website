@@ -182,7 +182,7 @@ test("Phase 26: Job Classification & Transparency Seal Verification", async (t) 
   // =========================================================================
   // 5. Public Transparency Landing Route (/transparency)
   // =========================================================================
-  await t.test("Public /transparency route exposes Procurement and BAC", () => {
+  await t.test("Public /transparency route exposes Procurement as sole top-level card", () => {
     const transparencyPath = path.join(process.cwd(), "src/app/(public)/transparency/page.tsx");
     assert(fs.existsSync(transparencyPath), "src/app/(public)/transparency/page.tsx must exist");
 
@@ -196,8 +196,8 @@ test("Phase 26: Job Classification & Transparency Seal Verification", async (t) 
       "/transparency must link to /transparency/procurement"
     );
     assert(
-      transparencySrc.includes("/transparency/bac"),
-      "/transparency must link to /transparency/bac"
+      !transparencySrc.includes('href="/transparency/bac"'),
+      "/transparency must NOT feature BAC card (Phase 27 refinement)"
     );
     assert(
       transparencySrc.includes("Access municipal transparency resources and public disclosures."),
@@ -275,8 +275,8 @@ test("Phase 26: Job Classification & Transparency Seal Verification", async (t) 
       "GAD Corner must link internally to /gad"
     );
     assert(
-      progSrc.includes('href="/transparency"'),
-      "Transparency Seal must link internally to /transparency"
+      progSrc.includes('href="/transparency/procurement"'),
+      "Transparency Seal must link internally to /transparency/procurement (Phase 27 refinement)"
     );
 
     // Transparency Seal attributes: internal link, no target="_blank"
@@ -365,7 +365,7 @@ test("Phase 26: Job Classification & Transparency Seal Verification", async (t) 
       .readdirSync(migrationsDir, { withFileTypes: true })
       .filter((d) => d.isDirectory());
 
-    assert.strictEqual(migrationDirs.length, 12, "Migration count must be exactly 12");
+    assert([12, 13].includes(migrationDirs.length), "Migration count must be 12 (Phase 26) or 13 (Phase 27)");
     const migration12 = migrationDirs.find((d) => d.name.includes("make_news_article_office_optional"));
     assert(migration12, "Migration #12 (make_news_article_office_optional) must exist");
 

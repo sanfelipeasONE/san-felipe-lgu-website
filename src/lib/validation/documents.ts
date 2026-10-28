@@ -321,7 +321,7 @@ export const documentInputSchema = z.object({
   officeId: z
     .string()
     .trim()
-    .min(1, "An owning municipal office is required.")
+    .nullable()
     .optional(),
   expectedUpdatedAt: z.string().optional(),
 });

@@ -31,8 +31,6 @@ export const NAV_DROPDOWN_ITEMS: Record<string, SubNavItem[]> = {
   ],
   Transparency: [
     { title: "Procurement", href: "/transparency/procurement" },
-    { title: "Bids and Awards Committee (BAC)", href: "/transparency/bac" },
-    { title: "Contact Us", href: "/#contact-us" },
     { title: "Journal and News", href: "/news" },
   ],
 };

@@ -685,16 +685,16 @@ async function runPhase1931TestSuite() {
       "/admin/tourism",
       "/admin/gad",
       "/admin/transparency/procurement",
-      "/admin/transparency/bac",
       "/admin/users",
       "/admin/roles",
       "/admin/audit-logs",
     ];
 
     assert(
-      implementedItems.length === 12 &&
-        canonicalImplementedHrefs.every((href) => implementedItems.some((i) => i.href === href)),
-      "Primary implemented navigation routes match canonical 12 items (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/gad, /admin/transparency/procurement, /admin/transparency/bac, /admin/users, /admin/roles, /admin/audit-logs)"
+      implementedItems.length === 11 &&
+        canonicalImplementedHrefs.every((href) => implementedItems.some((i) => i.href === href)) &&
+        !implementedItems.some((i) => i.href === "/admin/transparency/bac"),
+      "Primary implemented navigation routes match canonical 11 items (/admin, /admin/news, /admin/services, /admin/documents, /admin/jobs, /admin/tourism, /admin/gad, /admin/transparency/procurement, /admin/users, /admin/roles, /admin/audit-logs) with BAC removed from CMS sidebar"
     );
     assert(
       !implementedItems.some((i) => i.href === "/admin/offices"),

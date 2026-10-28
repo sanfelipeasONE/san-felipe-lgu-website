@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default async function ProcurementPage() {
   const procurementDocs = await getPublishedDocuments({
     purpose: "OTHER_PUBLIC_DOCUMENT",
-    category: "Procurement",
+    category: ["Procurement", "Bids and Awards Committee (BAC)"],
   });
 
   return (
@@ -78,11 +78,15 @@ export default async function ProcurementPage() {
                         <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs bg-slate-100 text-slate-700">
                           {doc.category || "Procurement"}
                         </span>
-                        {doc.office?.name && (
+                        {doc.office?.name ? (
                           <span className="text-[11px] font-semibold text-gov-muted">
                             {doc.office.name}
                           </span>
-                        )}
+                        ) : doc.category === "Bids and Awards Committee (BAC)" ? (
+                          <span className="text-[11px] font-semibold text-burgundy-700">
+                            Bids and Awards Committee (BAC)
+                          </span>
+                        ) : null}
                         <span className="text-[10px] font-mono font-bold text-burgundy-800 uppercase px-1.5 py-0.5 bg-burgundy-50 rounded-xs">
                           {doc.format} • {doc.fileSizeFormatted}
                         </span>

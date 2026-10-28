@@ -31,7 +31,7 @@ export class DocumentError extends Error {
 export interface AdminDocumentFilters {
   search?: string;
   status?: string;
-  category?: string;
+  category?: string | string[];
   purpose?: string;
   officeId?: string;
   page?: number;
@@ -77,7 +77,11 @@ export async function getAdminDocumentsList(
   }
 
   if (filters?.category) {
-    where.category = filters.category;
+    if (Array.isArray(filters.category)) {
+      where.category = { in: filters.category };
+    } else {
+      where.category = filters.category;
+    }
   }
 
   if (filters?.purpose) {
@@ -181,33 +185,42 @@ export async function createDocument(
   }
 
   const isSystem = isSystemScoped(user);
-  let targetOfficeId: string;
+  let targetOfficeId: string | null = null;
 
   if (isSystem) {
-    if (!params.input.officeId) {
+    if (params.input.category === "Bids and Awards Committee (BAC)") {
+      // BAC committee authority: officeId is strictly null (no fake office attribution)
+      targetOfficeId = null;
+    } else if (params.input.officeId) {
+      targetOfficeId = params.input.officeId;
+    } else {
       throw new DocumentError("An owning municipal office is required.", 400);
     }
-    targetOfficeId = params.input.officeId;
   } else {
     if (!user.officeId) {
       throw new DocumentError("Your account does not have an assigned office to own documents.", 403);
+    }
+    if (params.input.category === "Bids and Awards Committee (BAC)") {
+      throw new DocumentError("Office-scoped accounts cannot author BAC committee documents.", 403);
     }
     // Office-scoped users must strictly use their assigned office
     targetOfficeId = user.officeId;
   }
 
-  // Verify target office exists and is ACTIVE
-  const targetOffice = await prisma.office.findUnique({
-    where: { id: targetOfficeId },
-    select: { id: true, status: true, name: true },
-  });
+  // Verify target office exists and is ACTIVE if targetOfficeId is non-null
+  if (targetOfficeId) {
+    const targetOffice = await prisma.office.findUnique({
+      where: { id: targetOfficeId },
+      select: { id: true, status: true, name: true },
+    });
 
-  if (!targetOffice) {
-    throw new DocumentError("The selected municipal office does not exist.", 400);
-  }
+    if (!targetOffice) {
+      throw new DocumentError("The selected municipal office does not exist.", 400);
+    }
 
-  if (targetOffice.status !== "ACTIVE") {
-    throw new DocumentError("Documents can only be assigned to active municipal offices.", 400);
+    if (targetOffice.status !== "ACTIVE") {
+      throw new DocumentError("Documents can only be assigned to active municipal offices.", 400);
+    }
   }
 
   // Validate uploaded file and verify content signatures
@@ -264,7 +277,7 @@ export async function createDocument(
   await logAuditEvent({
     action: AUDIT_ACTIONS.DOCUMENT_CREATED,
     userId: user.id,
-    officeId: targetOfficeId,
+    officeId: targetOfficeId ?? undefined,
     details: {
       documentId: createdDocument.id,
       title: createdDocument.title,
@@ -334,20 +347,38 @@ export async function updateDocument(
     );
   }
 
-  // Determine officeId
-  let targetOfficeId = existing.officeId;
-  if (isSystem && params.input.officeId && params.input.officeId !== existing.officeId) {
-    const targetOffice = await prisma.office.findUnique({
-      where: { id: params.input.officeId },
-      select: { id: true, status: true },
-    });
-    if (!targetOffice) {
-      throw new DocumentError("The selected municipal office does not exist.", 400);
+  // Determine officeId & normalization
+  let targetOfficeId: string | null = existing.officeId;
+  const targetCategory =
+    params.input.category !== undefined
+      ? params.input.category?.trim() || null
+      : existing.category;
+
+  if (isSystem) {
+    if (targetCategory === "Bids and Awards Committee (BAC)") {
+      // Normalization: explicitly saving with BAC selected normalizes officeId to null
+      targetOfficeId = null;
+    } else if (params.input.officeId !== undefined) {
+      if (params.input.officeId === null || params.input.officeId === "") {
+        targetOfficeId = null;
+      } else if (params.input.officeId !== existing.officeId) {
+        const targetOffice = await prisma.office.findUnique({
+          where: { id: params.input.officeId },
+          select: { id: true, status: true },
+        });
+        if (!targetOffice) {
+          throw new DocumentError("The selected municipal office does not exist.", 400);
+        }
+        if (targetOffice.status !== "ACTIVE") {
+          throw new DocumentError("Documents can only be assigned to active municipal offices.", 400);
+        }
+        targetOfficeId = params.input.officeId;
+      }
     }
-    if (targetOffice.status !== "ACTIVE") {
-      throw new DocumentError("Documents can only be assigned to active municipal offices.", 400);
+  } else {
+    if (targetCategory === "Bids and Awards Committee (BAC)") {
+      throw new DocumentError("Office-scoped accounts cannot author BAC committee documents.", 403);
     }
-    targetOfficeId = params.input.officeId;
   }
 
   // If a new file is provided, perform safe replacement
@@ -482,7 +513,7 @@ export async function updateDocument(
   await logAuditEvent({
     action: AUDIT_ACTIONS.DOCUMENT_UPDATED,
     userId: user.id,
-    officeId: targetOfficeId,
+    officeId: targetOfficeId ?? undefined,
     details: {
       documentId: id,
       title: updated.title,
@@ -780,33 +811,50 @@ export async function deleteDocument(
  */
 export async function getPublishedDocuments(filters?: {
   search?: string;
-  category?: string;
+  category?: string | string[];
   officeId?: string;
   purpose?: DocumentPurpose;
 }) {
   const where: Prisma.DocumentWhereInput = {
     status: "PUBLISHED",
     purpose: (filters?.purpose as PrismaDocumentPurpose) ?? "DOWNLOADABLE_FORM",
-    office: {
-      status: "ACTIVE",
-    },
   };
 
   if (filters?.officeId) {
     where.officeId = filters.officeId;
+    where.office = { status: "ACTIVE" };
+  } else {
+    // Documents without office (e.g. BAC committee records) or documents from active offices
+    where.AND = [
+      {
+        OR: [
+          { officeId: null },
+          { office: { status: "ACTIVE" } },
+        ],
+      },
+    ];
   }
 
   if (filters?.category) {
-    where.category = filters.category;
+    if (Array.isArray(filters.category)) {
+      where.category = { in: filters.category };
+    } else {
+      where.category = filters.category;
+    }
   }
 
   if (filters?.search && filters.search.trim()) {
     const q = filters.search.trim();
-    where.OR = [
+    const searchConditions: Prisma.DocumentWhereInput[] = [
       { title: { contains: q, mode: "insensitive" } },
       { description: { contains: q, mode: "insensitive" } },
       { originalFilename: { contains: q, mode: "insensitive" } },
     ];
+    if (where.AND && Array.isArray(where.AND)) {
+      where.AND.push({ OR: searchConditions });
+    } else {
+      where.OR = searchConditions;
+    }
   }
 
   const documents = await prisma.document.findMany({
