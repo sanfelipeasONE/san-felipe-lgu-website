@@ -259,7 +259,8 @@ async function runPhase27TestSuite() {
       "utf8"
     );
     assert(
-      barangayPageCode.includes("Showing") && (barangayPageCode.includes("11") || barangayPageCode.includes("AUTHORITATIVE_BARANGAY_COUNT")),
+      (barangayPageCode.includes("Showing") || barangayPageCode.includes("barangays")) &&
+        (barangayPageCode.includes("11") || barangayPageCode.includes("AUTHORITATIVE_BARANGAY_COUNT")),
       "Barangay directory shows count of 11 barangays"
     );
     assert(
@@ -271,18 +272,18 @@ async function runPhase27TestSuite() {
       "Table has 'Emergency Hotline' column header"
     );
     assert(
-      />\s*Facebook Page\s*<\/th>/.test(barangayPageCode),
-      "Table has 'Facebook Page' column header"
+      />\s*Official Facebook\s*<\/th>/.test(barangayPageCode) || />\s*Facebook Page\s*<\/th>/.test(barangayPageCode),
+      "Table has Facebook column header"
     );
     assert(
-      barangayPageCode.includes('href={`tel:${brgy.phone') || barangayPageCode.includes("href={`tel:"),
+      barangayPageCode.includes('href={`tel:${brgy.phone') || barangayPageCode.includes("href={telHref"),
       "Emergency hotline numbers render callable tel: links"
     );
     assert(
       barangayPageCode.includes('target="_blank"') &&
         barangayPageCode.includes('rel="noopener noreferrer"') &&
-        barangayPageCode.includes("Visit Facebook Page"),
-      "Facebook links render with target='_blank', rel='noopener noreferrer', and 'Visit Facebook Page' label"
+        barangayPageCode.includes("Facebook Page"),
+      "Facebook links render with target='_blank', rel='noopener noreferrer', and 'Facebook Page' label"
     );
 
     // =========================================================================

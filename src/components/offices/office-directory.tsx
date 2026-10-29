@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Info } from "lucide-react";
+import { Info, ExternalLink } from "lucide-react";
 import type { MunicipalOffice } from "@/config/offices-data";
 
 export interface OfficeDirectoryProps {
@@ -9,107 +9,108 @@ export interface OfficeDirectoryProps {
 export function OfficeDirectory({ offices }: OfficeDirectoryProps) {
   return (
     <div>
-      {/* Directory Count Header */}
-      <div className="flex items-center justify-between text-xs text-slate-500 mb-4 pb-2 border-b border-gray-200">
-        <span>
-          Showing{" "}
-          <strong className="text-gov-charcoal font-bold">
-            {offices.length}
-          </strong>{" "}
-          municipal offices
-        </span>
+      {/* Restrained Directory Summary Header */}
+      <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 pb-3 border-b border-gray-200">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-base sm:text-lg font-bold text-gov-charcoal tracking-tight">
+            Municipal Office Directory
+          </h2>
+          <span className="text-xs font-normal text-slate-500">
+            ({offices.length} municipal offices)
+          </span>
+        </div>
+        <p className="text-xs text-gov-muted">
+          Verified executive, legislative, administrative, and frontline departments of San Felipe, Zambales.
+        </p>
       </div>
 
-      {/* Directory Table */}
-      <div className="bg-white border border-gray-300 rounded-xs shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left border-collapse">
-            <thead>
-              <tr className="bg-burgundy-900 text-white border-b-2 border-gold-500 divide-x divide-burgundy-800/80">
-                <th
-                  scope="col"
-                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[40%]"
-                >
-                  Office / Department
-                </th>
-                <th
-                  scope="col"
-                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[30%]"
-                >
-                  Office Head / OIC
-                </th>
-                <th
-                  scope="col"
-                  className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-[30%]"
-                >
-                  Facebook Page
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {offices.map((office) => {
-                const formattedNumber = String(office.displayOrder).padStart(2, "0");
+      {/* Unified Modern Directory Surface (Row-and-Column) */}
+      <div className="bg-white border border-gray-200 rounded-xs shadow-2xs overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead className="hidden md:table-header-group bg-burgundy-900 text-white border-b-2 border-gold-500">
+            <tr>
+              <th
+                scope="col"
+                className="py-2.5 px-5 sm:px-6 text-[11px] font-semibold uppercase tracking-wider text-white w-[40%]"
+              >
+                Office / Department
+              </th>
+              <th
+                scope="col"
+                className="py-2.5 px-5 sm:px-6 text-[11px] font-semibold uppercase tracking-wider text-white w-[40%]"
+              >
+                Office Head / OIC
+              </th>
+              <th
+                scope="col"
+                className="py-2.5 px-5 sm:px-6 text-[11px] font-semibold uppercase tracking-wider text-white w-[20%]"
+              >
+                Official Facebook
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 md:divide-gray-100">
+            {offices.map((office) => {
+              const formattedNumber = String(office.displayOrder).padStart(2, "0");
 
-                return (
-                  <tr
-                    key={office.id}
-                    className="odd:bg-white even:bg-slate-50/60 hover:bg-burgundy-50/30 transition-colors divide-x divide-gray-200"
-                  >
-                    {/* 1. Office / Department */}
-                    <td className="py-3.5 px-5 align-top">
-                      <div className="flex items-start gap-2.5">
-                        <span className="font-mono text-[11px] font-bold text-slate-400 shrink-0 mt-0.5">
-                          #{formattedNumber}
-                        </span>
-                        <span className="font-bold text-gov-charcoal text-xs sm:text-sm leading-snug">
-                          {office.name}
-                        </span>
-                      </div>
-                    </td>
+              return (
+                <tr
+                  key={office.id}
+                  className="block md:table-row p-4 md:p-0 hover:bg-slate-50/70 transition-colors"
+                >
+                  {/* Column 1: Office / Department */}
+                  <td className="block md:table-cell py-1.5 md:py-3 px-0 md:px-6 align-top">
+                    <div className="flex items-start gap-2.5">
+                      <span className="font-mono text-xs text-slate-400 select-none shrink-0 mt-0.5 font-normal">
+                        #{formattedNumber}
+                      </span>
+                      <span className="font-medium text-gov-charcoal text-xs sm:text-sm leading-snug block">
+                        {office.name}
+                      </span>
+                    </div>
+                  </td>
 
-                    {/* 2. Office Head / OIC */}
-                    <td className="py-3.5 px-5 align-top">
-                      {office.head ? (
-                        <div>
-                          <span className="font-bold text-gov-charcoal text-xs sm:text-[13px] block leading-snug">
-                            {office.head}
+                  {/* Column 2: Office Head / OIC */}
+                  <td className="block md:table-cell py-1.5 md:py-3 px-0 md:px-6 align-top">
+                    {office.head ? (
+                      <div>
+                        <span className="md:hidden text-[10px] font-medium uppercase tracking-wider text-slate-400 block mb-0.5">
+                          Office Head / OIC
+                        </span>
+                        <span className="font-medium text-gov-charcoal text-xs sm:text-[13px] block leading-snug">
+                          {office.head}
+                        </span>
+                        {office.headTitle && (
+                          <span className="text-[11px] text-gov-muted font-normal block mt-0.5">
+                            {office.headTitle}
                           </span>
-                          {office.headTitle && (
-                            <span className="text-[11px] text-slate-500 font-medium block mt-0.5">
-                              {office.headTitle}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-mono text-xs select-none">
-                          —
-                        </span>
-                      )}
-                    </td>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-xs font-normal">Not available</span>
+                    )}
+                  </td>
 
-                    {/* 3. Facebook Page */}
-                    <td className="py-3.5 px-5 align-top">
-                      {office.facebookUrl ? (
-                        <a
-                          href={office.facebookUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-burgundy-800 hover:underline text-xs text-burgundy-700 font-semibold"
-                        >
-                          Visit Facebook Page
-                        </a>
-                      ) : (
-                        <span className="text-slate-400 font-mono text-xs select-none">
-                          —
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  {/* Column 3: Official Facebook */}
+                  <td className="block md:table-cell py-1.5 md:py-3 px-0 md:px-6 align-top">
+                    {office.facebookUrl ? (
+                      <a
+                        href={office.facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs sm:text-sm font-normal text-slate-600 hover:text-burgundy-800 hover:underline transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-burgundy-700 rounded-2xs"
+                        aria-label={`Visit ${office.name} Facebook page`}
+                      >
+                        <span>Facebook Page</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
+                      </a>
+                    ) : null}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Directory Notes Card */}

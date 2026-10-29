@@ -23,14 +23,15 @@ export default async function MunicipalOfficesPage() {
         title="Municipal Offices"
         description="Directory of offices serving the Municipality of San Felipe, Zambales."
         breadcrumbs={[{ label: "Municipal Offices" }]}
+        className="pt-6 pb-6 sm:pt-8 sm:pb-8"
       />
 
-      {/* Directory Grid */}
-      <main className="py-10 sm:py-14 bg-slate-50/50">
+      {/* Directory Section */}
+      <section className="pt-6 pb-12 sm:pt-8 sm:pb-16 bg-slate-50/50">
         <Container>
           <OfficeDirectory offices={offices} />
         </Container>
-      </main>
+      </section>
     </>
   );
 }

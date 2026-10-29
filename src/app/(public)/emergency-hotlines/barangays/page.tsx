@@ -15,109 +15,120 @@ export const metadata: Metadata = {
 
 export default function BarangayEmergencyHotlinesPage() {
   return (
-    <main>
+    <>
       <PageHeader
-        eyebrow="24/7 EMERGENCY & DISASTER RESPONSE"
+        eyebrow="EMERGENCY & DISASTER RESPONSE"
         title="Barangay Emergency Hotlines"
         description="Emergency response and community coordination directory for the 11 barangays of San Felipe, Zambales."
         breadcrumbs={[
           { label: "Emergency Hotlines", href: "/#emergency-hotlines" },
           { label: "Barangays" },
         ]}
+        className="pt-6 pb-6 sm:pt-8 sm:pb-8"
       />
 
-      <section className="py-10 sm:py-14 bg-slate-50/70 min-h-[460px]">
+      <section className="pt-6 pb-12 sm:pt-8 sm:pb-16 bg-slate-50/50">
         <Container>
-          {/* Directory Count Header */}
-          <div className="flex items-center justify-between text-xs text-slate-500 mb-4 pb-2 border-b border-gray-200">
-            <span>
-              Showing{" "}
-              <strong className="text-gov-charcoal font-bold">
-                {AUTHORITATIVE_BARANGAY_COUNT}
-              </strong>{" "}
-              barangays
-            </span>
+          {/* Restrained Directory Summary Header */}
+          <div className="mb-5 sm:mb-6 flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 pb-3 border-b border-gray-200">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-gov-charcoal tracking-tight">
+                Barangay Directory
+              </h2>
+              <span className="text-xs font-normal text-slate-500">
+                ({AUTHORITATIVE_BARANGAY_COUNT} barangays)
+              </span>
+            </div>
+            <p className="text-xs text-gov-muted">
+              Emergency contact numbers and official Facebook channels for the barangays of San Felipe.
+            </p>
           </div>
 
-          {/* Directory Table */}
-          <div className="bg-white border border-gray-300 rounded-xs shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-burgundy-900 text-white border-b-2 border-gold-500 divide-x divide-burgundy-800/80">
-                    <th
-                      scope="col"
-                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/3 sm:w-[35%]"
-                    >
-                      Barangay
-                    </th>
-                    <th
-                      scope="col"
-                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/3 sm:w-[35%]"
-                    >
-                      Emergency Hotline
-                    </th>
-                    <th
-                      scope="col"
-                      className="py-3 px-5 text-xs font-bold uppercase tracking-wider text-white w-1/3 sm:w-[30%]"
-                    >
-                      Facebook Page
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {AUTHORITATIVE_BARANGAYS.map((brgy) => (
+          {/* Unified Modern Directory Surface (Row-and-Column) */}
+          <div className="bg-white border border-gray-200 rounded-xs shadow-2xs overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead className="hidden md:table-header-group bg-burgundy-900 text-white border-b-2 border-gold-500">
+                <tr>
+                  <th
+                    scope="col"
+                    className="py-2.5 px-5 sm:px-6 text-[11px] font-semibold uppercase tracking-wider text-white w-[30%]"
+                  >
+                    Barangay
+                  </th>
+                  <th
+                    scope="col"
+                    className="py-2.5 px-5 sm:px-6 text-[11px] font-semibold uppercase tracking-wider text-white w-[35%]"
+                  >
+                    Emergency Hotline
+                  </th>
+                  <th
+                    scope="col"
+                    className="py-2.5 px-5 sm:px-6 text-[11px] font-semibold uppercase tracking-wider text-white w-[35%]"
+                  >
+                    Official Facebook
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 md:divide-gray-100">
+                {AUTHORITATIVE_BARANGAYS.map((brgy) => {
+                  const rawDigits = brgy.phone ? brgy.phone.replace(/\D/g, "") : "";
+                  const telHref = rawDigits ? `tel:${rawDigits}` : undefined;
+
+                  return (
                     <tr
                       key={brgy.id}
-                      className="odd:bg-white even:bg-slate-50/60 hover:bg-burgundy-50/30 transition-colors divide-x divide-gray-200"
+                      className="block md:table-row p-4 md:p-0 hover:bg-slate-50/70 transition-colors"
                     >
                       {/* Column 1: Barangay Name */}
-                      <td className="py-3.5 px-5 align-middle">
-                        <span className="font-bold text-gov-charcoal text-xs sm:text-sm leading-snug">
+                      <td className="block md:table-cell py-1.5 md:py-3 px-0 md:px-6 align-middle">
+                        <span className="font-medium text-gov-charcoal text-sm sm:text-base leading-snug">
                           {brgy.name}
                         </span>
                       </td>
 
                       {/* Column 2: Emergency Hotline */}
-                      <td className="py-3.5 px-5 align-middle">
-                        {brgy.isContactProvided && brgy.phone ? (
+                      <td className="block md:table-cell py-1.5 md:py-3 px-0 md:px-6 align-middle">
+                        <span className="md:hidden text-[10px] font-medium uppercase tracking-wider text-slate-400 block mb-0.5">
+                          Emergency Hotline
+                        </span>
+                        {brgy.isContactProvided && brgy.phone && telHref ? (
                           <a
-                            href={`tel:${brgy.phone.replace(/\D/g, "")}`}
-                            className="inline-flex items-center gap-1.5 font-mono text-xs sm:text-sm font-bold text-burgundy-800 hover:text-burgundy-900 hover:underline"
+                            href={telHref}
+                            className="inline-flex items-center gap-1.5 font-mono text-sm sm:text-[15px] font-medium text-burgundy-800 hover:text-burgundy-950 hover:underline tracking-tight focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-burgundy-700 rounded-2xs"
                             aria-label={`Call Barangay ${brgy.name} at ${brgy.phone}`}
                           >
                             <Phone className="w-3.5 h-3.5 text-burgundy-700 shrink-0" aria-hidden="true" />
                             <span>{brgy.phone}</span>
                           </a>
                         ) : (
-                          <span className="text-slate-500 text-xs sm:text-sm font-medium">
+                          <span className="text-slate-400 text-xs font-normal">
                             Not yet provided
                           </span>
                         )}
                       </td>
 
-                      {/* Column 3: Facebook Page */}
-                      <td className="py-3.5 px-5 align-middle">
+                      {/* Column 3: Official Facebook */}
+                      <td className="block md:table-cell py-1.5 md:py-3 px-0 md:px-6 align-middle">
                         {brgy.facebook ? (
                           <a
                             href={brgy.facebook}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-burgundy-700 hover:text-burgundy-900 hover:underline"
-                            aria-label={`Visit Barangay ${brgy.name} Facebook page`}
+                            className="inline-flex items-center gap-1 text-xs sm:text-sm font-normal text-slate-600 hover:text-burgundy-800 hover:underline transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-burgundy-700 rounded-2xs"
+                            aria-label={`Visit Barangay ${brgy.name} Facebook Page`}
                           >
-                            <span>Visit Facebook Page</span>
-                            <ExternalLink className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                            <span>Facebook Page</span>
+                            <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
                           </a>
                         ) : (
-                          <span className="text-slate-400 text-xs">None</span>
+                          <span className="text-slate-400 text-xs font-normal">Not available</span>
                         )}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
           {/* Directory Notes Card */}
@@ -136,6 +147,6 @@ export default function BarangayEmergencyHotlinesPage() {
           </div>
         </Container>
       </section>
-    </main>
+    </>
   );
 }
