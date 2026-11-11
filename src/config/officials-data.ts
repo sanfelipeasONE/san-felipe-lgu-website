@@ -175,7 +175,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
         portrait: {
-          src: "/images/Hon. Roselyn Manglicmot-4.jpg",
+          src: "/images/Hon. Roselyn Manglicmot-4-official.jpg",
           alt: "Hon. Roselyn Manglicmot, Sangguniang Bayan Member",
           provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
         },

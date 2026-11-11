@@ -89,7 +89,7 @@ async function runPhase22Tests() {
       { name: "HON. ROBERT R. TORRES", src: "/images/Hon. Robert R. Torres-1.jpg" },
       { name: "HON. RONALD JETRO L. DE JESUS", src: "/images/Hon. Ronald Jetro L. De Jesus-2.jpg" },
       { name: "HON. SIR ALFRED A. ABILLE", src: "/images/Hon. Sir Alfred A. Abille-3.jpg" },
-      { name: "HON. ROSELYN MANGLICMOT", src: "/images/Hon. Roselyn Manglicmot-4.jpg" },
+      { name: "HON. ROSELYN MANGLICMOT", src: "/images/Hon. Roselyn Manglicmot-4-official.jpg" },
       { name: "HON. REX DANIEL A. ASUTILLA", src: "/images/Hon. Rex Daniel A. Asutilla-5.jpg" },
       { name: "HON. RAMIL T. ABLIAN", src: "/images/Hon. Ramil T. Ablian-6.jpg" },
       { name: "HON. RAY A. FRONDARINA", src: "/images/Hon. Ray A. Frondarina-7.jpg" },

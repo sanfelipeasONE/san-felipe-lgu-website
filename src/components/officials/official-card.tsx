@@ -89,9 +89,9 @@ export function ExecutiveOfficialCard({
       {/* Portrait Container */}
       <div
         className={cn(
-          "relative w-32 h-40 sm:w-36 sm:h-44 shrink-0 overflow-hidden rounded-xs bg-slate-100 shadow-2xs mt-1",
+          "relative w-32 sm:w-36 aspect-3/4 shrink-0 overflow-hidden rounded-xs bg-slate-100 shadow-2xs mt-1",
           isMayor
-            ? "border-2 border-gold-500/80 p-0.5 bg-white"
+            ? "border-2 border-gold-500/80"
             : "border border-gray-200"
         )}
       >
@@ -100,7 +100,7 @@ export function ExecutiveOfficialCard({
           alt={official.portrait.alt}
           fill
           sizes="(max-width: 640px) 128px, 144px"
-          className={cn("object-cover object-top", PORTRAIT_ZOOM_EXECUTIVE)}
+          className={cn("w-full h-full object-cover object-top", PORTRAIT_ZOOM_EXECUTIVE)}
           priority
         />
       </div>
@@ -173,13 +173,13 @@ export function CouncilorCard({
 
       <div>
         {/* Full-Width Portrait Area */}
-        <div className="relative w-full aspect-4/5 bg-slate-100 overflow-hidden border-b border-gray-200">
+        <div className="relative w-full aspect-3/4 bg-slate-100 overflow-hidden border-b border-gray-200">
           <Image
             src={official.portrait.src}
             alt={official.portrait.alt}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px"
-            className={cn("object-cover object-center", PORTRAIT_ZOOM_SB)}
+            className={cn("w-full h-full object-cover object-top", PORTRAIT_ZOOM_SB)}
           />
         </div>
 
@@ -231,13 +231,13 @@ export function ExOfficioCard({
       <CardTopAccent />
 
       {/* Portrait Container */}
-      <div className="w-24 h-28 sm:w-28 sm:h-32 shrink-0 aspect-4/5 relative rounded-xs overflow-hidden border border-gray-200 bg-slate-100 shadow-2xs">
+      <div className="relative w-24 sm:w-28 aspect-3/4 shrink-0 overflow-hidden rounded-xs border border-gray-200 bg-slate-100 shadow-2xs">
         <Image
           src={official.portrait.src}
           alt={official.portrait.alt}
           fill
           sizes="(max-width: 640px) 96px, 112px"
-          className={cn("object-cover object-center", PORTRAIT_ZOOM_EX_OFFICIO)}
+          className={cn("w-full h-full object-cover object-top", PORTRAIT_ZOOM_EX_OFFICIO)}
         />
       </div>
 
