@@ -90,7 +90,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       roleDescription: "Presiding Officer, Sangguniang Bayan",
       committeeAssignments: ["Committee on Legislative and Executive Affairs"],
       portrait: {
-        src: "/images/Hon. Mary Ann R. Quiba.jpg",
+        src: "/images/Hon. Mary Ann R. Quiba-official.jpg",
         alt: "Hon. Mary Ann R. Quiba, Municipal Vice Mayor & SB Presiding Officer",
         provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
       },

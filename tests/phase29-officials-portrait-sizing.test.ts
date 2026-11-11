@@ -108,6 +108,19 @@ function runPhase29Tests() {
     assert(legislative.viceMayor.position.includes("Municipal Vice Mayor"));
   });
 
+  test("Vice Mayor uses unique cache-safe official portrait filename", () => {
+    const { legislative } = MUNICIPAL_OFFICIALS_DATA;
+    assert.strictEqual(
+      legislative.viceMayor.portrait.src,
+      "/images/Hon. Mary Ann R. Quiba-official.jpg",
+      "Vice Mayor portrait must use cache-safe -official.jpg filename"
+    );
+    const officialPath = path.join(process.cwd(), "public/images/Hon. Mary Ann R. Quiba-official.jpg");
+    assert(fs.existsSync(officialPath), "Hon. Mary Ann R. Quiba-official.jpg must exist on disk");
+    const legacyPath = path.join(process.cwd(), "public/images/Hon. Mary Ann R. Quiba.jpg");
+    assert(fs.existsSync(legacyPath), "Hon. Mary Ann R. Quiba.jpg must remain available for backward compatibility");
+  });
+
   test("All 8 regular councilors preserved in authoritative order", () => {
     const { legislative } = MUNICIPAL_OFFICIALS_DATA;
     assert.strictEqual(legislative.regularMembers.length, 8);

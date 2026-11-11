@@ -77,7 +77,7 @@ async function runPhase22Tests() {
 
   test("Vice Mayor name is HON. MARY ANN R. QUIBA and uses official portrait", () => {
     assert.strictEqual(legislative.viceMayor.name, "HON. MARY ANN R. QUIBA");
-    assert.strictEqual(legislative.viceMayor.portrait.src, "/images/Hon. Mary Ann R. Quiba.jpg");
+    assert.strictEqual(legislative.viceMayor.portrait.src, "/images/Hon. Mary Ann R. Quiba-official.jpg");
     assert.strictEqual(legislative.viceMayor.isPortraitVerified, true);
     assert(!legislative.viceMayor.portrait.src.includes("placeholder"));
   });
