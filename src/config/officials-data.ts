@@ -1,5 +1,10 @@
 import { ASSET_PROVENANCE, type AssetProvenance } from "@/config/assets";
 
+export interface CommitteeAssignment {
+  name: string;
+  designation: "Chairman" | "Vice-Chairman";
+}
+
 export interface Official {
   id: string;
   slug: string;
@@ -10,7 +15,7 @@ export interface Official {
   eyebrow?: string;
   seat?: string;
   roleDescription?: string;
-  committeeAssignments?: string[];
+  committeeAssignments?: CommitteeAssignment[];
   secondaryInfo?: string;
   portrait: {
     src: string;
@@ -88,7 +93,12 @@ export const MUNICIPAL_OFFICIALS_DATA: {
       branch: "legislative",
       office: "Office of the Sangguniang Bayan",
       roleDescription: "Presiding Officer, Sangguniang Bayan",
-      committeeAssignments: ["Committee on Legislative and Executive Affairs"],
+      committeeAssignments: [
+        {
+          name: "Committee on Legislative and Executive Affairs",
+          designation: "Chairman",
+        },
+      ],
       portrait: {
         src: "/images/Hon. Mary Ann R. Quiba-official.jpg",
         alt: "Hon. Mary Ann R. Quiba, Municipal Vice Mayor & SB Presiding Officer",
@@ -111,6 +121,24 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Finance, Budget and Appropriation",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Rules and Privileges, Ordinance and Legal Matters",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Good Government, Public Ethics and Accountability",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Ways and Means",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Robert R. Torres-1.jpg",
           alt: "Hon. Robert R. Torres, Sangguniang Bayan Member",
@@ -120,7 +148,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 3,
       },
@@ -132,6 +160,20 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Public Utilities, Facilities and Transportation",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Games and Amusement",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Information Technology",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Ronald Jetro L. De Jesus-2.jpg",
           alt: "Hon. Ronald Jetro L. De Jesus, Sangguniang Bayan Member",
@@ -141,7 +183,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 4,
       },
@@ -153,6 +195,24 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Peace and Order and Security",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Fishing and Livelihood",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Municipal Disaster Risk Reduction and Management",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Social Welfare",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Sir Alfred A. Abille-3.jpg",
           alt: "Hon. Sir Alfred A. Abille, Sangguniang Bayan Member",
@@ -162,7 +222,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 5,
       },
@@ -174,6 +234,16 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Women and Family",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Health",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Roselyn Manglicmot-4-official.jpg",
           alt: "Hon. Roselyn Manglicmot, Sangguniang Bayan Member",
@@ -183,7 +253,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 6,
       },
@@ -195,6 +265,20 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Justice and Human Rights",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Trade, Commerce and Industry and Tourism",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Housing and Land Utilization",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Rex Daniel A. Asutilla-5.jpg",
           alt: "Hon. Rex Daniel A. Asutilla, Sangguniang Bayan Member",
@@ -204,7 +288,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 7,
       },
@@ -216,6 +300,20 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Environmental Protection",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Public Market/Public Mall and Slaughterhouse",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Public Works and Infrastructure",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Ramil T. Ablian-6.jpg",
           alt: "Hon. Ramil T. Ablian, Sangguniang Bayan Member",
@@ -225,7 +323,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 8,
       },
@@ -237,6 +335,16 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Labor and Employment",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Senior Citizens",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Ray A. Frondarina-7.jpg",
           alt: "Hon. Ray A. Frondarina, Sangguniang Bayan Member",
@@ -246,7 +354,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 9,
       },
@@ -258,6 +366,20 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         seat: "SB Councilor",
         branch: "legislative",
         office: "Office of the Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Cooperatives",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Agriculture",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Administrative Investigation",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Gary Michael P. Fariñas-8.jpg",
           alt: "Hon. Gary Michael P. Fariñas, Sangguniang Bayan Member",
@@ -267,7 +389,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         term: "2025–2028",
         order: 10,
       },
@@ -283,6 +405,12 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         branch: "legislative",
         office: "Liga ng mga Barangay / Sangguniang Bayan",
         secondaryInfo: "Ex-Officio Member, Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Barangay Affairs",
+            designation: "Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Dana F. Damaso-LNB.jpg",
           alt: "Hon. Dana F. Damaso, Liga ng mga Barangay President",
@@ -292,7 +420,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         isExOfficio: true,
         term: "2025–2028",
         order: 11,
@@ -307,6 +435,20 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         branch: "legislative",
         office: "Pederasyon ng Sangguniang Kabataan / Sangguniang Bayan",
         secondaryInfo: "Ex-Officio Member, Sangguniang Bayan",
+        committeeAssignments: [
+          {
+            name: "Committee on Youth and Development",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Education and Culture",
+            designation: "Chairman",
+          },
+          {
+            name: "Committee on Indigenous Folks",
+            designation: "Vice-Chairman",
+          },
+        ],
         portrait: {
           src: "/images/Hon. Iver-son G. Alcantara-SK FED..jpg",
           alt: "Hon. Iver-son G. Alcantara, SK Federation President",
@@ -316,7 +458,7 @@ export const MUNICIPAL_OFFICIALS_DATA: {
         isNameVerified: true,
         isPositionVerified: true,
         isPortraitVerified: true,
-        isCommitteeVerified: false,
+        isCommitteeVerified: true,
         isExOfficio: true,
         term: "2025–2028",
         order: 12,

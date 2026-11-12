@@ -107,11 +107,18 @@ export function DocumentForm({
     defaultCategory === "Gender and Development (GAD)" ||
     (initialData?.purpose === "OTHER_PUBLIC_DOCUMENT" && initialData?.category === "Gender and Development (GAD)");
 
-  const effectiveLockPurpose = lockPurpose ?? (isProcurementFlow || isBacFlow || isGadFlow);
-  const effectiveLockCategory = lockCategory ?? (isProcurementFlow || isBacFlow || isGadFlow);
+  const isSomaFlow =
+    returnTo === "soma" ||
+    defaultCategory === "State of the Municipal Address (SOMA)" ||
+    (initialData?.purpose === "OTHER_PUBLIC_DOCUMENT" && initialData?.category === "State of the Municipal Address (SOMA)");
+
+  const effectiveLockPurpose = lockPurpose ?? (isProcurementFlow || isBacFlow || isGadFlow || isSomaFlow);
+  const effectiveLockCategory = lockCategory ?? (isProcurementFlow || isBacFlow || isGadFlow || isSomaFlow);
   const effectiveBackHref =
     backHref ||
-    (isGadFlow
+    (isSomaFlow
+      ? "/admin/transparency/soma"
+      : isGadFlow
       ? "/admin/gad"
       : isBacFlow
       ? "/admin/transparency/bac"
@@ -120,7 +127,9 @@ export function DocumentForm({
       : "/admin/documents");
   const effectiveBackLabel =
     backLabel ||
-    (isGadFlow
+    (isSomaFlow
+      ? "Back to State of the Municipal Address (SOMA)"
+      : isGadFlow
       ? "Back to GAD Corner"
       : isBacFlow
       ? "Back to Bids and Awards Committee"
@@ -139,6 +148,10 @@ export function DocumentForm({
     }
     if (isProcurementFlow) {
       return "__BAC__";
+    }
+    if (isSomaFlow) {
+      const mayorOffice = offices.find((o) => o.name.toLowerCase().includes("mayor"));
+      return mayorOffice?.id || offices[0]?.id || "";
     }
     return offices[0]?.id || "";
   };
@@ -170,6 +183,15 @@ export function DocumentForm({
     }
 
     const ext = getFileExtension(file.name);
+    if (category === "State of the Municipal Address (SOMA)" && ext !== "pdf") {
+      setErrorMessage(
+        `Only PDF files (.pdf) are permitted for the State of the Municipal Address (SOMA) (received .${ext || "unknown"}).`
+      );
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     if (!ALLOWED_DOCUMENT_EXTENSIONS.includes(ext as (typeof ALLOWED_DOCUMENT_EXTENSIONS)[number])) {
       setErrorMessage(
         `Invalid file type (.${ext}). Accepted formats: PDF, DOC, DOCX, XLS, XLSX.`
@@ -204,6 +226,13 @@ export function DocumentForm({
     if (mode === "create" && !selectedFile) {
       setErrorMessage("Please select an official document file to upload.");
       return;
+    }
+
+    if (category === "State of the Municipal Address (SOMA)") {
+      if (selectedFile && getFileExtension(selectedFile.name) !== "pdf") {
+        setErrorMessage("Only PDF files (.pdf) are permitted for the State of the Municipal Address (SOMA).");
+        return;
+      }
     }
 
     setIsPending(true);
@@ -462,7 +491,18 @@ export function DocumentForm({
               <select
                 id="doc-category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCategory(val);
+                  if (val === "State of the Municipal Address (SOMA)") {
+                    setPurpose("OTHER_PUBLIC_DOCUMENT");
+                    if (selectedFile && getFileExtension(selectedFile.name) !== "pdf") {
+                      setErrorMessage("Only PDF files (.pdf) are permitted for the State of the Municipal Address (SOMA).");
+                      setSelectedFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }
+                  }
+                }}
                 className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition"
               >
                 <option value="">-- Select Category --</option>
@@ -585,7 +625,11 @@ export function DocumentForm({
               id="doc-file"
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.doc,.docx,.xls,.xlsx"
+              accept={
+                category === "State of the Municipal Address (SOMA)"
+                  ? ".pdf,application/pdf"
+                  : ".pdf,.doc,.docx,.xls,.xlsx"
+              }
               onChange={handleFileChange}
               className="block w-full text-xs text-slate-500
                 file:mr-4 file:py-2 file:px-4
@@ -597,7 +641,9 @@ export function DocumentForm({
             />
           </div>
           <p className="text-[11px] text-slate-500 mt-1.5">
-            Supported formats: PDF, DOC, DOCX, XLS, XLSX. Maximum file size: 15 MB. Files are stored securely in official cloud storage.
+            {category === "State of the Municipal Address (SOMA)"
+              ? "State of the Municipal Address (SOMA) documents must strictly be in PDF format (.pdf). Maximum file size: 15 MB. Files are stored securely in official cloud storage."
+              : "Supported formats: PDF, DOC, DOCX, XLS, XLSX. Maximum file size: 15 MB. Files are stored securely in official cloud storage."}
           </p>
 
           {selectedFile && (

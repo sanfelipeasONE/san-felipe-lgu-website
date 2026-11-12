@@ -235,6 +235,16 @@ export async function createDocument(
     throw new DocumentError(fileValidation.error || "Invalid document file.", 400);
   }
 
+  // Enforce PDF-only constraint for State of the Municipal Address (SOMA)
+  if (params.input.category === "State of the Municipal Address (SOMA)") {
+    if (fileValidation.extension !== "pdf") {
+      throw new DocumentError(
+        "State of the Municipal Address (SOMA) documents must strictly be in PDF format (.pdf).",
+        400
+      );
+    }
+  }
+
   const cleanOriginalFilename = sanitizeFilename(params.filename);
 
   // Upload raw file to Cloudinary
@@ -392,6 +402,16 @@ export async function updateDocument(
 
     if (!fileValidation.valid || !fileValidation.extension) {
       throw new DocumentError(fileValidation.error || "Invalid replacement document file.", 400);
+    }
+
+    // Enforce PDF-only constraint for State of the Municipal Address (SOMA)
+    if (targetCategory === "State of the Municipal Address (SOMA)") {
+      if (fileValidation.extension !== "pdf") {
+        throw new DocumentError(
+          "State of the Municipal Address (SOMA) documents must strictly be in PDF format (.pdf).",
+          400
+        );
+      }
     }
 
     const cleanFilename = sanitizeFilename(params.file.filename);
@@ -1000,10 +1020,10 @@ export async function getEligiblePublicDocument(id: string) {
     return document;
   }
 
-  // 3. Other Public Documents (Procurement & Civic Transparency Disclosures):
-  //    Must belong to an active municipal office
+  // 3. Other Public Documents (Procurement, SOMA & Civic Transparency Disclosures):
+  //    Must belong to an active municipal office OR have no office binding (e.g. statutory/executive disclosures)
   if (document.purpose === "OTHER_PUBLIC_DOCUMENT") {
-    if (!document.office || document.office.status !== "ACTIVE") {
+    if (document.officeId && (!document.office || document.office.status !== "ACTIVE")) {
       return null;
     }
     return document;

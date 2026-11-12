@@ -138,10 +138,15 @@ export function ExecutiveOfficialCard({
 
         {/* Committee Assignment (e.g. Vice Mayor) */}
         {official.committeeAssignments && official.committeeAssignments.length > 0 && (
-          <div className="pt-1.5">
-            <span className="inline-block text-[11px] font-semibold text-burgundy-800 bg-burgundy-50 border border-burgundy-200/80 px-2.5 py-1 rounded-xs">
-              {official.committeeAssignments[0]}
-            </span>
+          <div className="pt-1.5 flex flex-wrap gap-1.5">
+            {official.committeeAssignments.map((assignment, idx) => (
+              <span
+                key={idx}
+                className="inline-block text-[11px] font-semibold text-burgundy-800 bg-burgundy-50 border border-burgundy-200/80 px-2.5 py-1 rounded-xs"
+              >
+                {assignment.designation} — {assignment.name}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -198,9 +203,40 @@ export function CouncilorCard({
           </p>
 
           {official.committeeAssignments && official.committeeAssignments.length > 0 && (
-            <p className="text-[11px] text-slate-600 pt-1">
-              {official.committeeAssignments[0]}
-            </p>
+            <div className="pt-2.5 mt-2.5 border-t border-slate-100">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                Committee Assignments
+              </span>
+              <ul className="space-y-1.5" aria-label="Committee Assignments">
+                {official.committeeAssignments.map((assignment, idx) => (
+                  <li key={idx} className="flex items-start gap-1.5 text-[11px] leading-snug">
+                    <span
+                      className={cn(
+                        "inline-block w-1.5 h-1.5 rounded-full shrink-0 mt-1",
+                        assignment.designation === "Chairman"
+                          ? "bg-burgundy-700"
+                          : "bg-amber-600"
+                      )}
+                      aria-hidden="true"
+                    />
+                    <div className="text-slate-700 min-w-0">
+                      <span
+                        className={cn(
+                          "font-bold",
+                          assignment.designation === "Chairman"
+                            ? "text-burgundy-900"
+                            : "text-amber-800"
+                        )}
+                      >
+                        {assignment.designation}
+                      </span>
+                      <span className="text-slate-400 font-normal"> — </span>
+                      <span className="text-slate-600 font-medium">{assignment.name}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>
@@ -222,7 +258,7 @@ export function ExOfficioCard({
   return (
     <article
       className={cn(
-        "bg-white border border-gray-200 rounded-xs p-4 sm:p-5 shadow-2xs flex flex-row gap-4 items-center text-left",
+        "bg-white border border-gray-200 rounded-xs p-4 sm:p-5 shadow-2xs flex flex-row gap-4 items-start text-left",
         EX_OFFICIO_CARD_INTERACTION,
         className
       )}
@@ -261,6 +297,43 @@ export function ExOfficioCard({
           <p className="text-xs text-slate-500">
             {official.secondaryInfo}
           </p>
+        )}
+
+        {official.committeeAssignments && official.committeeAssignments.length > 0 && (
+          <div className="pt-2 mt-2 border-t border-slate-100">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+              Committee Assignments
+            </span>
+            <ul className="space-y-1.5" aria-label="Committee Assignments">
+              {official.committeeAssignments.map((assignment, idx) => (
+                <li key={idx} className="flex items-start gap-1.5 text-[11px] leading-snug">
+                  <span
+                    className={cn(
+                      "inline-block w-1.5 h-1.5 rounded-full shrink-0 mt-1",
+                      assignment.designation === "Chairman"
+                        ? "bg-burgundy-700"
+                        : "bg-amber-600"
+                    )}
+                    aria-hidden="true"
+                  />
+                  <div className="text-slate-700 min-w-0">
+                    <span
+                      className={cn(
+                        "font-bold",
+                        assignment.designation === "Chairman"
+                          ? "text-burgundy-900"
+                          : "text-amber-800"
+                      )}
+                    >
+                      {assignment.designation}
+                    </span>
+                    <span className="text-slate-400 font-normal"> — </span>
+                    <span className="text-slate-600 font-medium">{assignment.name}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
     </article>

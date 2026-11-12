@@ -10,6 +10,7 @@ import {
   Palmtree,
   FileSpreadsheet,
   HeartHandshake,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
@@ -154,6 +155,16 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         icon: FileSpreadsheet,
         section: "transparency",
         description: "Official public procurement notices, bidding opportunities, and disclosure records",
+        requiredPermission: "documents.view",
+        isImplemented: true,
+      },
+      {
+        id: "transparency-soma",
+        label: "State of the Municipal Address (SOMA)",
+        href: "/admin/transparency/soma",
+        icon: ScrollText,
+        section: "transparency",
+        description: "Official State of the Municipal Address (SOMA) reports and executive transparency publications",
         requiredPermission: "documents.view",
         isImplemented: true,
       },

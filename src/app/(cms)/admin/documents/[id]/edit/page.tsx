@@ -68,6 +68,10 @@ export default async function EditDocumentPage({
     sParams?.returnTo === "gad" ||
     (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "Gender and Development (GAD)");
 
+  const isSoma =
+    sParams?.returnTo === "soma" ||
+    (doc.purpose === "OTHER_PUBLIC_DOCUMENT" && doc.category === "State of the Municipal Address (SOMA)");
+
   const isSystem = isSystemScoped(user);
 
   let officesList: Array<{ id: string; name: string }> = [];
@@ -85,7 +89,13 @@ export default async function EditDocumentPage({
     hasPermission(user, PERMISSIONS.DOCUMENTS_DELETE) &&
     (isSystem || (doc.officeId ? user.officeId === doc.officeId : false));
 
-  const breadcrumbs = isGad
+  const breadcrumbs = isSoma
+    ? [
+        { label: "Transparency" },
+        { label: "State of the Municipal Address (SOMA)", href: "/admin/transparency/soma" },
+        { label: doc.title },
+      ]
+    : isGad
     ? [
         { label: "Content Management" },
         { label: "GAD Corner", href: "/admin/gad" },
@@ -108,7 +118,9 @@ export default async function EditDocumentPage({
         { label: doc.title },
       ];
 
-  const description = isGad
+  const description = isSoma
+    ? "Update State of the Municipal Address (SOMA) report details, replace PDF asset, or manage publication status."
+    : isGad
     ? "Update GAD resource details, replace file asset, or manage publication status."
     : isBac
     ? "Update BAC resolution details, replace document asset, or manage publication status."
@@ -116,23 +128,27 @@ export default async function EditDocumentPage({
     ? "Update procurement notice details, replace document asset, or manage publication status."
     : "Update form metadata, replace the uploaded document file, or update publication status.";
 
-  const lockPurpose = isBac || isProcurement || isGad;
-  const lockCategory = isBac || isProcurement || isGad;
-  const backHref = isBac
+  const lockPurpose = isBac || isProcurement || isGad || isSoma;
+  const lockCategory = isBac || isProcurement || isGad || isSoma;
+  const backHref = isSoma
+    ? "/admin/transparency/soma"
+    : isBac
     ? "/admin/transparency/bac"
     : isProcurement
     ? "/admin/transparency/procurement"
     : isGad
     ? "/admin/gad"
     : "/admin/documents";
-  const backLabel = isBac
+  const backLabel = isSoma
+    ? "Back to State of the Municipal Address (SOMA)"
+    : isBac
     ? "Back to Bids and Awards Committee"
     : isProcurement
     ? "Back to Procurement"
     : isGad
     ? "Back to GAD Corner"
     : "Back to Documents";
-  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : isGad ? "gad" : undefined;
+  const returnTo = isSoma ? "soma" : isBac ? "bac" : isProcurement ? "procurement" : isGad ? "gad" : undefined;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">

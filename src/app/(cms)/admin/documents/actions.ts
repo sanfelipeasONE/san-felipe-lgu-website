@@ -39,6 +39,9 @@ export async function createDocumentAction(
     if (returnTo === "gad") {
       category = "Gender and Development (GAD)";
       purpose = "OTHER_PUBLIC_DOCUMENT";
+    } else if (returnTo === "soma" || category === "State of the Municipal Address (SOMA)") {
+      category = "State of the Municipal Address (SOMA)";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
     } else if (returnTo === "bac" || responsibleAuthority === "BAC") {
       category = "Bids and Awards Committee (BAC)";
       purpose = "OTHER_PUBLIC_DOCUMENT";
@@ -89,9 +92,12 @@ export async function createDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/soma");
     revalidatePath("/admin/transparency/bac");
     revalidatePath("/admin/gad");
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency");
+    revalidatePath("/transparency/soma");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
     revalidatePath("/gad");
@@ -128,6 +134,9 @@ export async function updateDocumentAction(
     // Server-side classification locks & responsible authority normalization
     if (returnTo === "gad") {
       category = "Gender and Development (GAD)";
+      purpose = "OTHER_PUBLIC_DOCUMENT";
+    } else if (returnTo === "soma" || category === "State of the Municipal Address (SOMA)") {
+      category = "State of the Municipal Address (SOMA)";
       purpose = "OTHER_PUBLIC_DOCUMENT";
     } else if (returnTo === "bac" || responsibleAuthority === "BAC") {
       category = "Bids and Awards Committee (BAC)";
@@ -179,10 +188,13 @@ export async function updateDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/soma");
     revalidatePath("/admin/transparency/bac");
     revalidatePath("/admin/gad");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency");
+    revalidatePath("/transparency/soma");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
     revalidatePath("/gad");
@@ -210,10 +222,13 @@ export async function publishDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/soma");
     revalidatePath("/admin/transparency/bac");
     revalidatePath("/admin/gad");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency");
+    revalidatePath("/transparency/soma");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
     revalidatePath("/gad");
@@ -241,10 +256,13 @@ export async function archiveDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/soma");
     revalidatePath("/admin/transparency/bac");
     revalidatePath("/admin/gad");
     revalidatePath(`/admin/documents/${id}/edit`);
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency");
+    revalidatePath("/transparency/soma");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
     revalidatePath("/gad");
@@ -272,9 +290,12 @@ export async function deleteDocumentAction(
 
     revalidatePath("/admin/documents");
     revalidatePath("/admin/transparency/procurement");
+    revalidatePath("/admin/transparency/soma");
     revalidatePath("/admin/transparency/bac");
     revalidatePath("/admin/gad");
     revalidatePath("/services/downloadable-forms");
+    revalidatePath("/transparency");
+    revalidatePath("/transparency/soma");
     revalidatePath("/transparency/procurement");
     revalidatePath("/transparency/bac");
     revalidatePath("/gad");

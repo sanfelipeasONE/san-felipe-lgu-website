@@ -51,6 +51,11 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     params.category === "Gender and Development (GAD)" ||
     (params.purpose === "OTHER_PUBLIC_DOCUMENT" && params.category === "Gender and Development (GAD)");
 
+  const isSoma =
+    params.returnTo === "soma" ||
+    params.category === "State of the Municipal Address (SOMA)" ||
+    (params.purpose === "OTHER_PUBLIC_DOCUMENT" && params.category === "State of the Municipal Address (SOMA)");
+
   const isSystem = isSystemScoped(user);
 
   let officesList: Array<{ id: string; name: string }> = [];
@@ -70,7 +75,9 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     userOfficeName = userOffice?.name;
   }
 
-  const title = isGad
+  const title = isSoma
+    ? "Upload State of the Municipal Address (SOMA) Document"
+    : isGad
     ? "Upload GAD Resource"
     : isBac
     ? "Add BAC Document"
@@ -78,7 +85,9 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     ? "Add Procurement Document"
     : "Upload Municipal Document";
 
-  const description = isGad
+  const description = isSoma
+    ? "Upload official State of the Municipal Address (SOMA) reports, annual executive summaries, and civic transparency disclosures delivered by the Municipal Mayor."
+    : isGad
     ? "Upload official GAD plans, annual budgets, accomplishment narratives, and gender development public resources."
     : isBac
     ? "Upload official resolutions, bidding invitations, and public procurement disclosures issued by the Bids and Awards Committee."
@@ -86,7 +95,13 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
     ? "Upload official procurement notices, invitations to bid, and public disclosures for municipal transparency."
     : "Upload official application forms, procedural guidelines, or civic templates for citizen access.";
 
-  const breadcrumbs = isGad
+  const breadcrumbs = isSoma
+    ? [
+        { label: "Transparency" },
+        { label: "State of the Municipal Address (SOMA)", href: "/admin/transparency/soma" },
+        { label: "Add Document" },
+      ]
+    : isGad
     ? [
         { label: "Content Management" },
         { label: "GAD Corner", href: "/admin/gad" },
@@ -109,31 +124,37 @@ export default async function CreateDocumentPage({ searchParams }: CreateDocumen
         { label: "Upload Document" },
       ];
 
-  const defaultPurpose = isBac || isProcurement || isGad ? "OTHER_PUBLIC_DOCUMENT" : undefined;
-  const defaultCategory = isBac
+  const defaultPurpose = isBac || isProcurement || isGad || isSoma ? "OTHER_PUBLIC_DOCUMENT" : undefined;
+  const defaultCategory = isSoma
+    ? "State of the Municipal Address (SOMA)"
+    : isBac
     ? "Bids and Awards Committee (BAC)"
     : isProcurement
     ? "Procurement"
     : isGad
     ? "Gender and Development (GAD)"
     : params.category;
-  const lockPurpose = isBac || isProcurement || isGad;
-  const lockCategory = isBac || isProcurement || isGad;
-  const backHref = isBac
+  const lockPurpose = isBac || isProcurement || isGad || isSoma;
+  const lockCategory = isBac || isProcurement || isGad || isSoma;
+  const backHref = isSoma
+    ? "/admin/transparency/soma"
+    : isBac
     ? "/admin/transparency/bac"
     : isProcurement
     ? "/admin/transparency/procurement"
     : isGad
     ? "/admin/gad"
     : "/admin/documents";
-  const backLabel = isBac
+  const backLabel = isSoma
+    ? "Back to State of the Municipal Address (SOMA)"
+    : isBac
     ? "Back to Bids and Awards Committee"
     : isProcurement
     ? "Back to Procurement"
     : isGad
     ? "Back to GAD Corner"
     : "Back to Documents";
-  const returnTo = isBac ? "bac" : isProcurement ? "procurement" : isGad ? "gad" : params.returnTo;
+  const returnTo = isSoma ? "soma" : isBac ? "bac" : isProcurement ? "procurement" : isGad ? "gad" : params.returnTo;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">

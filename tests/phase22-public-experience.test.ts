@@ -226,14 +226,16 @@ async function runPhase22Tests() {
     assert.strictEqual(tourismDropdown[3].href, "/tourism/products");
   });
 
-  test("Transparency dropdown contains Procurement and Journal and News (/news) (BAC and Contact Us removed in Phase 27)", () => {
+  test("Transparency dropdown contains Procurement, SOMA, and Journal and News (/news)", () => {
     const transparencyDropdown = NAV_DROPDOWN_ITEMS["Transparency"];
     assert(transparencyDropdown, "Transparency dropdown must exist");
-    assert.strictEqual(transparencyDropdown.length, 2);
+    assert.strictEqual(transparencyDropdown.length, 3);
     assert.strictEqual(transparencyDropdown[0].title, "Procurement");
     assert.strictEqual(transparencyDropdown[0].href, "/transparency/procurement");
-    assert.strictEqual(transparencyDropdown[1].title, "Journal and News");
-    assert.strictEqual(transparencyDropdown[1].href, "/news");
+    assert.strictEqual(transparencyDropdown[1].title, "State of the Municipal Address (SOMA)");
+    assert.strictEqual(transparencyDropdown[1].href, "/transparency/soma");
+    assert.strictEqual(transparencyDropdown[2].title, "Journal and News");
+    assert.strictEqual(transparencyDropdown[2].href, "/news");
     assert(
       !transparencyDropdown.some((item) => item.title.includes("BAC") || item.href.includes("/bac")),
       "BAC is strictly excluded from Transparency dropdown"

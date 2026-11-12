@@ -416,12 +416,10 @@ async function runPhase27TestSuite() {
     // 19. Final Transparency dropdown items
     assert(
       transparencyDropdown !== undefined &&
-        transparencyDropdown.length === 2 &&
-        transparencyDropdown[0].title === "Procurement" &&
-        transparencyDropdown[0].href === "/transparency/procurement" &&
-        transparencyDropdown[1].title === "Journal and News" &&
-        transparencyDropdown[1].href === "/news",
-      "Transparency dropdown contains strictly Procurement and Journal and News"
+        transparencyDropdown.some((item) => item.title === "Procurement" && item.href === "/transparency/procurement") &&
+        transparencyDropdown.some((item) => item.title === "State of the Municipal Address (SOMA)" && item.href === "/transparency/soma") &&
+        transparencyDropdown.some((item) => item.title === "Journal and News" && item.href === "/news"),
+      "Transparency dropdown contains Procurement, SOMA, and Journal and News"
     );
 
     // 20. Transparency landing page has Procurement as sole top-level card
@@ -456,18 +454,20 @@ async function runPhase27TestSuite() {
     // =========================================================================
     console.log("\n--- 4. CMS Sidebar & Administration ---");
 
-    // 22. CMS sidebar Transparency section contains ONLY Procurement
+    // 22. CMS sidebar Transparency section contains Procurement and SOMA
     const transparencyNavSection = ADMIN_NAV_CONFIG.find(
       (sec) => sec.key === "transparency"
     );
     assert(
-      transparencyNavSection !== undefined && transparencyNavSection.items.length === 1,
-      "CMS sidebar Transparency section contains exactly ONE item"
+      transparencyNavSection !== undefined && transparencyNavSection.items.length === 2,
+      "CMS sidebar Transparency section contains Procurement and SOMA"
     );
     assert(
-      transparencyNavSection?.items[0].id === "transparency-procurement" &&
-        transparencyNavSection?.items[0].href === "/admin/transparency/procurement",
-      "CMS sidebar Transparency item is strictly Procurement"
+      Boolean(
+        transparencyNavSection?.items.some((item) => item.id === "transparency-procurement" && item.href === "/admin/transparency/procurement") &&
+          transparencyNavSection?.items.some((item) => item.id === "transparency-soma" && item.href === "/admin/transparency/soma")
+      ),
+      "CMS sidebar Transparency items include Procurement and SOMA"
     );
 
     // 23. CMS sidebar does NOT contain standalone BAC navigation

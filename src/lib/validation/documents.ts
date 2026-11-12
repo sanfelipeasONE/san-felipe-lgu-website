@@ -24,6 +24,7 @@ export const DOCUMENT_CATEGORIES = [
   "Procurement",
   "Bids and Awards Committee (BAC)",
   "Gender and Development (GAD)",
+  "State of the Municipal Address (SOMA)",
 ] as const;
 
 export type DocumentCategory = (typeof DOCUMENT_CATEGORIES)[number];
@@ -266,6 +267,40 @@ export function validateCharterPdfFile(file: {
     return {
       valid: false,
       error: `Only PDF files (.pdf) are permitted for the official Citizen's Charter handbook (received .${ext || "unknown"}).`,
+    };
+  }
+
+  const result = validateDocumentFile(file);
+  if (!result.valid) {
+    return { valid: false, error: result.error };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Dedicated file validation for the State of the Municipal Address (SOMA).
+ * Strictly enforces PDF-only format (.pdf extension) and authentic %PDF- header magic bytes,
+ * up to the standard 15 MB document limit.
+ */
+export function validateSomaPdfFile(file: {
+  name?: string;
+  filename?: string;
+  size?: number;
+  type?: string;
+  mimeType?: string;
+  buffer?: Buffer | Uint8Array;
+}): { valid: boolean; error?: string } {
+  const filename = file.name || file.filename || "";
+  if (!filename) {
+    return { valid: false, error: "A PDF file must be selected for the State of the Municipal Address (SOMA)." };
+  }
+
+  const ext = getFileExtension(filename);
+  if (ext !== "pdf") {
+    return {
+      valid: false,
+      error: `Only PDF files (.pdf) are permitted for the State of the Municipal Address (SOMA) (received .${ext || "unknown"}).`,
     };
   }
 

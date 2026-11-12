@@ -41,9 +41,21 @@ export const ASSETS = {
     },
   },
   hero: {
+    vectorPanorama: {
+      src: "/images/san-felipe-tourism-vector-panorama-hero.webp",
+      alt: "Illustrated tourism panorama of San Felipe, Zambales depicting coastal scenery, cultural activities, tourism, greenery, and the Municipal Hall",
+      provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
+    },
     aerialBackdrop: {
       src: "/images/hero-aerial-san-felipe.jpg",
       alt: "Aerial view of San Felipe, Zambales showing the town center, National Highway, and coastline",
+      provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
+    },
+  },
+  programs: {
+    fdpp: {
+      src: "/images/fdpp.png",
+      alt: "Full Disclosure Policy Portal (FDPP) - Department of the Interior and Local Government",
       provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
     },
   },
