@@ -107,8 +107,10 @@ export function MobileNavigation() {
       <div
         id="mobile-navigation-menu"
         className={cn(
-          "fixed top-0 right-0 z-50 h-full w-4/5 max-w-sm bg-white shadow-xl transition-transform duration-200 ease-in-out flex flex-col",
-          isOpen ? "translate-x-0" : "translate-x-full"
+          "fixed top-0 right-0 z-50 h-full w-4/5 max-w-sm bg-white shadow-xl transition-all duration-200 ease-in-out flex flex-col",
+          isOpen
+            ? "translate-x-0 opacity-100 visible pointer-events-auto"
+            : "translate-x-full opacity-0 invisible pointer-events-none"
         )}
       >
         <div className="flex items-center justify-between p-4 border-b border-gov-border">

@@ -127,14 +127,14 @@ export function MunicipalOfficialsPreview() {
 
         {/* Civic CTA: Full Officials Directory Link */}
         <ScrollReveal variant="fade-up" delayMs={200} className="text-center mt-10">
-          <Link href="/government/officials" className="inline-block">
+          <Link href="/government/officials" className="inline-block max-w-full">
             <Button
               variant="outline"
               size="sm"
-              className="border-slate-300 text-gov-charcoal hover:border-burgundy-700 hover:text-burgundy-800 font-bold text-xs uppercase tracking-wider px-6 py-2.5 shadow-2xs"
+              className="border-slate-300 text-gov-charcoal hover:border-burgundy-700 hover:text-burgundy-800 font-bold text-xs uppercase tracking-wider px-6 py-2.5 shadow-2xs h-auto max-w-full text-center"
             >
-              <span>Meet All Municipal Officials &amp; Sangguniang Bayan Members</span>
-              <ArrowRight className="h-3.5 w-3.5 ml-2" />
+              <span className="whitespace-normal">Meet All Municipal Officials &amp; Sangguniang Bayan Members</span>
+              <ArrowRight className="h-3.5 w-3.5 ml-2 shrink-0" />
             </Button>
           </Link>
         </ScrollReveal>
