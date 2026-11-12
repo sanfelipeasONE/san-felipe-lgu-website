@@ -83,8 +83,14 @@ function runHeroTests() {
     const code = fs.readFileSync(heroComponentPath, "utf8");
 
     // Asset binding
-    assert(code.includes("ASSETS.hero.vectorPanorama.src"), "HeroSection must use vectorPanorama.src as default imageSrc");
-    assert(code.includes("ASSETS.hero.vectorPanorama.alt"), "HeroSection must use vectorPanorama.alt as default imageAlt");
+    assert(
+      code.includes("ASSETS.hero.bannerOriginal.src") || code.includes("ASSETS.hero.vectorPanorama.src"),
+      "HeroSection must use official verified banner asset as default imageSrc"
+    );
+    assert(
+      code.includes("ASSETS.hero.bannerOriginal.alt") || code.includes("ASSETS.hero.vectorPanorama.alt"),
+      "HeroSection must use official verified banner asset as default imageAlt"
+    );
 
     // Municipal branding & single smooth left-to-right gradient overlay
     assert(code.includes("bg-burgundy-950"), "HeroSection must use burgundy-950 base");

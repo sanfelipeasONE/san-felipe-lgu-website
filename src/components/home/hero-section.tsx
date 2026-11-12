@@ -13,8 +13,8 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({
-  imageSrc = ASSETS.hero.vectorPanorama.src,
-  imageAlt = ASSETS.hero.vectorPanorama.alt,
+  imageSrc = ASSETS.hero.bannerOriginal.src,
+  imageAlt = ASSETS.hero.bannerOriginal.alt,
 }: HeroSectionProps) {
   return (
     <section className="relative overflow-hidden bg-burgundy-950 text-white border-b-4 border-gold-600">
@@ -30,16 +30,16 @@ export function HeroSection({
         />
       </div>
 
-      {/* Single Smooth Left-to-Right Burgundy Gradient Overlay */}
-      {/* Dark on left for text legibility, fading across center for artwork visibility, transparent on right for vibrant Municipal Hall & greenery */}
+      {/* Single Smooth Left-to-Right Subtle Burgundy Gradient Overlay */}
+      {/* Dark on left for text legibility, fading across center for artwork visibility, completely transparent on right for pristine original collage */}
       <div
-        className="hidden sm:block absolute inset-0 z-1 pointer-events-none bg-gradient-to-r from-burgundy-950/95 from-15% via-burgundy-950/45 via-48% to-transparent to-75%"
+        className="hidden sm:block absolute inset-0 z-1 pointer-events-none bg-gradient-to-r from-burgundy-950/90 from-0% via-burgundy-950/40 via-30% to-transparent to-55%"
         aria-hidden="true"
       />
 
       {/* Hero Content Container */}
       <Container className="relative z-10 pt-10 pb-8 sm:py-16 lg:py-20 min-h-[460px] sm:min-h-[500px] lg:min-h-[540px] flex flex-col justify-center">
-        <div className="max-w-xl space-y-4 sm:space-y-5">
+        <div className="max-w-md sm:max-w-lg lg:max-w-xl space-y-4 sm:space-y-5">
           {/* Institutional Government Eyebrow with Crisp Gold Accent Line (0ms delay) */}
           <div className="flex items-center gap-2.5 text-[11px] sm:text-xs font-medium tracking-[0.22em] uppercase text-[#FDE047] animate-hero-eyebrow">
             <span className="h-0.5 w-6 bg-[#FDE047] shrink-0 shadow-2xs" aria-hidden="true" />

@@ -41,6 +41,11 @@ export const ASSETS = {
     },
   },
   hero: {
+    bannerOriginal: {
+      src: "/images/san-felipe-tourism-banner-original.webp",
+      alt: "Official tourism banner of the Municipality of San Felipe, Zambales depicting coastal sunset, cultural heritage, ecotourism, waterfalls, and the Municipal Hall",
+      provenance: ASSET_PROVENANCE.VERIFIED_CLIENT_ASSET,
+    },
     vectorPanorama: {
       src: "/images/san-felipe-tourism-vector-panorama-hero.webp",
       alt: "Illustrated tourism panorama of San Felipe, Zambales depicting coastal scenery, cultural activities, tourism, greenery, and the Municipal Hall",
