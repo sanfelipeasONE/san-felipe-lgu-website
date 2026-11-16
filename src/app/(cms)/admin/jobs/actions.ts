@@ -51,13 +51,41 @@ export async function createJobAction(
     const closingDate = formData.get("closingDate")?.toString() || undefined;
     const attachmentDocumentId = formData.get("attachmentDocumentId")?.toString() || undefined;
 
-    const featuredImagePublicId = formData.get("featuredImagePublicId")?.toString() || undefined;
-    const featuredImageUrl = formData.get("featuredImageUrl")?.toString() || undefined;
-    const featuredImageAlt = formData.get("featuredImageAlt")?.toString() || undefined;
-    const featuredImageWidth = formData.get("featuredImageWidth") ? Number(formData.get("featuredImageWidth")) : undefined;
-    const featuredImageHeight = formData.get("featuredImageHeight") ? Number(formData.get("featuredImageHeight")) : undefined;
-    const featuredImageFormat = formData.get("featuredImageFormat")?.toString() || undefined;
-    const featuredImageBytes = formData.get("featuredImageBytes") ? Number(formData.get("featuredImageBytes")) : undefined;
+    const rawPublicId = formData.get("featuredImagePublicId");
+    const featuredImagePublicId =
+      rawPublicId === null
+        ? undefined
+        : rawPublicId.toString().trim() || null;
+    const featuredImageUrl =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageUrl")?.toString() || undefined;
+    const featuredImageAlt =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageAlt")?.toString() || undefined;
+    const featuredImageWidth =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageWidth")
+          ? Number(formData.get("featuredImageWidth"))
+          : undefined;
+    const featuredImageHeight =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageHeight")
+          ? Number(formData.get("featuredImageHeight"))
+          : undefined;
+    const featuredImageFormat =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageFormat")?.toString() || undefined;
+    const featuredImageBytes =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageBytes")
+          ? Number(formData.get("featuredImageBytes"))
+          : undefined;
 
     const parsed = jobOpportunityInputSchema.safeParse({
       title,
@@ -135,13 +163,41 @@ export async function updateJobAction(
     const attachmentDocumentId = formData.get("attachmentDocumentId")?.toString() || undefined;
     const expectedUpdatedAt = formData.get("expectedUpdatedAt")?.toString() || undefined;
 
-    const featuredImagePublicId = formData.get("featuredImagePublicId")?.toString() || undefined;
-    const featuredImageUrl = formData.get("featuredImageUrl")?.toString() || undefined;
-    const featuredImageAlt = formData.get("featuredImageAlt")?.toString() || undefined;
-    const featuredImageWidth = formData.get("featuredImageWidth") ? Number(formData.get("featuredImageWidth")) : undefined;
-    const featuredImageHeight = formData.get("featuredImageHeight") ? Number(formData.get("featuredImageHeight")) : undefined;
-    const featuredImageFormat = formData.get("featuredImageFormat")?.toString() || undefined;
-    const featuredImageBytes = formData.get("featuredImageBytes") ? Number(formData.get("featuredImageBytes")) : undefined;
+    const rawPublicId = formData.get("featuredImagePublicId");
+    const featuredImagePublicId =
+      rawPublicId === null
+        ? undefined
+        : rawPublicId.toString().trim() || null;
+    const featuredImageUrl =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageUrl")?.toString() || undefined;
+    const featuredImageAlt =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageAlt")?.toString() || undefined;
+    const featuredImageWidth =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageWidth")
+          ? Number(formData.get("featuredImageWidth"))
+          : undefined;
+    const featuredImageHeight =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageHeight")
+          ? Number(formData.get("featuredImageHeight"))
+          : undefined;
+    const featuredImageFormat =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageFormat")?.toString() || undefined;
+    const featuredImageBytes =
+      featuredImagePublicId === null
+        ? null
+        : formData.get("featuredImageBytes")
+          ? Number(formData.get("featuredImageBytes"))
+          : undefined;
 
     const parsed = jobOpportunityInputSchema.safeParse({
       title,

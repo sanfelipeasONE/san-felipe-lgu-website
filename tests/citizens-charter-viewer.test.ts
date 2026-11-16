@@ -255,8 +255,8 @@ async function runCitizensCharterViewerTests() {
     console.log("TEST 6: Wrong-purpose Document public Charter delivery denied/not found");
     const wrongPurposeDoc = await prisma.document.create({
       data: {
-        title: "Downloadable Form Document",
-        purpose: "DOWNLOADABLE_FORM",
+        title: "Job Attachment Document",
+        purpose: "JOB_ATTACHMENT",
         status: "PUBLISHED",
         officeId: office.id,
         createdById: adminUser.id,

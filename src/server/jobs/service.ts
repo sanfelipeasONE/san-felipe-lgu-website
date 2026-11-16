@@ -370,6 +370,23 @@ export async function createJobOpportunity(
   return job;
 }
 
+async function cleanupUnusedJobImage(
+  publicId: string | null | undefined,
+  deleteAsset: (id: string) => Promise<boolean> = deleteCloudinaryAsset
+): Promise<void> {
+  if (!publicId) return;
+  try {
+    const remainingRefs = await prisma.jobOpportunity.count({
+      where: { featuredImagePublicId: publicId },
+    });
+    if (remainingRefs === 0) {
+      await deleteAsset(publicId);
+    }
+  } catch (err) {
+    console.error("[CLOUDINARY] Failed to clean up unused job image asset:", publicId, err);
+  }
+}
+
 /**
  * Updates a vacancy. Preserves PUBLISHED status if already published.
  * Atomic conditional update protects against concurrent modifications.
@@ -377,7 +394,8 @@ export async function createJobOpportunity(
 export async function updateJobOpportunity(
   user: SessionUser,
   id: string,
-  input: JobOpportunityInput
+  input: JobOpportunityInput,
+  options?: { deleteAsset?: (publicId: string) => Promise<boolean> }
 ) {
   if (!hasPermission(user, PERMISSIONS.JOBS_UPDATE)) {
     throw new JobError("You do not have permission to update job opportunities.", 403);
@@ -505,13 +523,15 @@ export async function updateJobOpportunity(
     throw error;
   }
 
-  // Safe asset replacement: if image was replaced, delete old asset from Cloudinary
+  const deleteAssetFn = options?.deleteAsset ?? deleteCloudinaryAsset;
+
+  // Safe asset cleanup: only after DB update succeeds, and only if no other record references it
   if (
     existing.featuredImagePublicId &&
     input.featuredImagePublicId !== undefined &&
     existing.featuredImagePublicId !== input.featuredImagePublicId
   ) {
-    deleteCloudinaryAsset(existing.featuredImagePublicId).catch(() => {});
+    await cleanupUnusedJobImage(existing.featuredImagePublicId, deleteAssetFn);
   }
 
   const updated = await prisma.jobOpportunity.findUniqueOrThrow({
@@ -811,9 +831,9 @@ export async function deleteJobOpportunity(
     where: { id },
   });
 
-  // Clean up Cloudinary featured image asset if present
+  // Clean up Cloudinary featured image asset if present and unreferenced
   if (existing.featuredImagePublicId) {
-    deleteCloudinaryAsset(existing.featuredImagePublicId).catch(() => {});
+    await cleanupUnusedJobImage(existing.featuredImagePublicId);
   }
 
   await logAuditEvent({
@@ -867,7 +887,7 @@ export async function removeJobFeaturedImage(user: SessionUser, id: string) {
   });
 
   if (existing.featuredImagePublicId) {
-    deleteCloudinaryAsset(existing.featuredImagePublicId).catch(() => {});
+    await cleanupUnusedJobImage(existing.featuredImagePublicId);
   }
 
   return updated;

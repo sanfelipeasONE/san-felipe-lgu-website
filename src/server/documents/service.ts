@@ -578,8 +578,19 @@ export async function publishDocument(
     throw new DocumentError("Cannot publish document with invalid title.", 400);
   }
 
-  if (!existing.office || existing.office.status !== "ACTIVE") {
-    throw new DocumentError("Cannot publish documents for an inactive municipal office.", 400);
+  const isBacDocument =
+    existing.purpose === "OTHER_PUBLIC_DOCUMENT" &&
+    existing.category === "Bids and Awards Committee (BAC)";
+
+  if (existing.officeId) {
+    if (!existing.office || existing.office.status !== "ACTIVE") {
+      throw new DocumentError("Cannot publish documents for an inactive municipal office.", 400);
+    }
+    if (isBacDocument) {
+      throw new DocumentError("BAC committee documents must not be bound to a municipal office.", 400);
+    }
+  } else if (!isBacDocument) {
+    throw new DocumentError("Cannot publish documents without an active owning municipal office.", 400);
   }
 
   if (!existing.storagePublicId || !existing.storageUrl) {
@@ -1020,16 +1031,19 @@ export async function getEligiblePublicDocument(id: string) {
     return document;
   }
 
-  // 3. Other Public Documents (Procurement, SOMA & Civic Transparency Disclosures):
-  //    Must belong to an active municipal office OR have no office binding (e.g. statutory/executive disclosures)
-  if (document.purpose === "OTHER_PUBLIC_DOCUMENT") {
+  // 3. Downloadable Forms & Other Public Documents (Procurement, BAC, SOMA, Forms):
+  //    Must belong to an active municipal office OR have no office binding (e.g. BAC disclosures)
+  if (
+    document.purpose === "OTHER_PUBLIC_DOCUMENT" ||
+    document.purpose === "DOWNLOADABLE_FORM"
+  ) {
     if (document.officeId && (!document.office || document.office.status !== "ACTIVE")) {
       return null;
     }
     return document;
   }
 
-  // All other purposes (e.g. DOWNLOADABLE_FORM, JOB_ATTACHMENT) are not served via these managed routes
+  // All other purposes (e.g. JOB_ATTACHMENT) are not served via these managed routes
   return null;
 }
 
