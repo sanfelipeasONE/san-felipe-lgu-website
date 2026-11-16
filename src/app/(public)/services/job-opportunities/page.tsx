@@ -55,7 +55,7 @@ export default async function JobOpportunitiesPage() {
   }));
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="PUBLIC SERVICES"
         title={publishedPage?.title || "Job Opportunities"}
@@ -78,6 +78,6 @@ export default async function JobOpportunitiesPage() {
 
       {/* Database-backed municipal job vacancy announcements repository */}
       <JobOpportunitiesView opportunities={opportunities} />
-    </main>
+    </div>
   );
 }

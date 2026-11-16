@@ -20,7 +20,7 @@ export default async function StateOfTheMunicipalAddressPage() {
   });
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="TRANSPARENCY & ACCOUNTABILITY"
         title="State of the Municipal Address (SOMA)"
@@ -129,6 +129,6 @@ export default async function StateOfTheMunicipalAddressPage() {
           </ScrollReveal>
         </Container>
       </section>
-    </main>
+    </div>
   );
 }

@@ -20,7 +20,7 @@ export default async function BacPublicPage() {
   });
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="TRANSPARENCY & ACCOUNTABILITY"
         title="Bids and Awards Committee (BAC)"
@@ -112,6 +112,6 @@ export default async function BacPublicPage() {
           </ScrollReveal>
         </Container>
       </section>
-    </main>
+    </div>
   );
 }

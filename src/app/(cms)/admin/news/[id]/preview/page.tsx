@@ -94,7 +94,7 @@ export default async function NewsDraftPreviewPage({ params }: PreviewPageProps)
       </div>
 
       {/* Main Article Preview Surface (matches public presentation) */}
-      <main className="py-6 sm:py-10 bg-white flex-1">
+      <div className="py-6 sm:py-10 bg-white flex-1">
         <Container>
           {/* Breadcrumb Bar */}
           <div className="mb-6 bg-slate-100/70 border border-slate-200/80 px-4 py-2.5 rounded-xs">
@@ -173,7 +173,7 @@ export default async function NewsDraftPreviewPage({ params }: PreviewPageProps)
             )}
           </div>
         </Container>
-      </main>
+      </div>
     </div>
   );
 }

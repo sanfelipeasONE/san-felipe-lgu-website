@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Newspaper } from "lucide-react";
 import { Container } from "@/components/layout/container";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ASSETS } from "@/config/assets";
 
 interface HeroSectionProps {
@@ -96,38 +96,44 @@ export function HeroSection({
           <div className="space-y-2.5 pt-1 sm:pt-2 animate-hero-buttons">
             {/* Primary Action Row: Municipal Services & Municipal Offices */}
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              <Link href="#services">
-                <Button
-                  size="md"
-                  className="bg-white text-burgundy-900 hover:bg-gold-50 hover:text-burgundy-950 font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xs transition-all shadow-xs border border-white"
-                >
-                  <span>Municipal Services</span>
-                  <ArrowRight className="h-4 w-4 ml-1.5 text-burgundy-800" aria-hidden="true" />
-                </Button>
+              <Link
+                href="#services"
+                className={buttonVariants({
+                  size: "md",
+                  className:
+                    "bg-white text-burgundy-900 hover:bg-gold-50 hover:text-burgundy-950 font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xs transition-all shadow-xs border border-white",
+                })}
+              >
+                <span>Municipal Services</span>
+                <ArrowRight className="h-4 w-4 ml-1.5 text-burgundy-800" aria-hidden="true" />
               </Link>
 
-              <Link href="/offices">
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="bg-burgundy-950/70 hover:bg-burgundy-900 border border-white/75 hover:border-white text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xs transition-all shadow-2xs backdrop-blur-xs"
-                >
-                  <span>Municipal Offices</span>
-                </Button>
+              <Link
+                href="/offices"
+                className={buttonVariants({
+                  variant: "outline",
+                  size: "md",
+                  className:
+                    "bg-burgundy-950/70 hover:bg-burgundy-900 border border-white/75 hover:border-white text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xs transition-all shadow-2xs backdrop-blur-xs",
+                })}
+              >
+                <span>Municipal Offices</span>
               </Link>
             </div>
 
             {/* Secondary Action: Canonical News & Updates Link positioned directly below */}
             <div className="flex items-center">
-              <Link href="/news">
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="bg-burgundy-950/60 hover:bg-burgundy-900/90 border border-gold-500/60 hover:border-gold-400 text-gold-100 hover:text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xs transition-all shadow-2xs backdrop-blur-xs focus-visible:ring-gold-400"
-                >
-                  <Newspaper className="h-4 w-4 mr-2 text-gold-400 shrink-0" aria-hidden="true" />
-                  <span>News &amp; Updates</span>
-                </Button>
+              <Link
+                href="/news"
+                className={buttonVariants({
+                  variant: "outline",
+                  size: "md",
+                  className:
+                    "bg-burgundy-950/60 hover:bg-burgundy-900/90 border border-gold-500/60 hover:border-gold-400 text-gold-100 hover:text-white font-medium text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xs transition-all shadow-2xs backdrop-blur-xs focus-visible:ring-gold-400",
+                })}
+              >
+                <Newspaper className="h-4 w-4 mr-2 text-gold-400 shrink-0" aria-hidden="true" />
+                <span>News &amp; Updates</span>
               </Link>
             </div>
           </div>

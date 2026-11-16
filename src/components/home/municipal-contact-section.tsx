@@ -10,7 +10,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { Container } from "@/components/layout/container";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MUNICIPAL_CONTACT_DATA } from "@/config/homepage-data";
 import { getDirectionsUrl } from "@/config/location";
 import { MunicipalMap } from "@/components/home/municipal-map";
@@ -135,22 +135,32 @@ export function MunicipalContactSection() {
             </div>
 
             <div className="mt-8 pt-5 border-t border-gray-200 flex flex-wrap gap-3">
-              <a href={`mailto:${MUNICIPAL_CONTACT_DATA.email}`}>
-                <Button variant="primary" size="sm" className="font-bold text-xs uppercase tracking-wider bg-burgundy-800 hover:bg-burgundy-900 cursor-pointer">
-                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
-                  <span>Send a Message</span>
-                </Button>
+              <a
+                href={`mailto:${MUNICIPAL_CONTACT_DATA.email}`}
+                className={buttonVariants({
+                  variant: "primary",
+                  size: "sm",
+                  className:
+                    "font-bold text-xs uppercase tracking-wider bg-burgundy-800 hover:bg-burgundy-900 cursor-pointer",
+                })}
+              >
+                <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                <span>Send a Message</span>
               </a>
               <a
                 href={getDirectionsUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
+                className={buttonVariants({
+                  variant: "outline",
+                  size: "sm",
+                  className:
+                    "font-bold text-xs uppercase tracking-wider border-gray-300 hover:border-burgundy-700 hover:text-burgundy-800",
+                })}
               >
-                <Button variant="outline" size="sm" className="font-bold text-xs uppercase tracking-wider border-gray-300 hover:border-burgundy-700 hover:text-burgundy-800">
-                  <Navigation className="h-3.5 w-3.5 mr-1.5 text-burgundy-700" />
-                  <span>Get Directions</span>
-                  <ExternalLink className="h-3 w-3 ml-1 text-slate-400" />
-                </Button>
+                <Navigation className="h-3.5 w-3.5 mr-1.5 text-burgundy-700" />
+                <span>Get Directions</span>
+                <ExternalLink className="h-3 w-3 ml-1 text-slate-400" />
               </a>
             </div>
           </div>

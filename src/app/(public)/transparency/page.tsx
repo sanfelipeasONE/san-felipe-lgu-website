@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function TransparencyLandingPage() {
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="TRANSPARENCY & ACCOUNTABILITY"
         title="Transparency"
@@ -86,6 +86,6 @@ export default function TransparencyLandingPage() {
           </div>
         </Container>
       </section>
-    </main>
+    </div>
   );
 }

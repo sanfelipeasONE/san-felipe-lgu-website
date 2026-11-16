@@ -45,7 +45,7 @@ export default async function DownloadableFormsPage() {
   }));
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="PUBLIC SERVICES"
         title={publishedPage?.title || "Downloadable Forms"}
@@ -68,6 +68,6 @@ export default async function DownloadableFormsPage() {
 
       {/* Database-backed municipal downloadable forms repository */}
       <DownloadableFormsView forms={forms} />
-    </main>
+    </div>
   );
 }

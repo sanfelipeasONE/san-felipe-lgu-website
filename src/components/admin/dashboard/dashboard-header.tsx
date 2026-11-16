@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Plus, Upload, ArrowRight } from "lucide-react";
 import type { SessionUser } from "@/server/auth/session";
 import { hasPermission } from "@/lib/authz/scope";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 interface DashboardHeaderProps {
   user: SessionUser;
@@ -53,27 +53,31 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       {(canUploadDoc || canCreateNews) && (
         <div className="flex items-center gap-2.5 shrink-0">
           {canUploadDoc && (
-            <Link href="/admin/documents/new">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 px-3.5 text-xs font-semibold border-gray-300 text-gov-charcoal hover:bg-slate-50 shadow-2xs"
-              >
-                <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-600" />
-                <span>Upload Document</span>
-              </Button>
+            <Link
+              href="/admin/documents/new"
+              className={buttonVariants({
+                variant: "outline",
+                size: "sm",
+                className:
+                  "h-9 px-3.5 text-xs font-semibold border-gray-300 text-gov-charcoal hover:bg-slate-50 shadow-2xs",
+              })}
+            >
+              <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-600" />
+              <span>Upload Document</span>
             </Link>
           )}
 
           {canCreateNews && (
-            <Link href="/admin/news/new">
-              <Button
-                size="sm"
-                className="h-9 px-3.5 text-xs font-semibold bg-[#8B1E2D] hover:bg-[#651521] text-white shadow-2xs border border-transparent"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                <span>Create News Article</span>
-              </Button>
+            <Link
+              href="/admin/news/new"
+              className={buttonVariants({
+                size: "sm",
+                className:
+                  "h-9 px-3.5 text-xs font-semibold bg-[#8B1E2D] hover:bg-[#651521] text-white shadow-2xs border border-transparent",
+              })}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              <span>Create News Article</span>
             </Link>
           )}
         </div>

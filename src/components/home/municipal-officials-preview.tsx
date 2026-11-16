@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/layout/container";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { OFFICIALS_DATA } from "@/config/homepage-data";
 import { ASSETS } from "@/config/assets";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -127,15 +127,17 @@ export function MunicipalOfficialsPreview() {
 
         {/* Civic CTA: Full Officials Directory Link */}
         <ScrollReveal variant="fade-up" delayMs={200} className="text-center mt-10">
-          <Link href="/government/officials" className="inline-block max-w-full">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-slate-300 text-gov-charcoal hover:border-burgundy-700 hover:text-burgundy-800 font-bold text-xs uppercase tracking-wider px-6 py-2.5 shadow-2xs h-auto max-w-full text-center"
-            >
-              <span className="whitespace-normal">Meet All Municipal Officials &amp; Sangguniang Bayan Members</span>
-              <ArrowRight className="h-3.5 w-3.5 ml-2 shrink-0" />
-            </Button>
+          <Link
+            href="/government/officials"
+            className={buttonVariants({
+              variant: "outline",
+              size: "sm",
+              className:
+                "border-slate-300 text-gov-charcoal hover:border-burgundy-700 hover:text-burgundy-800 font-bold text-xs uppercase tracking-wider px-6 py-2.5 shadow-2xs h-auto max-w-full text-center",
+            })}
+          >
+            <span className="whitespace-normal">Meet All Municipal Officials &amp; Sangguniang Bayan Members</span>
+            <ArrowRight className="h-3.5 w-3.5 ml-2 shrink-0" />
           </Link>
         </ScrollReveal>
       </Container>

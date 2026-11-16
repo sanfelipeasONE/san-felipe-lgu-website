@@ -35,7 +35,7 @@ export default async function BusinessPermitsPage() {
   );
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="PUBLIC SERVICES"
         title={publishedPage?.title || "Business Permits"}
@@ -209,6 +209,6 @@ export default async function BusinessPermitsPage() {
           </div>
         </Container>
       </div>
-    </main>
+    </div>
   );
 }

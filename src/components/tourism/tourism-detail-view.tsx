@@ -44,7 +44,7 @@ export function TourismDetailView({ entry, otherEntries }: TourismDetailViewProp
   );
 
   return (
-    <main className="py-6 sm:py-10 bg-slate-50/50 min-h-screen">
+    <div className="py-6 sm:py-10 bg-slate-50/50 min-h-screen">
       <Container>
         {/* Navigation Breadcrumb Bar */}
         <div className="mb-6 bg-white border border-gray-200 px-4 py-2.5 rounded-xs shadow-2xs">
@@ -292,6 +292,6 @@ export function TourismDetailView({ entry, otherEntries }: TourismDetailViewProp
           </aside>
         </div>
       </Container>
-    </main>
+    </div>
   );
 }

@@ -14,7 +14,7 @@ export default function AboutSanFelipePage() {
   const { header, history, direction } = ABOUT_DATA;
 
   return (
-    <main>
+    <div>
       {/* 1. Compact About Page Header */}
       <PageHeader
         eyebrow={`• ${header.eyebrow}`}
@@ -120,6 +120,6 @@ export default function AboutSanFelipePage() {
           </ScrollReveal>
         </Container>
       </section>
-    </main>
+    </div>
   );
 }

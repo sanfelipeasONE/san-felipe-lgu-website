@@ -4,7 +4,7 @@ import { LayoutGrid } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { OfficeCard } from "@/components/home/office-card";
 import { OFFICES_DATA } from "@/config/homepage-data";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export function MunicipalOfficesPreview() {
@@ -26,15 +26,17 @@ export function MunicipalOfficesPreview() {
               </p>
             </div>
 
-            <Link href="/offices">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-gray-300 text-gov-charcoal hover:border-burgundy-700 hover:text-burgundy-700 focus-visible:outline-none focus-visible:border-burgundy-700 focus-visible:text-burgundy-700 transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              >
-                <LayoutGrid className="h-3.5 w-3.5 mr-1.5" />
-                <span>View All Offices</span>
-              </Button>
+            <Link
+              href="/offices"
+              className={buttonVariants({
+                variant: "outline",
+                size: "sm",
+                className:
+                  "border-gray-300 text-gov-charcoal hover:border-burgundy-700 hover:text-burgundy-700 focus-visible:outline-none focus-visible:border-burgundy-700 focus-visible:text-burgundy-700 transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              })}
+            >
+              <LayoutGrid className="h-3.5 w-3.5 mr-1.5" />
+              <span>View All Offices</span>
             </Link>
           </div>
         </ScrollReveal>

@@ -23,7 +23,7 @@ export default async function StaffLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col justify-center items-center py-10 px-4 sm:px-6 relative">
+    <main className="min-h-screen bg-[#f8f9fa] flex flex-col justify-center items-center py-10 px-4 sm:px-6 relative">
       <div className="w-full max-w-[420px] flex flex-col items-center">
         {/* Municipal Identity Header */}
         <div className="text-center flex flex-col items-center">
@@ -90,6 +90,6 @@ export default async function StaffLoginPage() {
           <p>Official Staff Portal</p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

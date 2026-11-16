@@ -20,7 +20,7 @@ export default async function ProductsPage() {
   const entries = result.entries.map(mapDbTourismToPublic);
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="MUNICIPAL TOURISM"
         title="Products"
@@ -78,6 +78,6 @@ export default async function ProductsPage() {
           )}
         </Container>
       </section>
-    </main>
+    </div>
   );
 }

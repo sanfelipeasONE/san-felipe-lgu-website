@@ -20,7 +20,7 @@ export default async function ProcurementPage() {
   });
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="TRANSPARENCY & ACCOUNTABILITY"
         title="Procurement"
@@ -129,6 +129,6 @@ export default async function ProcurementPage() {
           </ScrollReveal>
         </Container>
       </section>
-    </main>
+    </div>
   );
 }

@@ -41,7 +41,7 @@ export default async function GadCornerPage() {
   });
 
   return (
-    <main className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
       {/* 1. Straightforward Municipal Content Header */}
       <div className="border-b border-gray-200 bg-slate-50/50 py-10 sm:py-12">
         <Container>
@@ -193,6 +193,6 @@ export default async function GadCornerPage() {
 
         </div>
       </Container>
-    </main>
+    </div>
   );
 }

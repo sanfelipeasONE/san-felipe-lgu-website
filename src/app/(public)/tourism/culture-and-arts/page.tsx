@@ -20,7 +20,7 @@ export default async function CultureAndArtsPage() {
   const entries = result.entries.map(mapDbTourismToPublic);
 
   return (
-    <main>
+    <div>
       <PageHeader
         eyebrow="MUNICIPAL TOURISM"
         title="Culture and Arts"
@@ -78,6 +78,6 @@ export default async function CultureAndArtsPage() {
           )}
         </Container>
       </section>
-    </main>
+    </div>
   );
 }

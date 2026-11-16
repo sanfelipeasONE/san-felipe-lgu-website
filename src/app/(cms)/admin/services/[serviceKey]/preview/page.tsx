@@ -96,7 +96,7 @@ export default async function AdminServicePreviewPage({ params }: PreviewService
       </div>
 
       {/* 2. Public Page Presentation Simulation */}
-      <main className="flex-1 pb-16">
+      <div className="flex-1 pb-16">
         <PageHeader
           eyebrow="PUBLIC SERVICES PREVIEW"
           title={servicePage.title}
@@ -328,7 +328,7 @@ export default async function AdminServicePreviewPage({ params }: PreviewService
             )}
           </div>
         </Container>
-      </main>
+      </div>
     </div>
   );
 }

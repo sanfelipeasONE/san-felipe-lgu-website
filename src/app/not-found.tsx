@@ -4,7 +4,7 @@ import { Home, Building2, PhoneCall, ArrowRight, SearchX } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Container } from "@/components/layout/container";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -96,12 +96,17 @@ export default function NotFound() {
               </Link>
             </div>
 
-            {/* Direct Return Button */}
+            {/* Direct Return Link */}
             <div>
-              <Link href="/">
-                <Button variant="primary" size="md" className="font-bold text-xs uppercase tracking-wider">
-                  Back to Homepage
-                </Button>
+              <Link
+                href="/"
+                className={buttonVariants({
+                  variant: "primary",
+                  size: "md",
+                  className: "font-bold text-xs uppercase tracking-wider",
+                })}
+              >
+                Back to Homepage
               </Link>
             </div>
           </div>

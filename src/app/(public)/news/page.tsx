@@ -28,11 +28,11 @@ export default async function NewsArchivePage() {
       />
 
       {/* Main Image-First Editorial Archive */}
-      <main className="py-10 sm:py-14 bg-white">
+      <div className="py-10 sm:py-14 bg-white">
         <Container>
           <NewsGrid articles={allArticles} />
         </Container>
-      </main>
+      </div>
     </>
   );
 }
