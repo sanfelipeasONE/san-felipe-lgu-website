@@ -78,7 +78,7 @@ export async function createTourismAction(
 export async function updateTourismAction(
   id: string,
   rawInput: TourismDraftInput
-): Promise<ActionResult<{ id: string; slug: string }>> {
+): Promise<ActionResult<{ id: string; slug: string; updatedAt: string }>> {
   try {
     const user = await requireUser();
     const parsed = tourismDraftSchema.safeParse(rawInput);
@@ -96,7 +96,11 @@ export async function updateTourismAction(
 
     return {
       success: true,
-      data: { id: updated.id, slug: updated.slug },
+      data: {
+        id: updated.id,
+        slug: updated.slug,
+        updatedAt: updated.updatedAt.toISOString(),
+      },
     };
   } catch (err: unknown) {
     const message = err instanceof TourismError ? err.message : "Failed to update tourism entry.";

@@ -145,3 +145,70 @@ export function validateTourismForPublish(data: TourismDraftInput): {
     errors,
   };
 }
+
+export interface TourismPublishSequenceResult {
+  success: boolean;
+  error?: string;
+  concurrencyConflict: boolean;
+  closeDialog: boolean;
+  shouldRefresh: boolean;
+}
+
+/**
+ * Orchestrates the two-step save-then-publish workflow for Tourism entries,
+ * forwarding the fresh updatedAt returned by the save step to publish so
+ * optimistic concurrency protection is preserved without self-conflict.
+ */
+export async function executeTourismPublishSequence(params: {
+  id: string;
+  payload: TourismDraftInput;
+  saveEntry: (
+    id: string,
+    payload: TourismDraftInput
+  ) => Promise<{ success: boolean; data?: { updatedAt?: string }; error?: string }>;
+  publishEntry: (
+    id: string,
+    expectedUpdatedAt: string
+  ) => Promise<{ success: boolean; error?: string }>;
+}): Promise<TourismPublishSequenceResult> {
+  const saveRes = await params.saveEntry(params.id, params.payload);
+  if (!saveRes.success) {
+    return {
+      success: false,
+      error: saveRes.error || "Failed to save latest changes before publishing.",
+      concurrencyConflict: Boolean(saveRes.error?.includes("modified by another user")),
+      closeDialog: true,
+      shouldRefresh: false,
+    };
+  }
+
+  const nextUpdatedAt = saveRes.data?.updatedAt;
+  if (!nextUpdatedAt) {
+    return {
+      success: false,
+      error:
+        "Save succeeded, but the updated record timestamp was missing. Please reload the page before publishing.",
+      concurrencyConflict: false,
+      closeDialog: true,
+      shouldRefresh: false,
+    };
+  }
+
+  const pubRes = await params.publishEntry(params.id, nextUpdatedAt);
+  if (!pubRes.success) {
+    return {
+      success: false,
+      error: pubRes.error || "Failed to publish tourism entry.",
+      concurrencyConflict: Boolean(pubRes.error?.includes("modified by another user")),
+      closeDialog: true,
+      shouldRefresh: false,
+    };
+  }
+
+  return {
+    success: true,
+    concurrencyConflict: false,
+    closeDialog: true,
+    shouldRefresh: true,
+  };
+}

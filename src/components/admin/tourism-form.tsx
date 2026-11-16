@@ -42,6 +42,7 @@ import {
   TOURISM_CATEGORY_LABELS,
   TOURISM_CATEGORY_ROUTES,
   validateTourismForPublish,
+  executeTourismPublishSequence,
   type TourismDraftInput,
 } from "@/lib/validation/tourism";
 import { hasPermission } from "@/lib/authz/scope";
@@ -235,31 +236,30 @@ export function TourismForm({
     setConcurrencyConflict(false);
 
     try {
-      // First save current edits
-      const saveRes = await updateTourismAction(initialData.id, getPayload());
-      if (!saveRes.success) {
-        if (saveRes.error?.includes("modified by another user")) {
-          setConcurrencyConflict(true);
-        }
-        toast.error(saveRes.error || "Failed to save latest changes before publishing.");
+      const outcome = await executeTourismPublishSequence({
+        id: initialData.id,
+        payload: getPayload(),
+        saveEntry: updateTourismAction,
+        publishEntry: publishTourismAction,
+      });
+
+      if (outcome.concurrencyConflict) {
+        setConcurrencyConflict(true);
+      }
+      if (outcome.closeDialog) {
         setShowPublishDialog(false);
-        setIsPublishing(false);
-        return;
       }
 
-      // Then publish
-      const res = await publishTourismAction(initialData.id, initialData.updatedAt);
-      if (!res.success) {
-        if (res.error?.includes("modified by another user")) {
-          setConcurrencyConflict(true);
-        }
-        toast.error(res.error || "Failed to publish tourism entry.");
+      if (!outcome.success) {
+        toast.error(outcome.error || "Failed to publish tourism entry.");
       } else {
         toast.success("Tourism entry is now published to the public portal.");
-        setShowPublishDialog(false);
-        router.refresh();
+        if (outcome.shouldRefresh) {
+          router.refresh();
+        }
       }
     } catch {
+      setShowPublishDialog(false);
       toast.error("Failed to publish tourism entry.");
     } finally {
       setIsPublishing(false);
