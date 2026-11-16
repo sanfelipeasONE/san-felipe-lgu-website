@@ -46,6 +46,7 @@ export default async function CreateTourismPage({ searchParams }: CreateTourismP
         title="Create Tourism Entry"
         description="Draft a new municipal attraction, hospitality accommodation, cultural heritage entry, or local trade product."
         breadcrumbs={[
+          { label: "Dashboard", href: "/admin" },
           { label: "Tourism", href: "/admin/tourism" },
           { label: "Create Entry" },
         ]}

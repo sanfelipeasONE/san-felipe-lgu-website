@@ -8,6 +8,7 @@ import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { listUsers } from "@/server/users/service";
 import { prisma } from "@/server/db/client";
+import { ensureTourismRole } from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -68,6 +69,8 @@ export default async function AdminUsersListPage({ searchParams }: UsersPageProp
   let rolesList: Array<{ id: string; name: string }> = [];
 
   if (isSystemScoped(user)) {
+    await ensureTourismRole();
+
     officesList = await prisma.office.findMany({
       where: { status: "ACTIVE" },
       select: { id: true, name: true },
@@ -219,7 +222,11 @@ export default async function AdminUsersListPage({ searchParams }: UsersPageProp
                   <span className="font-medium text-slate-800">{item.role.name}</span>
                 </div>
                 <div className="text-[10px] text-slate-400 mt-0.5">
-                  {item.role.isSystemScope ? "System Authority" : "Office Scoped"}
+                  {item.role.isSystemScope
+                    ? "System Authority"
+                    : item.role.slug === "tourism-content-manager"
+                      ? "Dedicated Tourism Authority"
+                      : "Office Scoped"}
                 </div>
               </td>
 
@@ -233,7 +240,11 @@ export default async function AdminUsersListPage({ searchParams }: UsersPageProp
                     </span>
                   </div>
                 ) : (
-                  <span className="font-medium text-slate-800">Municipal-wide (Tourism Custody)</span>
+                  <span className="font-medium text-slate-800">
+                    {item.role.slug === "tourism-content-manager"
+                      ? "Municipal Tourism Scope"
+                      : "Municipal-wide (System Scope)"}
+                  </span>
                 )}
               </td>
 

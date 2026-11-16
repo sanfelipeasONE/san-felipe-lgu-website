@@ -19,6 +19,8 @@ import { RecentContentTable } from "@/components/admin/dashboard/recent-content-
 import { QuickActionsPanel } from "@/components/admin/dashboard/quick-actions-panel";
 import { OfficeDistributionPanel } from "@/components/admin/dashboard/office-distribution-panel";
 import { RecentActivityPanel } from "@/components/admin/dashboard/recent-activity-panel";
+import { getTourismDashboardData } from "@/server/dashboard/tourism";
+import { TourismDashboard } from "@/components/admin/dashboard/tourism-dashboard";
 
 export const instant = false;
 
@@ -39,6 +41,18 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
   if (!user || user.status !== "ACTIVE") {
     redirect("/staff/login");
+  }
+
+  // Dedicated Tourism Content Manager dashboard experience (Phase 31)
+  if (user.role?.slug === "tourism-content-manager") {
+    const tourismData = await getTourismDashboardData(user);
+    return (
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
+        <AdminContent maxWidth="full">
+          <TourismDashboard data={tourismData} user={user} />
+        </AdminContent>
+      </div>
+    );
   }
 
   const params = searchParams ? await searchParams : {};

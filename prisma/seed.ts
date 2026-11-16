@@ -120,6 +120,14 @@ const BASELINE_ROLES = [
     tier: RoleTier.STAFF,
     isBuiltIn: true,
   },
+  {
+    name: "Tourism Content Manager",
+    slug: "tourism-content-manager",
+    description: "Dedicated editorial, publishing, and media authority for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products",
+    isSystemScope: false,
+    tier: RoleTier.CUSTOM,
+    isBuiltIn: true,
+  },
 ];
 
 async function main() {
@@ -294,6 +302,31 @@ async function main() {
         update: {},
         create: { roleId: siteAdminRoleId, permissionId: permId },
       });
+    }
+  }
+
+  // Tourism Content Manager permissions (Phase 31)
+  const tourismRoleId = roleMap.get("tourism-content-manager");
+  if (tourismRoleId) {
+    const tourismPermCodes = [
+      "tourism.view",
+      "tourism.create",
+      "tourism.update",
+      "tourism.publish",
+      "tourism.archive",
+      "tourism.delete",
+    ];
+    for (const code of tourismPermCodes) {
+      const permId = permissionMap.get(code);
+      if (permId) {
+        await prisma.rolePermission.upsert({
+          where: {
+            roleId_permissionId: { roleId: tourismRoleId, permissionId: permId },
+          },
+          update: {},
+          create: { roleId: tourismRoleId, permissionId: permId },
+        });
+      }
     }
   }
   console.log("   ✓ Role-permission assignments configured.");

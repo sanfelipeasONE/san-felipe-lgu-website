@@ -6,7 +6,7 @@ import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { getUserById, UserError } from "@/server/users/service";
 import { prisma } from "@/server/db/client";
-import { CANONICAL_PRODUCTION_ROLES } from "@/server/roles/service";
+import { CANONICAL_PRODUCTION_ROLES, ensureTourismRole, TOURISM_ROLE_SLUG } from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { UserForm, type RoleOption, type OfficeOption } from "@/components/admin/user-form";
@@ -52,6 +52,8 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
   let userOfficeName: string | undefined;
 
   if (isSystem) {
+    await ensureTourismRole();
+
     offices = await prisma.office.findMany({
       where: {
         status: "ACTIVE",
@@ -63,7 +65,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
 
     const dbRoles = await prisma.role.findMany({
       where: {
-        slug: { in: [...CANONICAL_PRODUCTION_ROLES] },
+        slug: { in: [...CANONICAL_PRODUCTION_ROLES, TOURISM_ROLE_SLUG] },
       },
       select: {
         id: true,

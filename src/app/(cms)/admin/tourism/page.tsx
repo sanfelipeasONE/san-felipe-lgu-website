@@ -60,7 +60,10 @@ export default async function AdminTourismListPage({ searchParams }: TourismPage
       <AdminPageHeader
         title="Tourism Directory Management"
         description="Create, edit, publish, and maintain municipal attractions, accredited resorts, cultural heritage, and local products."
-        breadcrumbs={[{ label: "Tourism" }]}
+        breadcrumbs={[
+          { label: "Dashboard", href: "/admin" },
+          { label: "Tourism" },
+        ]}
         actions={
           canCreate ? (
             <Link

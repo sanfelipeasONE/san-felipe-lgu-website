@@ -50,6 +50,7 @@ export default async function EditTourismPage({ params }: EditTourismPageProps) 
         title={`Edit: ${entry.title}`}
         description={`Manage content, visitor details, and status for this ${TOURISM_CATEGORY_LABELS[entry.category]} entry.`}
         breadcrumbs={[
+          { label: "Dashboard", href: "/admin" },
           { label: "Tourism", href: "/admin/tourism" },
           { label: entry.title },
         ]}

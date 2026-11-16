@@ -30,6 +30,22 @@ export const CANONICAL_PRODUCTION_ROLES = [
 
 export type CanonicalProductionRole = (typeof CANONICAL_PRODUCTION_ROLES)[number];
 
+export const TOURISM_ROLE_SLUG = "tourism-content-manager";
+export const TOURISM_ROLE_NAME = "Tourism Content Manager";
+export const TOURISM_PERMISSIONS = [
+  PERMISSIONS.TOURISM_VIEW,
+  PERMISSIONS.TOURISM_CREATE,
+  PERMISSIONS.TOURISM_UPDATE,
+  PERMISSIONS.TOURISM_PUBLISH,
+  PERMISSIONS.TOURISM_ARCHIVE,
+  PERMISSIONS.TOURISM_DELETE,
+] as const;
+
+export const CANONICAL_PORTAL_ROLES = [
+  ...CANONICAL_PRODUCTION_ROLES,
+  TOURISM_ROLE_SLUG,
+] as const;
+
 export const RETIRED_ROLE_SLUGS = [
   "site-admin",
   "office-editor",
@@ -258,6 +274,19 @@ export async function updateRolePermissions(
     }
   }
 
+  // Enforce Tourism role strict domain boundary: cannot receive non-tourism permissions (Phase 31.1)
+  if (role.slug === TOURISM_ROLE_SLUG) {
+    const invalidCodes = permissionCodes.filter(
+      (code) => !(TOURISM_PERMISSIONS as readonly string[]).includes(code)
+    );
+    if (invalidCodes.length > 0) {
+      throw new RoleError(
+        `The Tourism Content Manager role is strictly restricted to municipal tourism permissions. The following non-tourism permissions cannot be assigned: ${invalidCodes.join(", ")}`,
+        400
+      );
+    }
+  }
+
   // Validate that all supplied permission codes exist in the database
   const matchingPermissions = await prisma.permission.findMany({
     where: { code: { in: permissionCodes } },
@@ -337,4 +366,61 @@ export async function listPermissionCatalog(caller: SessionUser) {
     },
     orderBy: [{ module: "asc" }, { code: "asc" }],
   });
+}
+
+/**
+ * Ensures the dedicated Tourism Content Manager role exists in the database
+ * with its canonical 6 tourism permissions (Phase 31).
+ */
+export async function ensureTourismRole() {
+  const role = await prisma.role.upsert({
+    where: { slug: TOURISM_ROLE_SLUG },
+    update: {
+      name: TOURISM_ROLE_NAME,
+      isSystemScope: false,
+      tier: RoleTier.CUSTOM,
+      isBuiltIn: true,
+      description: "Dedicated editorial, publishing, and media authority for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products.",
+    },
+    create: {
+      name: TOURISM_ROLE_NAME,
+      slug: TOURISM_ROLE_SLUG,
+      isSystemScope: false,
+      tier: RoleTier.CUSTOM,
+      isBuiltIn: true,
+      description: "Dedicated editorial, publishing, and media authority for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products.",
+    },
+  });
+
+  // Assign the exact 6 tourism permissions
+  for (const code of TOURISM_PERMISSIONS) {
+    const perm = await prisma.permission.findUnique({ where: { code } });
+    if (perm) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: role.id,
+            permissionId: perm.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: role.id,
+          permissionId: perm.id,
+        },
+      });
+    }
+  }
+
+  // Ensure runtime initialization cannot leave the role with unauthorized permissions (Phase 31.1)
+  await prisma.rolePermission.deleteMany({
+    where: {
+      roleId: role.id,
+      permission: {
+        code: { notIn: [...TOURISM_PERMISSIONS] },
+      },
+    },
+  });
+
+  return role;
 }

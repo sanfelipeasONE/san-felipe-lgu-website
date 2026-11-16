@@ -151,15 +151,20 @@ export function UserForm({
     initialData?.roleId ?? roles[0]?.id ?? ""
   );
   void offices;
-  void setSelectedRoleId;
   const selectedRole = roles.find((r) => r.id === selectedRoleId);
   const isSelectedRoleSystem = selectedRole?.isSystemScope;
+  const isSelectedRoleTourism = selectedRole?.slug === "tourism-content-manager";
 
   const onSubmit = async (data: UserFormData) => {
     setServerError(null);
 
     // Role-aware validation: Office-scoped roles require an assigned municipal office
-    if (isSystemScoped && !isSelectedRoleSystem && (!data.officeId || (typeof data.officeId === "string" && data.officeId.trim() === ""))) {
+    if (
+      isSystemScoped &&
+      !isSelectedRoleSystem &&
+      !isSelectedRoleTourism &&
+      (!data.officeId || (typeof data.officeId === "string" && data.officeId.trim() === ""))
+    ) {
       setServerError("An assigned municipal office is required for office-scoped roles.");
       return;
     }
@@ -172,7 +177,7 @@ export function UserForm({
           name: data.name,
           email: data.email,
           password: data.password ?? "",
-          roleId: isSystemScoped ? data.roleId : undefined,
+          roleId: isSystemScoped ? (data.roleId || selectedRoleId) : undefined,
           officeId: null,
           status: "ACTIVE",
         };
@@ -184,7 +189,12 @@ export function UserForm({
           return;
         }
 
-        toast.success("Administrator account created.");
+        const isTourism = selectedRole?.slug === "tourism-content-manager";
+        toast.success(
+          isTourism
+            ? "Tourism Content Manager account provisioned successfully."
+            : "Administrator account created."
+        );
         router.push("/admin/users");
         router.refresh();
       } else {
@@ -390,17 +400,35 @@ export function UserForm({
             {/* Role & Office Assignment Section */}
             {isSystemScoped ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                {/* System Role Display */}
+                {/* System Role Selector / Display */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    System Role
+                  <label htmlFor="accountRoleId" className="block text-xs font-medium text-slate-700 mb-1">
+                    System Role {mode === "create" && <span className="text-rose-500">*</span>}
                   </label>
-                  <div className="px-3.5 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium">
-                    Super Admin (System Authority)
-                  </div>
-                  <input type="hidden" {...register("roleId")} />
+                  {mode === "create" && roles.length > 1 ? (
+                    <select
+                      id="accountRoleId"
+                      {...register("roleId", {
+                        onChange: (e) => setSelectedRoleId(e.target.value),
+                      })}
+                      className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-burgundy-600/20 focus:border-burgundy-600 transition-colors bg-white font-medium"
+                    >
+                      {roles.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name} {r.slug === "super-admin" ? "(System Authority)" : "(Municipal Tourism)"}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="px-3.5 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium">
+                      {selectedRole?.name || (initialData?.roleId ? "Assigned Municipal Role" : "Super Admin (System Authority)")}
+                      <input type="hidden" {...register("roleId")} />
+                    </div>
+                  )}
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Full system authority across all 18 canonical municipal departments and modules.
+                    {selectedRole?.slug === "tourism-content-manager"
+                      ? "Dedicated editorial, publishing, and media custody for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products. Restricted strictly to the Tourism CMS module."
+                      : "Full system authority across all 18 canonical municipal departments and modules."}
                   </p>
                 </div>
 
@@ -410,14 +438,22 @@ export function UserForm({
                     Municipal Scope & Operational Custody
                   </label>
                   <div className="px-3.5 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium flex items-center justify-between">
-                    <span>Municipal-wide (System Scope)</span>
+                    <span>
+                      {selectedRole?.slug === "tourism-content-manager"
+                        ? "Municipal Tourism Scope"
+                        : "Municipal-wide (System Scope)"}
+                    </span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-                      Tourism Custody
+                      {selectedRole?.slug === "tourism-content-manager"
+                        ? "Tourism Only"
+                        : "All Modules"}
                     </span>
                   </div>
                   <input type="hidden" {...register("officeId")} value="" />
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Operationally maintained by the Municipal Tourism and Investments Promotions Office.
+                    {selectedRole?.slug === "tourism-content-manager"
+                      ? "Municipal-wide tourism domain. No departmental office assignment is required or permitted."
+                      : "System-wide administrative custody across all municipal departments and modules."}
                   </p>
                 </div>
               </div>

@@ -137,19 +137,27 @@ export function getAuthoritySummary(user: {
   permissions: string[];
 }) {
   const level = getAuthorityLevel(user);
+  const isTourismOnly =
+    !user.isSystemScope &&
+    !user.officeId &&
+    user.permissions.includes("tourism.view");
 
   let levelLabel = "Municipal Staff User";
   if (level === "SUPER_ADMIN") {
     levelLabel = "System Administrator";
   } else if (level === "OFFICE_ADMIN") {
     levelLabel = "Office Administrator";
+  } else if (isTourismOnly) {
+    levelLabel = "Tourism Content Manager";
   }
 
   const scopeLabel = user.isSystemScope
     ? "System-Wide (All Municipal Offices)"
-    : user.office
-      ? `${user.office.name}${user.office.shortName ? ` (${user.office.shortName})` : ""}`
-      : "Assigned Office Scope";
+    : isTourismOnly
+      ? "Municipal Tourism Scope"
+      : user.office
+        ? `${user.office.name}${user.office.shortName ? ` (${user.office.shortName})` : ""}`
+        : "Assigned Office Scope";
 
   return {
     level,

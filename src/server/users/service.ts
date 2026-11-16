@@ -12,11 +12,9 @@ import type {
   UpdateUserInput,
 } from "@/lib/validation/users";
 
-export const CANONICAL_ROLE_SLUGS = [
-  "super-admin",
-  "office-admin",
-  "staff",
-] as const;
+import { CANONICAL_PRODUCTION_ROLES, TOURISM_ROLE_SLUG } from "@/server/roles/service";
+
+export const CANONICAL_ROLE_SLUGS = CANONICAL_PRODUCTION_ROLES;
 
 export const RETIRED_ROLE_SLUGS = [
   "site-admin",
@@ -307,37 +305,50 @@ export async function createUser(
     throw new UserError("Access restricted: Only system administrators may provision user accounts.", 403);
   }
 
-  // Reject forged office assignments
-  if (input.officeId !== undefined && input.officeId !== null) {
-    if (typeof input.officeId === "string" && input.officeId.trim() !== "") {
-      throw new UserError("Super Admin accounts must not be assigned to a municipal office.", 400);
-    }
-  }
-
-  // Resolve canonical Super Admin role
+  // Resolve canonical Super Admin role as baseline default
   const superAdminRole = await prisma.role.findFirst({
     where: {
       slug: "super-admin",
       isSystemScope: true,
       tier: RoleTier.SYSTEM_ADMIN,
     },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, isSystemScope: true },
   });
 
   if (!superAdminRole) {
     throw new UserError("System configuration error: Canonical Super Admin role not found.", 500);
   }
 
-  // If roleId was supplied in the contract, validate that it strictly matches canonical Super Admin
+  let targetRoleId = superAdminRole.id;
+  let targetRoleSlug = "super-admin";
+  let targetRoleIsSystemScope = true;
+
+  // If roleId was supplied in the contract, validate against permitted roles (super-admin or tourism-content-manager)
   if (input.roleId && input.roleId !== superAdminRole.id) {
     const requestedRole = await prisma.role.findUnique({
       where: { id: input.roleId },
-      select: { slug: true },
+      select: { id: true, slug: true, isSystemScope: true },
     });
-    if (requestedRole && (RETIRED_ROLE_SLUGS as readonly string[]).includes(requestedRole.slug)) {
+    if (!requestedRole) {
+      throw new UserError("The selected role does not exist.", 400);
+    }
+    if ((RETIRED_ROLE_SLUGS as readonly string[]).includes(requestedRole.slug)) {
       throw new UserError("The selected role is retired and cannot be assigned to user accounts.", 400);
     }
-    throw new UserError("Only Super Admin accounts may be created under the approved municipal operating model.", 400);
+    if (requestedRole.slug !== "super-admin" && requestedRole.slug !== TOURISM_ROLE_SLUG) {
+      throw new UserError("Only Super Admin and Tourism Content Manager accounts may be created under the approved municipal operating model.", 400);
+    }
+    targetRoleId = requestedRole.id;
+    targetRoleSlug = requestedRole.slug;
+    targetRoleIsSystemScope = requestedRole.isSystemScope;
+  }
+
+  // Reject forged office assignments
+  if (input.officeId !== undefined && input.officeId !== null) {
+    if (typeof input.officeId === "string" && input.officeId.trim() !== "") {
+      const label = targetRoleSlug === "super-admin" ? "Super Admin" : "Tourism Content Manager";
+      throw new UserError(`${label} accounts must not be assigned to a municipal office.`, 400);
+    }
   }
 
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -362,7 +373,7 @@ export async function createUser(
       email: normalizedEmail,
       passwordHash,
       officeId: null,
-      roleId: superAdminRole.id,
+      roleId: targetRoleId,
       status: targetStatus,
     },
     select: {
@@ -384,8 +395,8 @@ export async function createUser(
     details: {
       targetUserId: newUser.id,
       targetEmail: newUser.email,
-      targetRoleSlug: "super-admin",
-      isSystemScope: true,
+      targetRoleSlug,
+      isSystemScope: targetRoleIsSystemScope,
     },
     ipAddress: clientMeta?.ipAddress,
     userAgent: clientMeta?.userAgent,
@@ -473,6 +484,7 @@ export async function updateUser(
   let roleChanged = false;
   let officeChanged = false;
   let nextRoleIsSystemScope = target.role.isSystemScope;
+  let targetRole: { id: string; isSystemScope: boolean; tier: RoleTier; slug: string } | null = null;
 
   if (caller.isSystemScope) {
     // Role change validation
@@ -481,7 +493,7 @@ export async function updateUser(
         throw new UserError("Super Admin role and scope are immutable under the approved municipal operating model.", 400);
       }
 
-      const targetRole = await prisma.role.findUnique({
+      targetRole = await prisma.role.findUnique({
         where: { id: input.roleId },
         select: { id: true, isSystemScope: true, tier: true, slug: true },
       });
@@ -513,6 +525,9 @@ export async function updateUser(
       if (target.role.slug === "super-admin" && input.officeId !== null) {
         throw new UserError("Super Admin role and scope are immutable under the approved municipal operating model.", 400);
       }
+      if (target.role.slug === TOURISM_ROLE_SLUG && input.officeId !== null) {
+        throw new UserError("Tourism Content Manager accounts must not be assigned to a municipal office.", 400);
+      }
       if (input.officeId !== null) {
         const office = await prisma.office.findUnique({
           where: { id: input.officeId },
@@ -532,8 +547,9 @@ export async function updateUser(
     }
 
     // Role-aware validation:
-    // System-scoped users (Super Admin) must remain system-wide with officeId = null
-    if (nextRoleIsSystemScope) {
+    // System-scoped users (Super Admin) and Tourism Content Managers must remain municipal-wide with officeId = null
+    const isTargetTourism = targetRole ? targetRole.slug === TOURISM_ROLE_SLUG : target.role.slug === TOURISM_ROLE_SLUG;
+    if (nextRoleIsSystemScope || isTargetTourism) {
       nextOfficeId = null;
     } else {
       // Office-scoped roles MUST have an assigned active municipal office
@@ -954,20 +970,22 @@ export async function deleteUser(
   }
 
   // Protected Authored Content Check (Phase 19.4 Authoritative Policy)
-  const [newsCount, docCount, serviceCount, jobCount] = await Promise.all([
+  const [newsCount, docCount, serviceCount, jobCount, tourismCount] = await Promise.all([
     prisma.newsArticle.count({ where: { createdById: target.id } }),
     prisma.document.count({ where: { createdById: target.id } }),
     prisma.servicePage.count({ where: { createdById: target.id } }),
     prisma.jobOpportunity.count({ where: { createdById: target.id } }),
+    prisma.tourismEntry.count({ where: { createdById: target.id } }),
   ]);
 
-  const totalAuthored = newsCount + docCount + serviceCount + jobCount;
+  const totalAuthored = newsCount + docCount + serviceCount + jobCount + tourismCount;
   if (totalAuthored > 0) {
     const parts: string[] = [];
     if (newsCount > 0) parts.push(`${newsCount} news article(s)`);
     if (docCount > 0) parts.push(`${docCount} document(s)`);
     if (serviceCount > 0) parts.push(`${serviceCount} service page(s)`);
     if (jobCount > 0) parts.push(`${jobCount} job vacancy announcement(s)`);
+    if (tourismCount > 0) parts.push(`${tourismCount} tourism entry/entries`);
     throw new UserError(
       `Cannot permanently delete user account: this user is the author of record for protected municipal content (${parts.join(", ")}). To remove their administrative access while preserving municipal history, deactivate or suspend the account instead.`,
       400

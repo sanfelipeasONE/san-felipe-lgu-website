@@ -68,10 +68,16 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
   }, [catalog]);
 
   const isSystemAdminRole = role.isSystemScope && role.tier === "SYSTEM_ADMIN";
+  const isTourismRole = role.slug === "tourism-content-manager";
 
   const togglePermission = (code: string) => {
     if (isSystemAdminRole && CRITICAL_SYSTEM_PERMISSIONS.has(code)) {
       // Cannot uncheck critical permissions on the system admin role
+      return;
+    }
+
+    if (isTourismRole && !code.startsWith("tourism.")) {
+      // Cannot assign non-tourism permissions to the Tourism Content Manager role
       return;
     }
 
@@ -87,6 +93,14 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
   };
 
   const handleSelectAllModule = (moduleItems: PermissionCatalogItem[]) => {
+    if (
+      isTourismRole &&
+      (moduleItems[0]?.module !== "tourism" ||
+        !moduleItems.some((m) => m.code.startsWith("tourism.")))
+    ) {
+      return;
+    }
+
     setSelectedCodes((prev) => {
       const next = new Set(prev);
       const allSelected = moduleItems.every((item) => next.has(item.code));
@@ -98,7 +112,9 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
         }
       } else {
         for (const item of moduleItems) {
-          next.add(item.code);
+          if (!isTourismRole || item.code.startsWith("tourism.")) {
+            next.add(item.code);
+          }
         }
       }
       return next;
@@ -176,6 +192,18 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
             <p className="font-semibold text-sm">Protected System Administrator Role</p>
             <p>
               Critical administrative permissions (<strong>users.*</strong>, <strong>settings.manage</strong>) are locked and cannot be stripped to prevent governance lockout.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isTourismRole && (
+        <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 flex items-start gap-3">
+          <Lock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <p className="font-semibold text-sm">Dedicated Tourism Manager Role</p>
+            <p>
+              This role is strictly restricted to municipal tourism permissions (<code>tourism.*</code>). Non-tourism permissions are locked and cannot be assigned to this role in order to enforce municipal departmental separation.
             </p>
           </div>
         </div>
@@ -274,25 +302,34 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
           <div className="p-6 space-y-6">
             {Array.from(modules.entries()).map(([moduleName, items]) => {
               const allChecked = items.every((i) => selectedCodes.has(i.code));
+              const isNonTourismModuleLocked = isTourismRole && moduleName !== "tourism";
               return (
                 <div key={moduleName} className="border border-slate-200 rounded-lg overflow-hidden">
                   <div className="bg-slate-50/80 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
                     <span className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
                       Module: {moduleName}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectAllModule(items)}
-                      className="text-[11px] font-medium text-burgundy-700 hover:text-burgundy-900 cursor-pointer"
-                    >
-                      {allChecked ? "Deselect All" : "Select All"}
-                    </button>
+                    {!isNonTourismModuleLocked ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSelectAllModule(items)}
+                        className="text-[11px] font-medium text-burgundy-700 hover:text-burgundy-900 cursor-pointer"
+                      >
+                        {allChecked ? "Deselect All" : "Select All"}
+                      </button>
+                    ) : (
+                      <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                        <Lock className="h-3 w-3" /> Locked
+                      </span>
+                    )}
                   </div>
 
                   <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {items.map((perm) => {
                       const isChecked = selectedCodes.has(perm.code);
-                      const isLocked = isSystemAdminRole && CRITICAL_SYSTEM_PERMISSIONS.has(perm.code);
+                      const isLocked =
+                        (isSystemAdminRole && CRITICAL_SYSTEM_PERMISSIONS.has(perm.code)) ||
+                        (isTourismRole && !perm.code.startsWith("tourism."));
 
                       return (
                         <label
@@ -301,14 +338,14 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
                             isChecked
                               ? "bg-slate-50/50 border-slate-300"
                               : "border-transparent hover:bg-slate-50"
-                          } ${isLocked ? "cursor-not-allowed opacity-80" : ""}`}
+                          } ${isLocked ? "cursor-not-allowed opacity-60" : ""}`}
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
                             disabled={isLocked}
                             onChange={() => togglePermission(perm.code)}
-                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-burgundy-700 focus:ring-burgundy-600"
+                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-burgundy-700 focus:ring-burgundy-600 disabled:opacity-50"
                           />
                           <div className="text-xs">
                             <div className="font-medium text-slate-800 flex items-center gap-1.5">
@@ -317,7 +354,13 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
                                 {perm.code}
                               </code>
                               {isLocked && (
-                                <span title="Locked by system security rule">
+                                <span
+                                  title={
+                                    isTourismRole
+                                      ? "Restricted: Non-tourism permissions cannot be assigned to Tourism Content Manager"
+                                      : "Locked by system security rule"
+                                  }
+                                >
                                   <Lock className="h-2.5 w-2.5 text-slate-400" />
                                 </span>
                               )}
