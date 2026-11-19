@@ -2,7 +2,7 @@ import * as React from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";
-import { hasPermission } from "@/lib/authz/scope";
+import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { getCanonicalSangguniangBayanOffice } from "@/server/resolutions/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -23,7 +23,7 @@ export default async function NewSbResolutionPage() {
     redirect("/staff/login");
   }
 
-  if (!hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_CREATE)) {
+  if (!isSystemScoped(user) && !hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_CREATE)) {
     redirect("/admin/transparency/sangguniang-bayan-resolutions");
   }
 
@@ -51,10 +51,18 @@ export default async function NewSbResolutionPage() {
         <SbResolutionForm
           mode="create"
           permissions={{
-            canUpdate: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_UPDATE),
-            canPublish: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_PUBLISH),
-            canArchive: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_ARCHIVE),
-            canDelete: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_DELETE),
+            canUpdate:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_UPDATE),
+            canPublish:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_PUBLISH),
+            canArchive:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_ARCHIVE),
+            canDelete:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_DELETE),
           }}
         />
       </AdminContent>

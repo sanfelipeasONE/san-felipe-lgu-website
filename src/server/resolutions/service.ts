@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/server/db/client";
 import type { SessionUser } from "@/server/auth/session";
-import { hasPermission } from "@/lib/authz/scope";
+import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { SB_OFFICE_SLUG } from "@/server/roles/service";
 import { recordAuditEvent } from "@/server/audit/service";
@@ -53,6 +53,15 @@ export async function getCanonicalSangguniangBayanOffice() {
 }
 
 /**
+ * Authorizes Sangguniang Bayan Resolutions operations:
+ * - SYSTEM-scoped Super Admins have unrestricted system-wide access.
+ * - Other roles must explicitly hold the granular sb_resolutions.* permission.
+ */
+function hasResolutionPermission(caller: SessionUser, permissionCode: string): boolean {
+  return isSystemScoped(caller) || hasPermission(caller, permissionCode);
+}
+
+/**
  * Enforces office boundary for Sangguniang Bayan Resolutions:
  * - SYSTEM-scoped users with sb_resolutions.* permissions are permitted.
  * - Non-system users MUST be assigned to the canonical Office of the Sangguniang Bayan.
@@ -82,7 +91,7 @@ export async function getAdminResolutionsList(
     year?: number;
   } = {}
 ) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
     throw new ResolutionError(
       "You do not have permission to view Sangguniang Bayan Resolutions.",
       403
@@ -155,7 +164,7 @@ export async function getAdminResolutionsList(
  * Retrieves a single Sangguniang Bayan Resolution for CMS editing.
  */
 export async function getAdminResolutionById(caller: SessionUser, id: string) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
     throw new ResolutionError(
       "You do not have permission to view Sangguniang Bayan Resolutions.",
       403
@@ -200,7 +209,7 @@ export async function createResolution(
   },
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
 ) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_CREATE)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_CREATE)) {
     throw new ResolutionError(
       "You do not have permission to create Sangguniang Bayan Resolutions.",
       403
@@ -331,7 +340,7 @@ export async function updateResolution(
   },
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
 ) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_UPDATE)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_UPDATE)) {
     throw new ResolutionError(
       "You do not have permission to update Sangguniang Bayan Resolutions.",
       403
@@ -475,7 +484,7 @@ export async function publishResolution(
   id: string,
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
 ) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_PUBLISH)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_PUBLISH)) {
     throw new ResolutionError(
       "You do not have permission to publish Sangguniang Bayan Resolutions.",
       403
@@ -554,7 +563,7 @@ export async function unpublishResolution(
   id: string,
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
 ) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_PUBLISH)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_PUBLISH)) {
     throw new ResolutionError(
       "You do not have permission to unpublish Sangguniang Bayan Resolutions.",
       403
@@ -608,7 +617,7 @@ export async function archiveResolution(
   id: string,
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
 ) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_ARCHIVE)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_ARCHIVE)) {
     throw new ResolutionError(
       "You do not have permission to archive Sangguniang Bayan Resolutions.",
       403
@@ -662,7 +671,7 @@ export async function deleteResolution(
   id: string,
   clientMeta?: { ipAddress?: string | null; userAgent?: string | null }
 ) {
-  if (!hasPermission(caller, PERMISSIONS.SB_RESOLUTIONS_DELETE)) {
+  if (!hasResolutionPermission(caller, PERMISSIONS.SB_RESOLUTIONS_DELETE)) {
     throw new ResolutionError(
       "Missing required permission: sb_resolutions.delete",
       403

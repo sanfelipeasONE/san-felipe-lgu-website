@@ -473,6 +473,123 @@ async function runTests() {
       where: { slug: { not: "icto" } },
     });
     assert(canonicalOfficesCount === 18, `18 canonical offices remain intact (got ${canonicalOfficesCount})`);
+
+    // 8. Super Admin (SYSTEM scope, officeId = null) WITHOUT explicit sb_resolutions.* permissions
+    console.log("\n[7] Testing Super Admin Full Access Without Explicit sb_resolutions.* Permissions...");
+    const superAdminWithoutSbPerms: SessionUser = {
+      ...superAdminCaller,
+      officeId: null,
+      permissions: Object.values(PERMISSIONS).filter(
+        (code) => !code.startsWith("sb_resolutions.")
+      ),
+    };
+
+    const superNav = getVisibleNavSections({
+      permissions: superAdminWithoutSbPerms.permissions,
+      isSystemScope: true,
+    });
+    const superNavIds = superNav.flatMap((s) => s.items.map((i) => i.id));
+    assert(
+      superNavIds.includes("transparency-sb-resolutions"),
+      "Super Admin sees Sangguniang Bayan Resolutions in sidebar without explicit sb_resolutions.view"
+    );
+
+    const superList = await getAdminResolutionsList(superAdminWithoutSbPerms, {});
+    assert(Array.isArray(superList.resolutions), "Super Admin can list SB resolutions without sb_resolutions.view");
+
+    const superResNum = `SB-SUPER-${Date.now()}`;
+    const superCreated = await createResolution(superAdminWithoutSbPerms, {
+      input: {
+        resolutionNumber: superResNum,
+        title: "Super Admin Created Resolution",
+        year: 2025,
+        adoptedAt: "2025-03-01",
+        summary: "Created by Super Admin without explicit sb_resolutions.* permissions",
+      },
+      file: {
+        buffer: validPdfBytes,
+        filename: "super-admin-res.pdf",
+        mimeType: "application/pdf",
+        size: validPdfBytes.length,
+      },
+    });
+    createdResolutionIds.push(superCreated.id);
+    assert(Boolean(superCreated.id), "Super Admin can create SB resolution without sb_resolutions.create");
+
+    const superFetched = await getAdminResolutionById(superAdminWithoutSbPerms, superCreated.id);
+    assert(superFetched.id === superCreated.id, "Super Admin can view individual SB resolution without sb_resolutions.view");
+
+    const superUpdated = await updateResolution(superAdminWithoutSbPerms, superCreated.id, {
+      input: {
+        resolutionNumber: superResNum,
+        title: "Super Admin Updated Resolution",
+        year: 2025,
+        adoptedAt: "2025-03-01",
+        summary: "Updated by Super Admin",
+      },
+      file: {
+        buffer: validPdfBytes,
+        filename: "super-admin-res-v2.pdf",
+        mimeType: "application/pdf",
+        size: validPdfBytes.length,
+      },
+    });
+    assert(superUpdated.title === "Super Admin Updated Resolution", "Super Admin can update SB resolution and replace PDF without sb_resolutions.update");
+
+    const superPublished = await publishResolution(superAdminWithoutSbPerms, superCreated.id);
+    assert(superPublished.status === "PUBLISHED", "Super Admin can publish SB resolution without sb_resolutions.publish");
+
+    const superUnpublished = await unpublishResolution(superAdminWithoutSbPerms, superCreated.id);
+    assert(superUnpublished.status === "DRAFT", "Super Admin can unpublish SB resolution without sb_resolutions.publish");
+
+    const superArchived = await archiveResolution(superAdminWithoutSbPerms, superCreated.id);
+    assert(superArchived.status === "ARCHIVED", "Super Admin can archive SB resolution without sb_resolutions.archive");
+
+    await deleteResolution(superAdminWithoutSbPerms, superCreated.id);
+    const superDeleted = await prisma.sangguniangBayanResolution.findUnique({ where: { id: superCreated.id } });
+    assert(superDeleted === null, "Super Admin can delete SB resolution without sb_resolutions.delete");
+
+    // 9. Partial-permission SB Admin & Ordinary Role denials
+    console.log("\n[8] Testing Partial-Permission SB Admin & Ordinary Role Denials...");
+    const partialSbCaller: SessionUser = {
+      ...sbAdminCaller,
+      permissions: [PERMISSIONS.SB_RESOLUTIONS_VIEW, PERMISSIONS.SB_RESOLUTIONS_CREATE],
+    };
+    let partialPublishDenied = false;
+    try {
+      await publishResolution(partialSbCaller, draftNoPdf.id);
+    } catch (err) {
+      partialPublishDenied = err instanceof ResolutionError && err.statusCode === 403;
+    }
+    assert(partialPublishDenied, "SB Admin without sb_resolutions.publish is denied publishResolution (403)");
+
+    let partialDeleteDenied = false;
+    try {
+      await deleteResolution(partialSbCaller, draftNoPdf.id);
+    } catch (err) {
+      partialDeleteDenied = err instanceof ResolutionError && err.statusCode === 403;
+    }
+    assert(partialDeleteDenied, "SB Admin without sb_resolutions.delete is denied deleteResolution (403)");
+
+    const ordinaryStaffCaller: SessionUser = {
+      ...officeAdminCaller,
+      permissions: [PERMISSIONS.POSTS_VIEW, PERMISSIONS.DOCUMENTS_VIEW],
+    };
+    const staffNav = getVisibleNavSections({
+      permissions: ordinaryStaffCaller.permissions,
+      isSystemScope: false,
+    });
+    assert(
+      !staffNav.flatMap((s) => s.items.map((i) => i.id)).includes("transparency-sb-resolutions"),
+      "Ordinary role does NOT see Sangguniang Bayan Resolutions in sidebar"
+    );
+    let staffDenied = false;
+    try {
+      await getAdminResolutionsList(ordinaryStaffCaller, {});
+    } catch (err) {
+      staffDenied = err instanceof ResolutionError && err.statusCode === 403;
+    }
+    assert(staffDenied, "Ordinary role is denied access to SB Resolutions service (403)");
   } finally {
     // Restore mocked cloudinary functions
     (cloudinaryMod.v2.uploader as unknown as Record<string, unknown>).upload_stream = originalUploadStream;

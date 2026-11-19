@@ -2,7 +2,7 @@ import * as React from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/session";
-import { hasPermission } from "@/lib/authz/scope";
+import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import {
   getAdminResolutionById,
@@ -32,7 +32,7 @@ export default async function EditSbResolutionPage({
     redirect("/staff/login");
   }
 
-  if (!hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
+  if (!isSystemScoped(user) && !hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
     redirect("/admin");
   }
 
@@ -79,10 +79,18 @@ export default async function EditSbResolutionPage({
             updatedAt: resolution.updatedAt.toISOString(),
           }}
           permissions={{
-            canUpdate: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_UPDATE),
-            canPublish: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_PUBLISH),
-            canArchive: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_ARCHIVE),
-            canDelete: hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_DELETE),
+            canUpdate:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_UPDATE),
+            canPublish:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_PUBLISH),
+            canArchive:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_ARCHIVE),
+            canDelete:
+              isSystemScoped(user) ||
+              hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_DELETE),
           }}
         />
       </AdminContent>

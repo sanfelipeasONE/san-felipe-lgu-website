@@ -37,6 +37,7 @@ export interface AdminNavItem {
   requiredPermission?: string;
   requiredAnyPermission?: string[];
   requiredScope?: "system" | "office";
+  allowSystemScope?: boolean;
   isImplemented: boolean;
   phaseLabel?: string;
   children?: AdminNavChildItem[];
@@ -176,6 +177,7 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "transparency",
         description: "Official Sangguniang Bayan resolutions, adoption metadata, and public PDF issuances",
         requiredPermission: "sb_resolutions.view",
+        allowSystemScope: true,
         isImplemented: true,
       },
     ],
@@ -244,6 +246,11 @@ export function getVisibleNavSections(user: {
   return ADMIN_NAV_CONFIG.map((section) => {
     const visibleItems = section.items
       .filter((item) => {
+        // 0. System-scoped Super Admin bypass for explicitly opted-in modules
+        if (item.allowSystemScope && isSystemScoped(user)) {
+          return true;
+        }
+
         // 1. Check required permission
         if (item.requiredPermission && !hasPermission(user, item.requiredPermission)) {
           return false;

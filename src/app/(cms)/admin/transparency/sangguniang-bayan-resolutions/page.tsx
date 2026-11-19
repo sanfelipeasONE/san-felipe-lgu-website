@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus } from "lucide-react";
 import { getCurrentUser } from "@/server/auth/session";
-import { hasPermission } from "@/lib/authz/scope";
+import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import {
   getAdminResolutionsList,
@@ -41,7 +41,7 @@ export default async function AdminSbResolutionsListPage({
     redirect("/staff/login");
   }
 
-  if (!hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
+  if (!isSystemScoped(user) && !hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_VIEW)) {
     redirect("/admin");
   }
 
@@ -67,8 +67,10 @@ export default async function AdminSbResolutionsListPage({
     throw err;
   }
 
-  const canCreate = hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_CREATE);
-  const canUpdate = hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_UPDATE);
+  const canCreate =
+    isSystemScoped(user) || hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_CREATE);
+  const canUpdate =
+    isSystemScoped(user) || hasPermission(user, PERMISSIONS.SB_RESOLUTIONS_UPDATE);
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
