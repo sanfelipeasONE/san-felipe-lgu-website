@@ -65,6 +65,14 @@ export const PERMISSIONS = {
   TOURISM_PUBLISH: "tourism.publish",
   TOURISM_ARCHIVE: "tourism.archive",
   TOURISM_DELETE: "tourism.delete",
+
+  // Sangguniang Bayan Resolutions (Transparency)
+  SB_RESOLUTIONS_VIEW: "sb_resolutions.view",
+  SB_RESOLUTIONS_CREATE: "sb_resolutions.create",
+  SB_RESOLUTIONS_UPDATE: "sb_resolutions.update",
+  SB_RESOLUTIONS_PUBLISH: "sb_resolutions.publish",
+  SB_RESOLUTIONS_ARCHIVE: "sb_resolutions.archive",
+  SB_RESOLUTIONS_DELETE: "sb_resolutions.delete",
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

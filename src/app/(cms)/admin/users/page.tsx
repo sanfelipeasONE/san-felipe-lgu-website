@@ -8,7 +8,7 @@ import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { listUsers } from "@/server/users/service";
 import { prisma } from "@/server/db/client";
-import { ensureTourismRole } from "@/server/roles/service";
+import { ensureTourismRole, ensureSangguniangBayanRole } from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -70,6 +70,7 @@ export default async function AdminUsersListPage({ searchParams }: UsersPageProp
 
   if (isSystemScoped(user)) {
     await ensureTourismRole();
+    await ensureSangguniangBayanRole();
 
     officesList = await prisma.office.findMany({
       where: { status: "ACTIVE" },

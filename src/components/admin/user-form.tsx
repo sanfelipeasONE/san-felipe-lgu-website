@@ -55,6 +55,7 @@ interface UserFormProps {
   userOfficeName?: string;
   roles?: RoleOption[];
   offices?: OfficeOption[];
+  sangguniangBayanOffice?: OfficeOption;
   initialData?: {
     id: string;
     name: string;
@@ -83,6 +84,7 @@ export function UserForm({
   userOfficeName,
   roles = [],
   offices = [],
+  sangguniangBayanOffice,
   initialData,
   canDelete = false,
 }: UserFormProps) {
@@ -154,6 +156,7 @@ export function UserForm({
   const selectedRole = roles.find((r) => r.id === selectedRoleId);
   const isSelectedRoleSystem = selectedRole?.isSystemScope;
   const isSelectedRoleTourism = selectedRole?.slug === "tourism-content-manager";
+  const isSelectedRoleSbAdmin = selectedRole?.slug === "sangguniang-bayan-admin";
 
   const onSubmit = async (data: UserFormData) => {
     setServerError(null);
@@ -163,6 +166,7 @@ export function UserForm({
       isSystemScoped &&
       !isSelectedRoleSystem &&
       !isSelectedRoleTourism &&
+      !isSelectedRoleSbAdmin &&
       (!data.officeId || (typeof data.officeId === "string" && data.officeId.trim() === ""))
     ) {
       setServerError("An assigned municipal office is required for office-scoped roles.");
@@ -178,7 +182,7 @@ export function UserForm({
           email: data.email,
           password: data.password ?? "",
           roleId: isSystemScoped ? (data.roleId || selectedRoleId) : undefined,
-          officeId: null,
+          officeId: isSelectedRoleSbAdmin ? (sangguniangBayanOffice?.id ?? null) : null,
           status: "ACTIVE",
         };
 
@@ -191,9 +195,11 @@ export function UserForm({
 
         const isTourism = selectedRole?.slug === "tourism-content-manager";
         toast.success(
-          isTourism
-            ? "Tourism Content Manager account provisioned successfully."
-            : "Administrator account created."
+          isSelectedRoleSbAdmin
+            ? "Sangguniang Bayan Admin account provisioned successfully."
+            : isTourism
+              ? "Tourism Content Manager account provisioned successfully."
+              : "Administrator account created."
         );
         router.push("/admin/users");
         router.refresh();
@@ -204,7 +210,9 @@ export function UserForm({
           name: data.name,
           email: data.email,
           roleId: isSystemScoped ? data.roleId : undefined,
-          officeId: null,
+          officeId: isSelectedRoleSbAdmin
+            ? (sangguniangBayanOffice?.id ?? initialData.officeId ?? null)
+            : null,
           status: data.status,
           expectedUpdatedAt: initialData.updatedAt,
         };
@@ -415,7 +423,12 @@ export function UserForm({
                     >
                       {roles.map((r) => (
                         <option key={r.id} value={r.id}>
-                          {r.name} {r.slug === "super-admin" ? "(System Authority)" : "(Municipal Tourism)"}
+                          {r.name}{" "}
+                          {r.slug === "super-admin"
+                            ? "(System Authority)"
+                            : r.slug === "sangguniang-bayan-admin"
+                              ? "(SB Resolutions Only)"
+                              : "(Municipal Tourism)"}
                         </option>
                       ))}
                     </select>
@@ -426,9 +439,11 @@ export function UserForm({
                     </div>
                   )}
                   <p className="text-[11px] text-slate-500 mt-1">
-                    {selectedRole?.slug === "tourism-content-manager"
-                      ? "Dedicated editorial, publishing, and media custody for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products. Restricted strictly to the Tourism CMS module."
-                      : "Full system authority across all 18 canonical municipal departments and modules."}
+                    {isSelectedRoleSbAdmin
+                      ? "Dedicated Sangguniang Bayan Resolutions management authority. Strictly restricted to the Sangguniang Bayan Resolutions CMS module."
+                      : isSelectedRoleTourism
+                        ? "Dedicated editorial, publishing, and media custody for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products. Restricted strictly to the Tourism CMS module."
+                        : "Full system authority across all 18 canonical municipal departments and modules."}
                   </p>
                 </div>
 
@@ -437,23 +452,33 @@ export function UserForm({
                   <label className="block text-xs font-medium text-slate-700 mb-1">
                     Municipal Scope & Operational Custody
                   </label>
-                  <div className="px-3.5 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium flex items-center justify-between">
-                    <span>
-                      {selectedRole?.slug === "tourism-content-manager"
-                        ? "Municipal Tourism Scope"
-                        : "Municipal-wide (System Scope)"}
+                  <div className="px-3.5 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium flex items-center justify-between gap-2">
+                    <span className="truncate">
+                      {isSelectedRoleSbAdmin
+                        ? sangguniangBayanOffice?.name || "Office of the Sangguniang Bayan"
+                        : isSelectedRoleTourism
+                          ? "Municipal Tourism Scope"
+                          : "Municipal-wide (System Scope)"}
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200">
-                      {selectedRole?.slug === "tourism-content-manager"
-                        ? "Tourism Only"
-                        : "All Modules"}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200 shrink-0">
+                      {isSelectedRoleSbAdmin
+                        ? "SB Resolutions Only"
+                        : isSelectedRoleTourism
+                          ? "Tourism Only"
+                          : "All Modules"}
                     </span>
                   </div>
-                  <input type="hidden" {...register("officeId")} value="" />
+                  <input
+                    type="hidden"
+                    {...register("officeId")}
+                    value={isSelectedRoleSbAdmin ? (sangguniangBayanOffice?.id ?? "") : ""}
+                  />
                   <p className="text-[11px] text-slate-500 mt-1">
-                    {selectedRole?.slug === "tourism-content-manager"
-                      ? "Municipal-wide tourism domain. No departmental office assignment is required or permitted."
-                      : "System-wide administrative custody across all municipal departments and modules."}
+                    {isSelectedRoleSbAdmin
+                      ? "Automatically locked to the Office of the Sangguniang Bayan. Cannot be reassigned to any other office or grant broad document permissions."
+                      : isSelectedRoleTourism
+                        ? "Municipal-wide tourism domain. No departmental office assignment is required or permitted."
+                        : "System-wide administrative custody across all municipal departments and modules."}
                   </p>
                 </div>
               </div>

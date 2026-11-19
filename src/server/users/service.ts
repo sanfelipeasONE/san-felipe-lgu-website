@@ -12,7 +12,12 @@ import type {
   UpdateUserInput,
 } from "@/lib/validation/users";
 
-import { CANONICAL_PRODUCTION_ROLES, TOURISM_ROLE_SLUG } from "@/server/roles/service";
+import {
+  CANONICAL_PRODUCTION_ROLES,
+  TOURISM_ROLE_SLUG,
+  SB_ADMIN_ROLE_SLUG,
+  SB_OFFICE_SLUG,
+} from "@/server/roles/service";
 
 export const CANONICAL_ROLE_SLUGS = CANONICAL_PRODUCTION_ROLES;
 
@@ -335,19 +340,54 @@ export async function createUser(
     if ((RETIRED_ROLE_SLUGS as readonly string[]).includes(requestedRole.slug)) {
       throw new UserError("The selected role is retired and cannot be assigned to user accounts.", 400);
     }
-    if (requestedRole.slug !== "super-admin" && requestedRole.slug !== TOURISM_ROLE_SLUG) {
-      throw new UserError("Only Super Admin and Tourism Content Manager accounts may be created under the approved municipal operating model.", 400);
+    if (
+      requestedRole.slug !== "super-admin" &&
+      requestedRole.slug !== TOURISM_ROLE_SLUG &&
+      requestedRole.slug !== SB_ADMIN_ROLE_SLUG
+    ) {
+      throw new UserError(
+        "Only Super Admin, Tourism Content Manager, and Sangguniang Bayan Admin accounts may be created under the approved municipal operating model.",
+        400
+      );
     }
     targetRoleId = requestedRole.id;
     targetRoleSlug = requestedRole.slug;
     targetRoleIsSystemScope = requestedRole.isSystemScope;
   }
 
-  // Reject forged office assignments
-  if (input.officeId !== undefined && input.officeId !== null) {
-    if (typeof input.officeId === "string" && input.officeId.trim() !== "") {
-      const label = targetRoleSlug === "super-admin" ? "Super Admin" : "Tourism Content Manager";
-      throw new UserError(`${label} accounts must not be assigned to a municipal office.`, 400);
+  // Office assignment validation & automatic canonical office binding
+  let assignedOfficeId: string | null = null;
+  if (targetRoleSlug === SB_ADMIN_ROLE_SLUG) {
+    const sbOffice = await prisma.office.findUnique({
+      where: { slug: SB_OFFICE_SLUG },
+      select: { id: true, status: true },
+    });
+    if (!sbOffice || sbOffice.status !== "ACTIVE") {
+      throw new UserError(
+        "System configuration error: Canonical Office of the Sangguniang Bayan is missing or inactive.",
+        500
+      );
+    }
+    if (
+      input.officeId !== undefined &&
+      input.officeId !== null &&
+      typeof input.officeId === "string" &&
+      input.officeId.trim() !== "" &&
+      input.officeId.trim() !== sbOffice.id
+    ) {
+      throw new UserError(
+        "Sangguniang Bayan Admin accounts can only be assigned to the Office of the Sangguniang Bayan.",
+        400
+      );
+    }
+    assignedOfficeId = sbOffice.id;
+  } else {
+    // Reject forged office assignments for Super Admin and Tourism Content Manager
+    if (input.officeId !== undefined && input.officeId !== null) {
+      if (typeof input.officeId === "string" && input.officeId.trim() !== "") {
+        const label = targetRoleSlug === "super-admin" ? "Super Admin" : "Tourism Content Manager";
+        throw new UserError(`${label} accounts must not be assigned to a municipal office.`, 400);
+      }
     }
   }
 
@@ -372,7 +412,7 @@ export async function createUser(
       name: input.name.trim(),
       email: normalizedEmail,
       passwordHash,
-      officeId: null,
+      officeId: assignedOfficeId,
       roleId: targetRoleId,
       status: targetStatus,
     },
@@ -391,12 +431,13 @@ export async function createUser(
   await recordAuditEvent({
     action: AUDIT_ACTIONS.USER_CREATED,
     userId: caller.id,
-    officeId: null,
+    officeId: assignedOfficeId,
     details: {
       targetUserId: newUser.id,
       targetEmail: newUser.email,
       targetRoleSlug,
       isSystemScope: targetRoleIsSystemScope,
+      officeId: assignedOfficeId,
     },
     ipAddress: clientMeta?.ipAddress,
     userAgent: clientMeta?.userAgent,
@@ -548,8 +589,33 @@ export async function updateUser(
 
     // Role-aware validation:
     // System-scoped users (Super Admin) and Tourism Content Managers must remain municipal-wide with officeId = null
-    const isTargetTourism = targetRole ? targetRole.slug === TOURISM_ROLE_SLUG : target.role.slug === TOURISM_ROLE_SLUG;
-    if (nextRoleIsSystemScope || isTargetTourism) {
+    // Sangguniang Bayan Admin must remain bound to the canonical Office of the Sangguniang Bayan
+    const effectiveRoleSlug = targetRole ? targetRole.slug : target.role.slug;
+    const isTargetTourism = effectiveRoleSlug === TOURISM_ROLE_SLUG;
+    const isTargetSbAdmin = effectiveRoleSlug === SB_ADMIN_ROLE_SLUG;
+
+    if (isTargetSbAdmin) {
+      const sbOffice = await prisma.office.findUnique({
+        where: { slug: SB_OFFICE_SLUG },
+        select: { id: true, status: true },
+      });
+      if (!sbOffice || sbOffice.status !== "ACTIVE") {
+        throw new UserError(
+          "System configuration error: Canonical Office of the Sangguniang Bayan is missing or inactive.",
+          500
+        );
+      }
+      if (input.officeId !== undefined && input.officeId !== sbOffice.id) {
+        throw new UserError(
+          "Sangguniang Bayan Admin accounts must remain assigned to the Office of the Sangguniang Bayan.",
+          400
+        );
+      }
+      if (target.officeId !== sbOffice.id) {
+        officeChanged = true;
+      }
+      nextOfficeId = sbOffice.id;
+    } else if (nextRoleIsSystemScope || isTargetTourism) {
       nextOfficeId = null;
     } else {
       // Office-scoped roles MUST have an assigned active municipal office

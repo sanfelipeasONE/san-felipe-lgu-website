@@ -41,9 +41,22 @@ export const TOURISM_PERMISSIONS = [
   PERMISSIONS.TOURISM_DELETE,
 ] as const;
 
+export const SB_ADMIN_ROLE_SLUG = "sangguniang-bayan-admin";
+export const SB_ADMIN_ROLE_NAME = "Sangguniang Bayan Admin";
+export const SB_OFFICE_SLUG = "office-of-the-sangguniang-bayan";
+export const SB_RESOLUTION_PERMISSIONS = [
+  PERMISSIONS.SB_RESOLUTIONS_VIEW,
+  PERMISSIONS.SB_RESOLUTIONS_CREATE,
+  PERMISSIONS.SB_RESOLUTIONS_UPDATE,
+  PERMISSIONS.SB_RESOLUTIONS_PUBLISH,
+  PERMISSIONS.SB_RESOLUTIONS_ARCHIVE,
+  PERMISSIONS.SB_RESOLUTIONS_DELETE,
+] as const;
+
 export const CANONICAL_PORTAL_ROLES = [
   ...CANONICAL_PRODUCTION_ROLES,
   TOURISM_ROLE_SLUG,
+  SB_ADMIN_ROLE_SLUG,
 ] as const;
 
 export const RETIRED_ROLE_SLUGS = [
@@ -287,6 +300,19 @@ export async function updateRolePermissions(
     }
   }
 
+  // Enforce Sangguniang Bayan Admin strict domain boundary: cannot receive non-SB-resolution permissions
+  if (role.slug === SB_ADMIN_ROLE_SLUG) {
+    const invalidCodes = permissionCodes.filter(
+      (code) => !(SB_RESOLUTION_PERMISSIONS as readonly string[]).includes(code)
+    );
+    if (invalidCodes.length > 0) {
+      throw new RoleError(
+        `The Sangguniang Bayan Admin role is strictly restricted to Sangguniang Bayan Resolutions permissions. The following permissions cannot be assigned: ${invalidCodes.join(", ")}`,
+        400
+      );
+    }
+  }
+
   // Validate that all supplied permission codes exist in the database
   const matchingPermissions = await prisma.permission.findMany({
     where: { code: { in: permissionCodes } },
@@ -418,6 +444,114 @@ export async function ensureTourismRole() {
       roleId: role.id,
       permission: {
         code: { notIn: [...TOURISM_PERMISSIONS] },
+      },
+    },
+  });
+
+  return role;
+}
+
+const SB_PERMISSION_CATALOG: Array<{ code: string; name: string; description: string }> = [
+  { code: PERMISSIONS.SB_RESOLUTIONS_VIEW, name: "View SB Resolutions", description: "View Sangguniang Bayan resolutions and drafts" },
+  { code: PERMISSIONS.SB_RESOLUTIONS_CREATE, name: "Create SB Resolutions", description: "Create Sangguniang Bayan resolution drafts and upload PDFs" },
+  { code: PERMISSIONS.SB_RESOLUTIONS_UPDATE, name: "Update SB Resolutions", description: "Edit Sangguniang Bayan resolution metadata and PDF attachments" },
+  { code: PERMISSIONS.SB_RESOLUTIONS_PUBLISH, name: "Publish SB Resolutions", description: "Publish or unpublish Sangguniang Bayan resolutions" },
+  { code: PERMISSIONS.SB_RESOLUTIONS_ARCHIVE, name: "Archive SB Resolutions", description: "Archive Sangguniang Bayan resolutions" },
+  { code: PERMISSIONS.SB_RESOLUTIONS_DELETE, name: "Delete SB Resolutions", description: "Permanently delete Sangguniang Bayan resolutions" },
+];
+
+/**
+ * Ensures the dedicated Sangguniang Bayan Admin role and its 6 sb_resolutions.*
+ * permissions exist in the database, with strict domain isolation.
+ */
+export async function ensureSangguniangBayanRole() {
+  const superAdminRole = await prisma.role.findUnique({
+    where: { slug: "super-admin" },
+    select: { id: true },
+  });
+
+  const permIds: string[] = [];
+  for (const item of SB_PERMISSION_CATALOG) {
+    const existing = await prisma.permission.findUnique({
+      where: { code: item.code },
+      select: { id: true },
+    });
+
+    const perm = existing
+      ? existing
+      : await prisma.permission.create({
+          data: {
+            code: item.code,
+            name: item.name,
+            module: "sb_resolutions",
+            description: item.description,
+          },
+          select: { id: true },
+        });
+
+    permIds.push(perm.id);
+
+    // Ensure Super Admin automatically receives newly created SB resolution permissions
+    if (!existing && superAdminRole) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: superAdminRole.id,
+            permissionId: perm.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: superAdminRole.id,
+          permissionId: perm.id,
+        },
+      });
+    }
+  }
+
+  const role = await prisma.role.upsert({
+    where: { slug: SB_ADMIN_ROLE_SLUG },
+    update: {
+      name: SB_ADMIN_ROLE_NAME,
+      isSystemScope: false,
+      tier: RoleTier.CUSTOM,
+      isBuiltIn: true,
+      description:
+        "Dedicated Sangguniang Bayan Resolutions management authority bound to the Office of the Sangguniang Bayan.",
+    },
+    create: {
+      name: SB_ADMIN_ROLE_NAME,
+      slug: SB_ADMIN_ROLE_SLUG,
+      isSystemScope: false,
+      tier: RoleTier.CUSTOM,
+      isBuiltIn: true,
+      description:
+        "Dedicated Sangguniang Bayan Resolutions management authority bound to the Office of the Sangguniang Bayan.",
+    },
+  });
+
+  for (const permissionId of permIds) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: role.id,
+          permissionId,
+        },
+      },
+      update: {},
+      create: {
+        roleId: role.id,
+        permissionId,
+      },
+    });
+  }
+
+  // Ensure runtime initialization cannot leave the role with unauthorized permissions
+  await prisma.rolePermission.deleteMany({
+    where: {
+      roleId: role.id,
+      permission: {
+        code: { notIn: [...SB_RESOLUTION_PERMISSIONS] },
       },
     },
   });

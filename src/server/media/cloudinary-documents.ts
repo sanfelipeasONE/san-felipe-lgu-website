@@ -29,10 +29,12 @@ export async function uploadDocumentFile(
     filename: string;
     format: AllowedDocumentExtension;
     year?: string | number;
+    folderPrefix?: string;
   }
 ): Promise<UploadedDocumentResult> {
   const year = options.year || new Date().getFullYear();
-  const folder = `san-felipe-lgu/documents/${year}`;
+  const basePrefix = options.folderPrefix || "san-felipe-lgu/documents";
+  const folder = `${basePrefix}/${year}`;
   const cleanBase = sanitizeFilename(options.filename).replace(/\.[^/.]+$/, "");
   // Include unique timestamp/random suffix and extension in public_id for raw assets
   const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;

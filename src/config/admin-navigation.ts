@@ -168,6 +168,16 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         requiredPermission: "documents.view",
         isImplemented: true,
       },
+      {
+        id: "transparency-sb-resolutions",
+        label: "Sangguniang Bayan Resolutions",
+        href: "/admin/transparency/sangguniang-bayan-resolutions",
+        icon: FileText,
+        section: "transparency",
+        description: "Official Sangguniang Bayan resolutions, adoption metadata, and public PDF issuances",
+        requiredPermission: "sb_resolutions.view",
+        isImplemented: true,
+      },
     ],
   },
   {

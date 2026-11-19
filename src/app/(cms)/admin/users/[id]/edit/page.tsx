@@ -6,7 +6,14 @@ import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { getUserById, UserError } from "@/server/users/service";
 import { prisma } from "@/server/db/client";
-import { CANONICAL_PRODUCTION_ROLES, ensureTourismRole, TOURISM_ROLE_SLUG } from "@/server/roles/service";
+import {
+  CANONICAL_PRODUCTION_ROLES,
+  ensureTourismRole,
+  ensureSangguniangBayanRole,
+  TOURISM_ROLE_SLUG,
+  SB_ADMIN_ROLE_SLUG,
+  SB_OFFICE_SLUG,
+} from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
 import { UserForm, type RoleOption, type OfficeOption } from "@/components/admin/user-form";
@@ -49,10 +56,12 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
 
   let offices: OfficeOption[] = [];
   let roles: RoleOption[] = [];
+  let sbOffice: OfficeOption | null = null;
   let userOfficeName: string | undefined;
 
   if (isSystem) {
     await ensureTourismRole();
+    await ensureSangguniangBayanRole();
 
     offices = await prisma.office.findMany({
       where: {
@@ -63,9 +72,20 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
       orderBy: { name: "asc" },
     });
 
+    sbOffice = await prisma.office.findUnique({
+      where: { slug: SB_OFFICE_SLUG },
+      select: { id: true, name: true, shortName: true },
+    });
+
     const dbRoles = await prisma.role.findMany({
       where: {
-        slug: { in: [...CANONICAL_PRODUCTION_ROLES, TOURISM_ROLE_SLUG] },
+        slug: {
+          in: [
+            ...CANONICAL_PRODUCTION_ROLES,
+            TOURISM_ROLE_SLUG,
+            SB_ADMIN_ROLE_SLUG,
+          ],
+        },
       },
       select: {
         id: true,
@@ -106,6 +126,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
           userOfficeName={userOfficeName}
           roles={roles}
           offices={offices}
+          sangguniangBayanOffice={sbOffice ?? undefined}
           initialData={{
             id: targetUser.id,
             name: targetUser.name,

@@ -69,6 +69,14 @@ const BASELINE_PERMISSIONS = [
   { code: "tourism.publish", name: "Publish Tourism Entries", module: "tourism", description: "Publish official tourism entries directly to the portal" },
   { code: "tourism.archive", name: "Archive Tourism Entries", module: "tourism", description: "Archive municipal tourism entries" },
   { code: "tourism.delete", name: "Delete Tourism Entries", module: "tourism", description: "Permanently delete municipal tourism entries" },
+
+  // Sangguniang Bayan Resolutions (Transparency)
+  { code: "sb_resolutions.view", name: "View SB Resolutions", module: "sb_resolutions", description: "View Sangguniang Bayan resolutions and drafts" },
+  { code: "sb_resolutions.create", name: "Create SB Resolutions", module: "sb_resolutions", description: "Create Sangguniang Bayan resolution drafts and upload PDFs" },
+  { code: "sb_resolutions.update", name: "Update SB Resolutions", module: "sb_resolutions", description: "Edit Sangguniang Bayan resolution metadata and PDF attachments" },
+  { code: "sb_resolutions.publish", name: "Publish SB Resolutions", module: "sb_resolutions", description: "Publish or unpublish Sangguniang Bayan resolutions" },
+  { code: "sb_resolutions.archive", name: "Archive SB Resolutions", module: "sb_resolutions", description: "Archive Sangguniang Bayan resolutions" },
+  { code: "sb_resolutions.delete", name: "Delete SB Resolutions", module: "sb_resolutions", description: "Permanently delete Sangguniang Bayan resolutions" },
 ];
 
 const BASELINE_ROLES = [
@@ -124,6 +132,14 @@ const BASELINE_ROLES = [
     name: "Tourism Content Manager",
     slug: "tourism-content-manager",
     description: "Dedicated editorial, publishing, and media authority for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products",
+    isSystemScope: false,
+    tier: RoleTier.CUSTOM,
+    isBuiltIn: true,
+  },
+  {
+    name: "Sangguniang Bayan Admin",
+    slug: "sangguniang-bayan-admin",
+    description: "Dedicated Sangguniang Bayan Resolutions management authority bound to the Office of the Sangguniang Bayan",
     isSystemScope: false,
     tier: RoleTier.CUSTOM,
     isBuiltIn: true,
@@ -325,6 +341,31 @@ async function main() {
           },
           update: {},
           create: { roleId: tourismRoleId, permissionId: permId },
+        });
+      }
+    }
+  }
+
+  // Sangguniang Bayan Admin permissions
+  const sbRoleId = roleMap.get("sangguniang-bayan-admin");
+  if (sbRoleId) {
+    const sbPermCodes = [
+      "sb_resolutions.view",
+      "sb_resolutions.create",
+      "sb_resolutions.update",
+      "sb_resolutions.publish",
+      "sb_resolutions.archive",
+      "sb_resolutions.delete",
+    ];
+    for (const code of sbPermCodes) {
+      const permId = permissionMap.get(code);
+      if (permId) {
+        await prisma.rolePermission.upsert({
+          where: {
+            roleId_permissionId: { roleId: sbRoleId, permissionId: permId },
+          },
+          update: {},
+          create: { roleId: sbRoleId, permissionId: permId },
         });
       }
     }

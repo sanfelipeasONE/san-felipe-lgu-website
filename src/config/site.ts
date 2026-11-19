@@ -32,6 +32,7 @@ export const NAV_DROPDOWN_ITEMS: Record<string, SubNavItem[]> = {
   Transparency: [
     { title: "Procurement", href: "/transparency/procurement" },
     { title: "State of the Municipal Address (SOMA)", href: "/transparency/soma" },
+    { title: "Sangguniang Bayan Resolutions", href: "/transparency/sangguniang-bayan-resolutions" },
     { title: "Journal and News", href: "/news" },
   ],
 };

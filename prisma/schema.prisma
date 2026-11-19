@@ -44,6 +44,7 @@ model Office {
   servicePages ServicePage[]
   documents   Document[]
   jobOpportunities JobOpportunity[]
+  resolutions SangguniangBayanResolution[]
 
   @@index([status])
   @@map("offices")
@@ -89,6 +90,10 @@ model User {
   // Tourism Entries authorship (Phase 23)
   tourismCreated TourismEntry[] @relation("TourismCreated")
   tourismUpdated TourismEntry[] @relation("TourismUpdated")
+
+  // Sangguniang Bayan Resolutions authorship
+  resolutionsCreated SangguniangBayanResolution[] @relation("ResolutionsCreated")
+  resolutionsUpdated SangguniangBayanResolution[] @relation("ResolutionsUpdated")
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -506,5 +511,55 @@ model TourismEntry {
   @@index([status, category])
   @@index([status, publishedAt])
   @@map("tourism_entries")
+}
+
+enum ResolutionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Official Sangguniang Bayan Resolutions published under Transparency.
+model SangguniangBayanResolution {
+  id               String           @id @default(cuid())
+  resolutionNumber String
+  title            String
+  year             Int
+  adoptedAt        DateTime
+  summary          String?          @db.Text
+  status           ResolutionStatus @default(DRAFT)
+
+  // Bound to the canonical Office of the Sangguniang Bayan
+  officeId         String
+  office           Office           @relation(fields: [officeId], references: [id], onDelete: Restrict)
+
+  // PDF attachment metadata (Cloudinary raw storage)
+  originalFilename String?
+  storagePublicId  String?
+  storageUrl       String?
+  resourceType     String           @default("raw")
+  format           String?          // "pdf"
+  mimeType         String?          // "application/pdf"
+  bytes            Int?
+
+  // Authorship & audit tracking
+  createdById      String
+  createdBy        User             @relation("ResolutionsCreated", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedById      String?
+  updatedBy        User?            @relation("ResolutionsUpdated", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  // Lifecycle timestamps
+  publishedAt      DateTime?
+  archivedAt       DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([resolutionNumber, year])
+  @@index([status])
+  @@index([year])
+  @@index([status, year])
+  @@index([status, adoptedAt])
+  @@index([officeId])
+  @@map("sangguniang_bayan_resolutions")
 }
 
