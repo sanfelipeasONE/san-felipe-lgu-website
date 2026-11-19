@@ -56,6 +56,7 @@ interface UserFormProps {
   roles?: RoleOption[];
   offices?: OfficeOption[];
   sangguniangBayanOffice?: OfficeOption;
+  pesoOffice?: OfficeOption;
   initialData?: {
     id: string;
     name: string;
@@ -85,6 +86,7 @@ export function UserForm({
   roles = [],
   offices = [],
   sangguniangBayanOffice,
+  pesoOffice,
   initialData,
   canDelete = false,
 }: UserFormProps) {
@@ -157,6 +159,7 @@ export function UserForm({
   const isSelectedRoleSystem = selectedRole?.isSystemScope;
   const isSelectedRoleTourism = selectedRole?.slug === "tourism-content-manager";
   const isSelectedRoleSbAdmin = selectedRole?.slug === "sangguniang-bayan-admin";
+  const isSelectedRolePesoAdmin = selectedRole?.slug === "peso-admin";
 
   const onSubmit = async (data: UserFormData) => {
     setServerError(null);
@@ -167,6 +170,7 @@ export function UserForm({
       !isSelectedRoleSystem &&
       !isSelectedRoleTourism &&
       !isSelectedRoleSbAdmin &&
+      !isSelectedRolePesoAdmin &&
       (!data.officeId || (typeof data.officeId === "string" && data.officeId.trim() === ""))
     ) {
       setServerError("An assigned municipal office is required for office-scoped roles.");
@@ -177,12 +181,18 @@ export function UserForm({
 
     try {
       if (mode === "create") {
+        const lockedOfficeId = isSelectedRoleSbAdmin
+          ? (sangguniangBayanOffice?.id ?? null)
+          : isSelectedRolePesoAdmin
+            ? (pesoOffice?.id ?? null)
+            : null;
+
         const payload: CreateUserInput = {
           name: data.name,
           email: data.email,
           password: data.password ?? "",
           roleId: isSystemScoped ? (data.roleId || selectedRoleId) : undefined,
-          officeId: isSelectedRoleSbAdmin ? (sangguniangBayanOffice?.id ?? null) : null,
+          officeId: lockedOfficeId,
           status: "ACTIVE",
         };
 
@@ -195,24 +205,30 @@ export function UserForm({
 
         const isTourism = selectedRole?.slug === "tourism-content-manager";
         toast.success(
-          isSelectedRoleSbAdmin
-            ? "Sangguniang Bayan Admin account provisioned successfully."
-            : isTourism
-              ? "Tourism Content Manager account provisioned successfully."
-              : "Administrator account created."
+          isSelectedRolePesoAdmin
+            ? "PESO Admin account provisioned successfully."
+            : isSelectedRoleSbAdmin
+              ? "Sangguniang Bayan Admin account provisioned successfully."
+              : isTourism
+                ? "Tourism Content Manager account provisioned successfully."
+                : "Administrator account created."
         );
         router.push("/admin/users");
         router.refresh();
       } else {
         if (!initialData) return;
 
+        const lockedOfficeId = isSelectedRoleSbAdmin
+          ? (sangguniangBayanOffice?.id ?? initialData.officeId ?? null)
+          : isSelectedRolePesoAdmin
+            ? (pesoOffice?.id ?? initialData.officeId ?? null)
+            : null;
+
         const payload: UpdateUserInput = {
           name: data.name,
           email: data.email,
           roleId: isSystemScoped ? data.roleId : undefined,
-          officeId: isSelectedRoleSbAdmin
-            ? (sangguniangBayanOffice?.id ?? initialData.officeId ?? null)
-            : null,
+          officeId: lockedOfficeId,
           status: data.status,
           expectedUpdatedAt: initialData.updatedAt,
         };
@@ -428,7 +444,9 @@ export function UserForm({
                             ? "(System Authority)"
                             : r.slug === "sangguniang-bayan-admin"
                               ? "(SB Resolutions Only)"
-                              : "(Municipal Tourism)"}
+                              : r.slug === "peso-admin"
+                                ? "(Job Opportunities Only)"
+                                : "(Municipal Tourism)"}
                         </option>
                       ))}
                     </select>
@@ -439,11 +457,13 @@ export function UserForm({
                     </div>
                   )}
                   <p className="text-[11px] text-slate-500 mt-1">
-                    {isSelectedRoleSbAdmin
-                      ? "Dedicated Sangguniang Bayan Resolutions management authority. Strictly restricted to the Sangguniang Bayan Resolutions CMS module."
-                      : isSelectedRoleTourism
-                        ? "Dedicated editorial, publishing, and media custody for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products. Restricted strictly to the Tourism CMS module."
-                        : "Full system authority across all 18 canonical municipal departments and modules."}
+                    {isSelectedRolePesoAdmin
+                      ? "Dedicated Job Opportunities management authority. Strictly restricted to the Job Opportunities CMS module."
+                      : isSelectedRoleSbAdmin
+                        ? "Dedicated Sangguniang Bayan Resolutions management authority. Strictly restricted to the Sangguniang Bayan Resolutions CMS module."
+                        : isSelectedRoleTourism
+                          ? "Dedicated editorial, publishing, and media custody for municipal tourism attractions, hospitality accommodations, cultural heritage, and local trade products. Restricted strictly to the Tourism CMS module."
+                          : "Full system authority across all 18 canonical municipal departments and modules."}
                   </p>
                 </div>
 
@@ -454,31 +474,43 @@ export function UserForm({
                   </label>
                   <div className="px-3.5 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium flex items-center justify-between gap-2">
                     <span className="truncate">
-                      {isSelectedRoleSbAdmin
-                        ? sangguniangBayanOffice?.name || "Office of the Sangguniang Bayan"
-                        : isSelectedRoleTourism
-                          ? "Municipal Tourism Scope"
-                          : "Municipal-wide (System Scope)"}
+                      {isSelectedRolePesoAdmin
+                        ? pesoOffice?.name || "Public Employment Service Office"
+                        : isSelectedRoleSbAdmin
+                          ? sangguniangBayanOffice?.name || "Office of the Sangguniang Bayan"
+                          : isSelectedRoleTourism
+                            ? "Municipal Tourism Scope"
+                            : "Municipal-wide (System Scope)"}
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200 shrink-0">
-                      {isSelectedRoleSbAdmin
-                        ? "SB Resolutions Only"
-                        : isSelectedRoleTourism
-                          ? "Tourism Only"
-                          : "All Modules"}
+                      {isSelectedRolePesoAdmin
+                        ? "Job Opportunities Only"
+                        : isSelectedRoleSbAdmin
+                          ? "SB Resolutions Only"
+                          : isSelectedRoleTourism
+                            ? "Tourism Only"
+                            : "All Modules"}
                     </span>
                   </div>
                   <input
                     type="hidden"
                     {...register("officeId")}
-                    value={isSelectedRoleSbAdmin ? (sangguniangBayanOffice?.id ?? "") : ""}
+                    value={
+                      isSelectedRolePesoAdmin
+                        ? (pesoOffice?.id ?? "")
+                        : isSelectedRoleSbAdmin
+                          ? (sangguniangBayanOffice?.id ?? "")
+                          : ""
+                    }
                   />
                   <p className="text-[11px] text-slate-500 mt-1">
-                    {isSelectedRoleSbAdmin
-                      ? "Automatically locked to the Office of the Sangguniang Bayan. Cannot be reassigned to any other office or grant broad document permissions."
-                      : isSelectedRoleTourism
-                        ? "Municipal-wide tourism domain. No departmental office assignment is required or permitted."
-                        : "System-wide administrative custody across all municipal departments and modules."}
+                    {isSelectedRolePesoAdmin
+                      ? "Automatically locked to the Public Employment Service Office (PESO). Cannot be reassigned to any other office or grant broad CMS permissions."
+                      : isSelectedRoleSbAdmin
+                        ? "Automatically locked to the Office of the Sangguniang Bayan. Cannot be reassigned to any other office or grant broad document permissions."
+                        : isSelectedRoleTourism
+                          ? "Municipal-wide tourism domain. No departmental office assignment is required or permitted."
+                          : "System-wide administrative custody across all municipal departments and modules."}
                   </p>
                 </div>
               </div>

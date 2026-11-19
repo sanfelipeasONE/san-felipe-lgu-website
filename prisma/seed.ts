@@ -144,6 +144,14 @@ const BASELINE_ROLES = [
     tier: RoleTier.CUSTOM,
     isBuiltIn: true,
   },
+  {
+    name: "PESO Admin",
+    slug: "peso-admin",
+    description: "Dedicated Job Opportunities management authority bound to the Public Employment Service Office (PESO)",
+    isSystemScope: false,
+    tier: RoleTier.CUSTOM,
+    isBuiltIn: true,
+  },
 ];
 
 async function main() {
@@ -366,6 +374,31 @@ async function main() {
           },
           update: {},
           create: { roleId: sbRoleId, permissionId: permId },
+        });
+      }
+    }
+  }
+
+  // PESO Admin permissions (Phase 33)
+  const pesoRoleId = roleMap.get("peso-admin");
+  if (pesoRoleId) {
+    const pesoPermCodes = [
+      "jobs.view",
+      "jobs.create",
+      "jobs.update",
+      "jobs.publish",
+      "jobs.archive",
+      "jobs.delete",
+    ];
+    for (const code of pesoPermCodes) {
+      const permId = permissionMap.get(code);
+      if (permId) {
+        await prisma.rolePermission.upsert({
+          where: {
+            roleId_permissionId: { roleId: pesoRoleId, permissionId: permId },
+          },
+          update: {},
+          create: { roleId: pesoRoleId, permissionId: permId },
         });
       }
     }

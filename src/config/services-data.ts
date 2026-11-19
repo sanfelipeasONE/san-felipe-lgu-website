@@ -130,7 +130,10 @@ export interface JobOpportunity {
   itemNumber?: string;
   officeId: string; // References canonical MunicipalOffice.id in offices-data.ts
   officeName?: string;
+  officeLocation?: string;
   employmentType?: EmploymentType | string;
+  employmentClassification?: "GOVERNMENT" | "PRIVATE";
+  employerName?: string;
   salaryGrade?: string;
   monthlySalary?: string;
   description?: string;

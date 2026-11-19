@@ -399,15 +399,22 @@ enum JobOpportunityStatus {
   ARCHIVED
 }
 
+enum EmploymentClassification {
+  GOVERNMENT
+  PRIVATE
+}
+
 /// Official municipal job vacancies and career recruitment notices (Phase 15).
 model JobOpportunity {
-  id                      String               @id @default(cuid())
-  title                   String               // Position Title
-  slug                    String               @unique
-  itemNumber              String?              // Plantilla Item Number (e.g. "MHO-01")
-  officeId                String
-  office                  Office               @relation(fields: [officeId], references: [id], onDelete: Restrict)
-  employmentType          String?              // "Permanent" | "Contractual" | "Casual" | "Co-Terminous"
+  id                       String                    @id @default(cuid())
+  title                    String                    // Position Title
+  slug                     String                    @unique
+  itemNumber               String?                   // Plantilla Item Number (e.g. "MHO-01")
+  officeId                 String
+  office                   Office                    @relation(fields: [officeId], references: [id], onDelete: Restrict)
+  employmentType           String?                   // "Permanent" | "Contractual" | "Casual" | "Co-Terminous"
+  employmentClassification EmploymentClassification? // GOVERNMENT | PRIVATE (Phase 33)
+  employerName             String?                   // Government Agency / Office or Company Name (Phase 33)
   salaryGrade             String?              // e.g. "11", "SG 11"
   monthlySalary           String?              // e.g. "₱27,000.00"
   description             String?              @db.Text

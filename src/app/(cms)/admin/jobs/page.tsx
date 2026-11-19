@@ -48,7 +48,9 @@ export default async function AdminJobsListPage({ searchParams }: JobsPageProps)
     redirect("/staff/login");
   }
 
-  if (!hasPermission(user, PERMISSIONS.JOBS_VIEW)) {
+  const isSystem = isSystemScoped(user);
+
+  if (!isSystem && !hasPermission(user, PERMISSIONS.JOBS_VIEW)) {
     redirect("/admin");
   }
 
@@ -78,8 +80,8 @@ export default async function AdminJobsListPage({ searchParams }: JobsPageProps)
     });
   }
 
-  const canCreate = hasPermission(user, PERMISSIONS.JOBS_CREATE);
-  const canUpdate = hasPermission(user, PERMISSIONS.JOBS_UPDATE);
+  const canCreate = isSystem || hasPermission(user, PERMISSIONS.JOBS_CREATE);
+  const canUpdate = isSystem || hasPermission(user, PERMISSIONS.JOBS_UPDATE);
 
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-slate-50">

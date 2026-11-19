@@ -53,10 +53,23 @@ export const SB_RESOLUTION_PERMISSIONS = [
   PERMISSIONS.SB_RESOLUTIONS_DELETE,
 ] as const;
 
+export const PESO_ADMIN_ROLE_SLUG = "peso-admin";
+export const PESO_ADMIN_ROLE_NAME = "PESO Admin";
+export const PESO_OFFICE_SLUG = "public-employment-service-office";
+export const PESO_JOB_PERMISSIONS = [
+  PERMISSIONS.JOBS_VIEW,
+  PERMISSIONS.JOBS_CREATE,
+  PERMISSIONS.JOBS_UPDATE,
+  PERMISSIONS.JOBS_PUBLISH,
+  PERMISSIONS.JOBS_ARCHIVE,
+  PERMISSIONS.JOBS_DELETE,
+] as const;
+
 export const CANONICAL_PORTAL_ROLES = [
   ...CANONICAL_PRODUCTION_ROLES,
   TOURISM_ROLE_SLUG,
   SB_ADMIN_ROLE_SLUG,
+  PESO_ADMIN_ROLE_SLUG,
 ] as const;
 
 export const RETIRED_ROLE_SLUGS = [
@@ -313,6 +326,19 @@ export async function updateRolePermissions(
     }
   }
 
+  // Enforce PESO Admin strict domain boundary: cannot receive non-jobs permissions (Phase 33)
+  if (role.slug === PESO_ADMIN_ROLE_SLUG) {
+    const invalidCodes = permissionCodes.filter(
+      (code) => !(PESO_JOB_PERMISSIONS as readonly string[]).includes(code)
+    );
+    if (invalidCodes.length > 0) {
+      throw new RoleError(
+        `The PESO Admin role is strictly restricted to Job Opportunities permissions. The following permissions cannot be assigned: ${invalidCodes.join(", ")}`,
+        400
+      );
+    }
+  }
+
   // Validate that all supplied permission codes exist in the database
   const matchingPermissions = await prisma.permission.findMany({
     where: { code: { in: permissionCodes } },
@@ -552,6 +578,67 @@ export async function ensureSangguniangBayanRole() {
       roleId: role.id,
       permission: {
         code: { notIn: [...SB_RESOLUTION_PERMISSIONS] },
+      },
+    },
+  });
+
+  return role;
+}
+
+/**
+ * Ensures the dedicated PESO Admin role and its 6 jobs.*
+ * permissions exist in the database, with strict domain isolation (Phase 33).
+ */
+export async function ensurePesoRole() {
+  const role = await prisma.role.upsert({
+    where: { slug: PESO_ADMIN_ROLE_SLUG },
+    update: {
+      name: PESO_ADMIN_ROLE_NAME,
+      isSystemScope: false,
+      tier: RoleTier.CUSTOM,
+      isBuiltIn: true,
+      description:
+        "Dedicated Job Opportunities management authority bound to the Public Employment Service Office (PESO).",
+    },
+    create: {
+      name: PESO_ADMIN_ROLE_NAME,
+      slug: PESO_ADMIN_ROLE_SLUG,
+      isSystemScope: false,
+      tier: RoleTier.CUSTOM,
+      isBuiltIn: true,
+      description:
+        "Dedicated Job Opportunities management authority bound to the Public Employment Service Office (PESO).",
+    },
+  });
+
+  for (const code of PESO_JOB_PERMISSIONS) {
+    const perm = await prisma.permission.findUnique({
+      where: { code },
+      select: { id: true },
+    });
+    if (perm) {
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: role.id,
+            permissionId: perm.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: role.id,
+          permissionId: perm.id,
+        },
+      });
+    }
+  }
+
+  // Ensure runtime initialization cannot leave the role with unauthorized permissions
+  await prisma.rolePermission.deleteMany({
+    where: {
+      roleId: role.id,
+      permission: {
+        code: { notIn: [...PESO_JOB_PERMISSIONS] },
       },
     },
   });

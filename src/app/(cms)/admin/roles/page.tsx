@@ -12,7 +12,9 @@ import {
   CANONICAL_PRODUCTION_ROLES,
   TOURISM_ROLE_SLUG,
   SB_ADMIN_ROLE_SLUG,
+  PESO_ADMIN_ROLE_SLUG,
   ensureSangguniangBayanRole,
+  ensurePesoRole,
 } from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
@@ -47,6 +49,7 @@ export default async function AdminRolesListPage() {
   }
 
   await ensureSangguniangBayanRole();
+  await ensurePesoRole();
 
   const [allRoles, catalog] = await Promise.all([
     listRoles(user),
@@ -57,7 +60,8 @@ export default async function AdminRolesListPage() {
     (r) =>
       CANONICAL_PRODUCTION_ROLES.includes(r.slug as (typeof CANONICAL_PRODUCTION_ROLES)[number]) ||
       r.slug === TOURISM_ROLE_SLUG ||
-      r.slug === SB_ADMIN_ROLE_SLUG
+      r.slug === SB_ADMIN_ROLE_SLUG ||
+      r.slug === PESO_ADMIN_ROLE_SLUG
   );
 
   // Group permission catalog by module for read-only inspection

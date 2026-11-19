@@ -4,9 +4,11 @@ import * as React from "react";
 import Image from "next/image";
 import {
   Briefcase,
+  Building2,
   Calendar,
   ChevronDown,
   FileText,
+  MapPin,
 } from "lucide-react";
 import { Container } from "@/components/layout/container";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -77,7 +79,19 @@ export function JobOpportunitiesView({ opportunities }: JobOpportunitiesViewProp
                         <h3 className="text-base sm:text-lg font-bold text-gov-charcoal">
                           {job.positionTitle}
                         </h3>
-                        <div className="flex items-center gap-4 text-xs text-gov-muted pt-1">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gov-muted pt-1">
+                          {job.employerName && (
+                            <span className="inline-flex items-center gap-1 font-medium text-gov-charcoal">
+                              <Building2 className="w-3.5 h-3.5 text-burgundy-700" aria-hidden="true" />
+                              {job.employmentClassification === "PRIVATE"
+                                ? `Company Name: ${job.employerName}`
+                                : `Government Agency / Office: ${job.employerName}`}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+                            {job.officeLocation || "San Felipe, Zambales"}
+                          </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-gold-700" aria-hidden="true" />
                             Posted: {job.postingDate}
@@ -123,6 +137,28 @@ export function JobOpportunitiesView({ opportunities }: JobOpportunitiesViewProp
                           </div>
                         )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          <div className="p-3 bg-slate-50 rounded-xs border border-gray-200/80">
+                            <span className="font-bold text-gov-charcoal uppercase block mb-1">
+                              Classification
+                            </span>
+                            <span className="text-gov-muted">
+                              {job.employmentClassification === "GOVERNMENT"
+                                ? "Government"
+                                : job.employmentClassification === "PRIVATE"
+                                  ? "Private"
+                                  : job.employmentType || "Not Specified"}
+                            </span>
+                          </div>
+                          {job.employerName && (
+                            <div className="p-3 bg-slate-50 rounded-xs border border-gray-200/80">
+                              <span className="font-bold text-gov-charcoal uppercase block mb-1">
+                                {job.employmentClassification === "PRIVATE"
+                                  ? "Company Name"
+                                  : "Government Agency / Office"}
+                              </span>
+                              <span className="text-gov-muted">{job.employerName}</span>
+                            </div>
+                          )}
                           <div className="p-3 bg-slate-50 rounded-xs border border-gray-200/80">
                             <span className="font-bold text-gov-charcoal uppercase block mb-1">Education</span>
                             <span className="text-gov-muted">{job.educationRequirement ?? "None Required"}</span>

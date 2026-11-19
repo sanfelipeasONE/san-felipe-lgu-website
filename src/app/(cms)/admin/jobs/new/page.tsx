@@ -23,11 +23,11 @@ export default async function NewJobOpportunityPage() {
     redirect("/staff/login");
   }
 
-  if (!hasPermission(user, PERMISSIONS.JOBS_CREATE)) {
+  const isSystem = isSystemScoped(user);
+
+  if (!isSystem && !hasPermission(user, PERMISSIONS.JOBS_CREATE)) {
     redirect("/admin/jobs");
   }
-
-  const isSystem = isSystemScoped(user);
 
   let offices: OfficeOption[] = [];
   let userOfficeName: string | undefined;
@@ -51,7 +51,7 @@ export default async function NewJobOpportunityPage() {
 
   // Load available documents for attachment linking only if user has document view permission
   let documents: DocumentOption[] = [];
-  if (hasPermission(user, PERMISSIONS.DOCUMENTS_VIEW)) {
+  if (isSystem || hasPermission(user, PERMISSIONS.DOCUMENTS_VIEW)) {
     const docsWhere: Prisma.DocumentWhereInput = isSystem
       ? { office: { status: OfficeStatus.ACTIVE } }
       : { officeId: user.officeId! };
@@ -83,8 +83,8 @@ export default async function NewJobOpportunityPage() {
           offices={offices}
           documents={documents}
           userOfficeName={userOfficeName}
-          canPublish={hasPermission(user, PERMISSIONS.JOBS_PUBLISH)}
-          canArchive={hasPermission(user, PERMISSIONS.JOBS_ARCHIVE)}
+          canPublish={isSystem || hasPermission(user, PERMISSIONS.JOBS_PUBLISH)}
+          canArchive={isSystem || hasPermission(user, PERMISSIONS.JOBS_ARCHIVE)}
         />
       </AdminContent>
     </div>

@@ -16,11 +16,17 @@ import {
   createJobAction,
   updateJobAction,
   publishJobAction,
+  unpublishJobAction,
   archiveJobAction,
   deleteJobAction,
   uploadJobImageAction,
 } from "@/app/(cms)/admin/jobs/actions";
-import { ALLOWED_EMPLOYMENT_TYPES } from "@/lib/validation/jobs";
+import {
+  EMPLOYMENT_CLASSIFICATIONS,
+  EMPLOYMENT_CLASSIFICATION_LABELS,
+  EMPLOYER_FIELD_LABELS,
+  type EmploymentClassificationValue,
+} from "@/lib/validation/jobs";
 import { TiptapEditor } from "@/components/admin/tiptap-editor";
 import { DestructiveConfirmDialog } from "@/components/admin/destructive-confirm-dialog";
 import { ConfirmationDialog } from "@/components/admin/confirmation-dialog";
@@ -51,6 +57,8 @@ export interface JobFormProps {
     itemNumber?: string | null;
     officeId: string;
     employmentType?: string | null;
+    employmentClassification?: EmploymentClassificationValue | null;
+    employerName?: string | null;
     salaryGrade?: string | null;
     monthlySalary?: string | null;
     description?: string | null;
@@ -100,7 +108,30 @@ export function JobForm({
   const [title, setTitle] = React.useState(initialData?.title || "");
   const [itemNumber, setItemNumber] = React.useState(initialData?.itemNumber || "");
   const [officeId, setOfficeId] = React.useState(initialData?.officeId || offices[0]?.id || "");
+  const initialClassification: EmploymentClassificationValue | "" =
+    initialData?.employmentClassification ??
+    (initialData?.employmentType === "Government"
+      ? "GOVERNMENT"
+      : initialData?.employmentType === "Private"
+        ? "PRIVATE"
+        : "");
+  const [employmentClassification, setEmploymentClassification] =
+    React.useState<EmploymentClassificationValue | "">(initialClassification);
+  const [employerName, setEmployerName] = React.useState(initialData?.employerName || "");
   const [employmentType, setEmploymentType] = React.useState(initialData?.employmentType || "");
+
+  const handleClassificationChange = (nextValue: string) => {
+    const nextClass =
+      nextValue === "GOVERNMENT" || nextValue === "PRIVATE" ? nextValue : "";
+    if (nextClass !== employmentClassification) {
+      // Clear stale employer name when switching classification so misleading values are never saved/published
+      setEmployerName("");
+    }
+    setEmploymentClassification(nextClass);
+    setEmploymentType(
+      nextClass ? EMPLOYMENT_CLASSIFICATION_LABELS[nextClass] : ""
+    );
+  };
   const [salaryGrade, setSalaryGrade] = React.useState(initialData?.salaryGrade || "");
   const [monthlySalary, setMonthlySalary] = React.useState(initialData?.monthlySalary || "");
   const [description, setDescription] = React.useState(initialData?.description || "");
@@ -150,7 +181,23 @@ export function JobForm({
       if (isSystemScoped) {
         formData.set("officeId", officeId);
       }
-      formData.set("employmentType", employmentType);
+      if (mode === "create" && !employmentClassification) {
+        setErrorMessage("Please select an Employment Classification (Government or Private).");
+        setIsPending(false);
+        return;
+      }
+      if (employmentClassification && employerName.trim().length < 2) {
+        setErrorMessage(
+          `${EMPLOYER_FIELD_LABELS[employmentClassification]} is required for ${EMPLOYMENT_CLASSIFICATION_LABELS[employmentClassification]} vacancies.`
+        );
+        setIsPending(false);
+        return;
+      }
+      formData.set("employmentClassification", employmentClassification);
+      formData.set("employerName", employerName.trim());
+      if (employmentClassification) {
+        formData.set("employmentType", employmentType);
+      }
       formData.set("salaryGrade", salaryGrade);
       formData.set("monthlySalary", monthlySalary);
       formData.set("description", description);
@@ -232,6 +279,28 @@ export function JobForm({
     } catch {
       setErrorMessage("An error occurred while publishing.");
       toast.error("An error occurred while publishing.");
+      setIsPending(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!initialData) return;
+    setIsPending(true);
+    setErrorMessage(null);
+    try {
+      const result = await unpublishJobAction(initialData.id, initialData.updatedAt);
+      if (!result.success) {
+        setErrorMessage(result.error || "Failed to unpublish job opportunity.");
+        toast.error(result.error || "Failed to unpublish job opportunity.");
+        setIsPending(false);
+        return;
+      }
+      toast.success("Job opportunity unpublished and returned to Draft.");
+      setIsPending(false);
+      router.refresh();
+    } catch {
+      setErrorMessage("An error occurred while unpublishing.");
+      toast.error("An error occurred while unpublishing.");
       setIsPending(false);
     }
   };
@@ -427,30 +496,51 @@ export function JobForm({
 
             {/* Employment Classification */}
             <div className="space-y-1">
-              <label htmlFor="job-type" className="block text-xs font-semibold text-gov-charcoal">
-                Employment Classification <span className="text-gov-muted font-normal">(Optional)</span>
+              <label htmlFor="job-classification" className="block text-xs font-semibold text-gov-charcoal">
+                Employment Classification {mode === "create" && <span className="text-red-600">*</span>}
               </label>
               <select
-                id="job-type"
-                value={employmentType}
-                onChange={(e) => setEmploymentType(e.target.value)}
+                id="job-classification"
+                required={mode === "create"}
+                value={employmentClassification}
+                onChange={(e) => handleClassificationChange(e.target.value)}
                 className="w-full px-3 py-2 text-xs bg-white border border-gray-300 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
               >
-                <option value="">Select classification (or leave blank)</option>
-                {ALLOWED_EMPLOYMENT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                <option value="">Select classification...</option>
+                {EMPLOYMENT_CLASSIFICATIONS.map((cls) => (
+                  <option key={cls} value={cls}>
+                    {EMPLOYMENT_CLASSIFICATION_LABELS[cls]}
                   </option>
                 ))}
-                {/* Backward compatibility: preserve display of legacy classification on existing records */}
-                {employmentType &&
-                  !(ALLOWED_EMPLOYMENT_TYPES as readonly string[]).includes(employmentType) && (
-                    <option value={employmentType}>
-                      {employmentType} (Legacy)
-                    </option>
-                  )}
               </select>
+              {!employmentClassification && employmentType && (
+                <p className="text-[11px] text-amber-700">
+                  Legacy classification: {employmentType}. Select Government or Private to update.
+                </p>
+              )}
             </div>
+
+            {/* Conditional Employer Name */}
+            {employmentClassification && (
+              <div className="space-y-1">
+                <label htmlFor="job-employer-name" className="block text-xs font-semibold text-gov-charcoal">
+                  {EMPLOYER_FIELD_LABELS[employmentClassification]} <span className="text-red-600">*</span>
+                </label>
+                <input
+                  id="job-employer-name"
+                  type="text"
+                  required
+                  value={employerName}
+                  onChange={(e) => setEmployerName(e.target.value)}
+                  placeholder={
+                    employmentClassification === "GOVERNMENT"
+                      ? "e.g. Municipal Government of San Felipe"
+                      : "e.g. ABC Manufacturing Corporation"
+                  }
+                  className="w-full px-3 py-2 text-xs bg-white border border-gray-300 rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-burgundy-700"
+                />
+              </div>
+            )}
 
             {/* Salary Grade */}
             <div className="space-y-1">
@@ -679,6 +769,18 @@ export function JobForm({
               >
                 <FileCheck className="w-3.5 h-3.5" />
                 Publish Directly
+              </button>
+            )}
+
+            {/* Unpublish Button */}
+            {mode === "edit" && canPublish && initialData?.status === "PUBLISHED" && (
+              <button
+                type="button"
+                onClick={handleUnpublish}
+                disabled={isPending}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xs disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+              >
+                Unpublish to Draft
               </button>
             )}
 

@@ -28,7 +28,9 @@ export default async function EditJobOpportunityPage({ params }: EditJobPageProp
     redirect("/staff/login");
   }
 
-  if (!hasPermission(user, PERMISSIONS.JOBS_VIEW)) {
+  const isSystem = isSystemScoped(user);
+
+  if (!isSystem && !hasPermission(user, PERMISSIONS.JOBS_VIEW)) {
     redirect("/admin/jobs");
   }
 
@@ -47,8 +49,6 @@ export default async function EditJobOpportunityPage({ params }: EditJobPageProp
     throw err;
   }
 
-  const isSystem = isSystemScoped(user);
-
   let offices: OfficeOption[] = [];
   let userOfficeName: string | undefined;
 
@@ -64,7 +64,7 @@ export default async function EditJobOpportunityPage({ params }: EditJobPageProp
 
   // Load available documents for attachment linking only if user has document view permission
   let documents: DocumentOption[] = [];
-  if (hasPermission(user, PERMISSIONS.DOCUMENTS_VIEW)) {
+  if (isSystem || hasPermission(user, PERMISSIONS.DOCUMENTS_VIEW)) {
     const docsWhere: Prisma.DocumentWhereInput = isSystem
       ? { office: { status: OfficeStatus.ACTIVE } }
       : { officeId: job.officeId };
@@ -98,6 +98,8 @@ export default async function EditJobOpportunityPage({ params }: EditJobPageProp
             itemNumber: job.itemNumber,
             officeId: job.officeId,
             employmentType: job.employmentType,
+            employmentClassification: job.employmentClassification,
+            employerName: job.employerName,
             salaryGrade: job.salaryGrade,
             monthlySalary: job.monthlySalary,
             description: job.description,
@@ -125,11 +127,12 @@ export default async function EditJobOpportunityPage({ params }: EditJobPageProp
           offices={offices}
           documents={documents}
           userOfficeName={userOfficeName}
-          canPublish={hasPermission(user, PERMISSIONS.JOBS_PUBLISH)}
-          canArchive={hasPermission(user, PERMISSIONS.JOBS_ARCHIVE)}
+          canPublish={isSystem || hasPermission(user, PERMISSIONS.JOBS_PUBLISH)}
+          canArchive={isSystem || hasPermission(user, PERMISSIONS.JOBS_ARCHIVE)}
           canDelete={
-            hasPermission(user, PERMISSIONS.JOBS_DELETE) &&
-            (isSystem || user.officeId === job.officeId)
+            isSystem ||
+            (hasPermission(user, PERMISSIONS.JOBS_DELETE) &&
+              user.officeId === job.officeId)
           }
         />
       </AdminContent>

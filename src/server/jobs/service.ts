@@ -5,6 +5,8 @@ import { PERMISSIONS } from "@/server/authz/permissions";
 import { AUDIT_ACTIONS } from "@/server/audit/constants";
 import { logAuditEvent } from "@/server/audit/service";
 import {
+  EMPLOYMENT_CLASSIFICATION_LABELS,
+  EMPLOYER_FIELD_LABELS,
   generateJobSlug,
   isJobClosed,
   sanitizePlainText,
@@ -21,6 +23,15 @@ export class JobError extends Error {
     super(message);
     this.name = "JobError";
   }
+}
+
+/**
+ * Authorizes Job Opportunities operations:
+ * - SYSTEM-scoped Super Admins have unrestricted system-wide access.
+ * - Other roles must explicitly hold the granular jobs.* permission.
+ */
+function hasJobsPermission(user: SessionUser, permissionCode: string): boolean {
+  return isSystemScoped(user) || hasPermission(user, permissionCode);
 }
 
 export interface AdminJobFilters {
@@ -41,7 +52,7 @@ export async function getAdminJobsList(
   user: SessionUser,
   filters?: AdminJobFilters
 ) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_VIEW)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_VIEW)) {
     throw new JobError("You do not have permission to view job opportunities.", 403);
   }
 
@@ -137,7 +148,7 @@ export async function getAdminJobsList(
  * Retrieves a single vacancy for CMS management with office isolation.
  */
 export async function getAdminJobById(user: SessionUser, id: string) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_VIEW)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_VIEW)) {
     throw new JobError("You do not have permission to view job opportunities.", 403);
   }
 
@@ -256,7 +267,7 @@ export async function createJobOpportunity(
   user: SessionUser,
   input: JobOpportunityInput
 ) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_CREATE)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_CREATE)) {
     throw new JobError("You do not have permission to create job opportunities.", 403);
   }
 
@@ -303,6 +314,25 @@ export async function createJobOpportunity(
 
   const slug = generateJobSlug(input.title);
 
+  // Structured employment classification & employer name (Phase 33)
+  const classification = input.employmentClassification ?? null;
+  const cleanedEmployer = sanitizePlainText(input.employerName);
+  if (classification && (!cleanedEmployer || cleanedEmployer.length < 2)) {
+    throw new JobError(
+      `${EMPLOYER_FIELD_LABELS[classification]} is required for ${EMPLOYMENT_CLASSIFICATION_LABELS[classification]} vacancies.`,
+      400
+    );
+  }
+  if (!classification && cleanedEmployer) {
+    throw new JobError(
+      "Employment classification (Government or Private) is required when specifying an employer name.",
+      400
+    );
+  }
+  const derivedEmploymentType = classification
+    ? EMPLOYMENT_CLASSIFICATION_LABELS[classification]
+    : sanitizePlainText(input.employmentType);
+
   const postingDate = input.postingDate && input.postingDate.trim()
     ? new Date(input.postingDate)
     : null;
@@ -318,7 +348,9 @@ export async function createJobOpportunity(
         slug,
         itemNumber: sanitizePlainText(input.itemNumber),
         officeId: targetOfficeId,
-        employmentType: sanitizePlainText(input.employmentType),
+        employmentType: derivedEmploymentType,
+        employmentClassification: classification,
+        employerName: cleanedEmployer,
         salaryGrade: sanitizePlainText(input.salaryGrade),
         monthlySalary: sanitizePlainText(input.monthlySalary),
         description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
@@ -397,7 +429,7 @@ export async function updateJobOpportunity(
   input: JobOpportunityInput,
   options?: { deleteAsset?: (publicId: string) => Promise<boolean> }
 ) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_UPDATE)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_UPDATE)) {
     throw new JobError("You do not have permission to update job opportunities.", 403);
   }
 
@@ -466,6 +498,34 @@ export async function updateJobOpportunity(
     ? new Date(input.closingDate)
     : null;
 
+  // Structured employment classification & employer name (Phase 33)
+  const hasClassificationUpdate = input.employmentClassification !== undefined;
+  const nextClassification = hasClassificationUpdate
+    ? (input.employmentClassification ?? null)
+    : existing.employmentClassification;
+  const nextEmployerName =
+    input.employerName !== undefined
+      ? sanitizePlainText(input.employerName)
+      : existing.employerName;
+
+  if (nextClassification && (!nextEmployerName || nextEmployerName.length < 2)) {
+    throw new JobError(
+      `${EMPLOYER_FIELD_LABELS[nextClassification]} is required for ${EMPLOYMENT_CLASSIFICATION_LABELS[nextClassification]} vacancies.`,
+      400
+    );
+  }
+  if (!nextClassification && nextEmployerName) {
+    throw new JobError(
+      "Employment classification (Government or Private) is required when specifying an employer name.",
+      400
+    );
+  }
+  const nextEmploymentType = nextClassification
+    ? EMPLOYMENT_CLASSIFICATION_LABELS[nextClassification]
+    : input.employmentType !== undefined
+      ? sanitizePlainText(input.employmentType)
+      : existing.employmentType;
+
   // Atomic conditional updateMany to prevent race conditions
   try {
     const updateResult = await prisma.jobOpportunity.updateMany({
@@ -477,7 +537,9 @@ export async function updateJobOpportunity(
         title: input.title.trim(),
         itemNumber: sanitizePlainText(input.itemNumber),
         officeId: targetOfficeId,
-        employmentType: sanitizePlainText(input.employmentType),
+        employmentType: nextEmploymentType,
+        employmentClassification: nextClassification,
+        employerName: nextEmployerName,
         salaryGrade: sanitizePlainText(input.salaryGrade),
         monthlySalary: sanitizePlainText(input.monthlySalary),
         description: input.description && input.description.trim() ? sanitizeArticleHtml(input.description) : null,
@@ -579,7 +641,7 @@ export async function publishJobOpportunity(
   id: string,
   expectedUpdatedAt?: string
 ) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_PUBLISH)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_PUBLISH)) {
     throw new JobError("You do not have permission to publish job opportunities.", 403);
   }
 
@@ -706,6 +768,71 @@ export async function publishJobOpportunity(
 }
 
 /**
+ * Unpublishes a PUBLISHED job opportunity back to DRAFT.
+ */
+export async function unpublishJobOpportunity(
+  user: SessionUser,
+  id: string,
+  expectedUpdatedAt?: string
+) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_PUBLISH)) {
+    throw new JobError("You do not have permission to unpublish job opportunities.", 403);
+  }
+
+  const existing = await prisma.jobOpportunity.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new JobError("Job opportunity not found.", 404);
+  }
+
+  if (!isSystemScoped(user) && existing.officeId !== user.officeId) {
+    throw new JobError("You do not have permission to unpublish job opportunities belonging to another office.", 403);
+  }
+
+  if (
+    expectedUpdatedAt &&
+    existing.updatedAt.toISOString() !== expectedUpdatedAt
+  ) {
+    throw new JobError(
+      "This job opportunity was modified by another user. Please refresh before unpublishing.",
+      409
+    );
+  }
+
+  if (existing.status !== "PUBLISHED") {
+    throw new JobError("Only published job opportunities can be unpublished.", 400);
+  }
+
+  const updated = await prisma.jobOpportunity.update({
+    where: { id },
+    data: {
+      status: "DRAFT",
+      publishedAt: null,
+      updatedById: user.id,
+    },
+    include: {
+      office: { select: { id: true, name: true, slug: true } },
+    },
+  });
+
+  await logAuditEvent({
+    action: AUDIT_ACTIONS.JOB_UNPUBLISHED,
+    userId: user.id,
+    officeId: existing.officeId,
+    details: {
+      jobId: updated.id,
+      title: updated.title,
+      previousStatus: existing.status,
+      newStatus: "DRAFT",
+    },
+  });
+
+  return updated;
+}
+
+/**
  * Archives a vacancy, transitioning status to ARCHIVED.
  * Archiving removes the vacancy from public display while preserving it in CMS history.
  */
@@ -714,7 +841,7 @@ export async function archiveJobOpportunity(
   id: string,
   expectedUpdatedAt?: string
 ) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_ARCHIVE)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_ARCHIVE)) {
     throw new JobError("You do not have permission to archive job opportunities.", 403);
   }
 
@@ -798,7 +925,7 @@ export async function deleteJobOpportunity(
   id: string,
   expectedUpdatedAt?: string
 ) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_DELETE)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_DELETE)) {
     throw new JobError("You do not have permission to delete job opportunities.", 403);
   }
 
@@ -856,7 +983,7 @@ export async function deleteJobOpportunity(
  * Removes the featured image from a job opportunity and cleans up Cloudinary asset.
  */
 export async function removeJobFeaturedImage(user: SessionUser, id: string) {
-  if (!hasPermission(user, PERMISSIONS.JOBS_UPDATE)) {
+  if (!hasJobsPermission(user, PERMISSIONS.JOBS_UPDATE)) {
     throw new JobError("You do not have permission to update job opportunities.", 403);
   }
 
@@ -923,6 +1050,7 @@ export async function getPublishedJobOpportunities(filters?: {
     where.OR = [
       { title: { contains: q, mode: "insensitive" } },
       { itemNumber: { contains: q, mode: "insensitive" } },
+      { employerName: { contains: q, mode: "insensitive" } },
       { description: { contains: q, mode: "insensitive" } },
       { office: { name: { contains: q, mode: "insensitive" } } },
     ];
@@ -942,6 +1070,7 @@ export async function getPublishedJobOpportunities(filters?: {
           name: true,
           shortName: true,
           slug: true,
+          location: true,
         },
       },
       attachmentDocument: {
@@ -965,7 +1094,13 @@ export async function getPublishedJobOpportunities(filters?: {
     itemNumber: job.itemNumber ?? undefined,
     officeId: job.office.id,
     officeName: job.office.name,
-    employmentType: job.employmentType ?? undefined,
+    officeLocation: job.office.location ?? "San Felipe, Zambales",
+    employmentType:
+      job.employmentClassification
+        ? EMPLOYMENT_CLASSIFICATION_LABELS[job.employmentClassification]
+        : (job.employmentType ?? undefined),
+    employmentClassification: job.employmentClassification ?? undefined,
+    employerName: job.employerName ?? undefined,
     salaryGrade: job.salaryGrade ?? undefined,
     monthlySalary: job.monthlySalary ?? undefined,
     description: job.description ?? undefined,

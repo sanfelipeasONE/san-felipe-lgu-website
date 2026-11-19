@@ -70,6 +70,7 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
   const isSystemAdminRole = role.isSystemScope && role.tier === "SYSTEM_ADMIN";
   const isTourismRole = role.slug === "tourism-content-manager";
   const isSbAdminRole = role.slug === "sangguniang-bayan-admin";
+  const isPesoAdminRole = role.slug === "peso-admin";
 
   const togglePermission = (code: string) => {
     if (isSystemAdminRole && CRITICAL_SYSTEM_PERMISSIONS.has(code)) {
@@ -84,6 +85,11 @@ export function RolePermissionForm({ role, catalog }: RolePermissionFormProps) {
 
     if (isSbAdminRole && !code.startsWith("sb_resolutions.")) {
       // Cannot assign non-SB-resolution permissions to the Sangguniang Bayan Admin role
+      return;
+    }
+
+    if (isPesoAdminRole && !code.startsWith("jobs.")) {
+      // Cannot assign non-jobs permissions to the PESO Admin role
       return;
     }
 

@@ -10,9 +10,12 @@ import {
   CANONICAL_PRODUCTION_ROLES,
   ensureTourismRole,
   ensureSangguniangBayanRole,
+  ensurePesoRole,
   TOURISM_ROLE_SLUG,
   SB_ADMIN_ROLE_SLUG,
   SB_OFFICE_SLUG,
+  PESO_ADMIN_ROLE_SLUG,
+  PESO_OFFICE_SLUG,
 } from "@/server/roles/service";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminContent } from "@/components/admin/admin-content";
@@ -57,11 +60,13 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
   let offices: OfficeOption[] = [];
   let roles: RoleOption[] = [];
   let sbOffice: OfficeOption | null = null;
+  let pesoOffice: OfficeOption | null = null;
   let userOfficeName: string | undefined;
 
   if (isSystem) {
     await ensureTourismRole();
     await ensureSangguniangBayanRole();
+    await ensurePesoRole();
 
     offices = await prisma.office.findMany({
       where: {
@@ -77,6 +82,11 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
       select: { id: true, name: true, shortName: true },
     });
 
+    pesoOffice = await prisma.office.findUnique({
+      where: { slug: PESO_OFFICE_SLUG },
+      select: { id: true, name: true, shortName: true },
+    });
+
     const dbRoles = await prisma.role.findMany({
       where: {
         slug: {
@@ -84,6 +94,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
             ...CANONICAL_PRODUCTION_ROLES,
             TOURISM_ROLE_SLUG,
             SB_ADMIN_ROLE_SLUG,
+            PESO_ADMIN_ROLE_SLUG,
           ],
         },
       },
@@ -127,6 +138,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
           roles={roles}
           offices={offices}
           sangguniangBayanOffice={sbOffice ?? undefined}
+          pesoOffice={pesoOffice ?? undefined}
           initialData={{
             id: targetUser.id,
             name: targetUser.name,

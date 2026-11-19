@@ -121,6 +121,7 @@ export const ADMIN_NAV_CONFIG: AdminNavSection[] = [
         section: "content",
         description: "LGU career vacancies and application guidelines",
         requiredPermission: "jobs.view",
+        allowSystemScope: true,
         isImplemented: true,
       },
       {

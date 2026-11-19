@@ -17,6 +17,8 @@ import {
   TOURISM_ROLE_SLUG,
   SB_ADMIN_ROLE_SLUG,
   SB_OFFICE_SLUG,
+  PESO_ADMIN_ROLE_SLUG,
+  PESO_OFFICE_SLUG,
 } from "@/server/roles/service";
 
 export const CANONICAL_ROLE_SLUGS = CANONICAL_PRODUCTION_ROLES;
@@ -343,10 +345,11 @@ export async function createUser(
     if (
       requestedRole.slug !== "super-admin" &&
       requestedRole.slug !== TOURISM_ROLE_SLUG &&
-      requestedRole.slug !== SB_ADMIN_ROLE_SLUG
+      requestedRole.slug !== SB_ADMIN_ROLE_SLUG &&
+      requestedRole.slug !== PESO_ADMIN_ROLE_SLUG
     ) {
       throw new UserError(
-        "Only Super Admin, Tourism Content Manager, and Sangguniang Bayan Admin accounts may be created under the approved municipal operating model.",
+        "Only Super Admin, Tourism Content Manager, Sangguniang Bayan Admin, and PESO Admin accounts may be created under the approved municipal operating model.",
         400
       );
     }
@@ -357,14 +360,25 @@ export async function createUser(
 
   // Office assignment validation & automatic canonical office binding
   let assignedOfficeId: string | null = null;
-  if (targetRoleSlug === SB_ADMIN_ROLE_SLUG) {
-    const sbOffice = await prisma.office.findUnique({
-      where: { slug: SB_OFFICE_SLUG },
+  if (targetRoleSlug === SB_ADMIN_ROLE_SLUG || targetRoleSlug === PESO_ADMIN_ROLE_SLUG) {
+    const expectedSlug =
+      targetRoleSlug === SB_ADMIN_ROLE_SLUG ? SB_OFFICE_SLUG : PESO_OFFICE_SLUG;
+    const expectedName =
+      targetRoleSlug === SB_ADMIN_ROLE_SLUG
+        ? "Office of the Sangguniang Bayan"
+        : "Public Employment Service Office";
+    const roleLabel =
+      targetRoleSlug === SB_ADMIN_ROLE_SLUG
+        ? "Sangguniang Bayan Admin"
+        : "PESO Admin";
+
+    const lockedOffice = await prisma.office.findUnique({
+      where: { slug: expectedSlug },
       select: { id: true, status: true },
     });
-    if (!sbOffice || sbOffice.status !== "ACTIVE") {
+    if (!lockedOffice || lockedOffice.status !== "ACTIVE") {
       throw new UserError(
-        "System configuration error: Canonical Office of the Sangguniang Bayan is missing or inactive.",
+        `System configuration error: Canonical ${expectedName} is missing or inactive.`,
         500
       );
     }
@@ -373,14 +387,14 @@ export async function createUser(
       input.officeId !== null &&
       typeof input.officeId === "string" &&
       input.officeId.trim() !== "" &&
-      input.officeId.trim() !== sbOffice.id
+      input.officeId.trim() !== lockedOffice.id
     ) {
       throw new UserError(
-        "Sangguniang Bayan Admin accounts can only be assigned to the Office of the Sangguniang Bayan.",
+        `${roleLabel} accounts can only be assigned to the ${expectedName}.`,
         400
       );
     }
-    assignedOfficeId = sbOffice.id;
+    assignedOfficeId = lockedOffice.id;
   } else {
     // Reject forged office assignments for Super Admin and Tourism Content Manager
     if (input.officeId !== undefined && input.officeId !== null) {
@@ -589,32 +603,39 @@ export async function updateUser(
 
     // Role-aware validation:
     // System-scoped users (Super Admin) and Tourism Content Managers must remain municipal-wide with officeId = null
-    // Sangguniang Bayan Admin must remain bound to the canonical Office of the Sangguniang Bayan
+    // Sangguniang Bayan Admin and PESO Admin must remain bound to their respective canonical offices
     const effectiveRoleSlug = targetRole ? targetRole.slug : target.role.slug;
     const isTargetTourism = effectiveRoleSlug === TOURISM_ROLE_SLUG;
     const isTargetSbAdmin = effectiveRoleSlug === SB_ADMIN_ROLE_SLUG;
+    const isTargetPesoAdmin = effectiveRoleSlug === PESO_ADMIN_ROLE_SLUG;
 
-    if (isTargetSbAdmin) {
-      const sbOffice = await prisma.office.findUnique({
-        where: { slug: SB_OFFICE_SLUG },
+    if (isTargetSbAdmin || isTargetPesoAdmin) {
+      const expectedSlug = isTargetSbAdmin ? SB_OFFICE_SLUG : PESO_OFFICE_SLUG;
+      const expectedName = isTargetSbAdmin
+        ? "Office of the Sangguniang Bayan"
+        : "Public Employment Service Office";
+      const roleLabel = isTargetSbAdmin ? "Sangguniang Bayan Admin" : "PESO Admin";
+
+      const lockedOffice = await prisma.office.findUnique({
+        where: { slug: expectedSlug },
         select: { id: true, status: true },
       });
-      if (!sbOffice || sbOffice.status !== "ACTIVE") {
+      if (!lockedOffice || lockedOffice.status !== "ACTIVE") {
         throw new UserError(
-          "System configuration error: Canonical Office of the Sangguniang Bayan is missing or inactive.",
+          `System configuration error: Canonical ${expectedName} is missing or inactive.`,
           500
         );
       }
-      if (input.officeId !== undefined && input.officeId !== sbOffice.id) {
+      if (input.officeId !== undefined && input.officeId !== lockedOffice.id) {
         throw new UserError(
-          "Sangguniang Bayan Admin accounts must remain assigned to the Office of the Sangguniang Bayan.",
+          `${roleLabel} accounts must remain assigned to the ${expectedName}.`,
           400
         );
       }
-      if (target.officeId !== sbOffice.id) {
+      if (target.officeId !== lockedOffice.id) {
         officeChanged = true;
       }
-      nextOfficeId = sbOffice.id;
+      nextOfficeId = lockedOffice.id;
     } else if (nextRoleIsSystemScope || isTargetTourism) {
       nextOfficeId = null;
     } else {

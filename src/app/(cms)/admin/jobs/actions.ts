@@ -6,6 +6,7 @@ import {
   createJobOpportunity,
   updateJobOpportunity,
   publishJobOpportunity,
+  unpublishJobOpportunity,
   archiveJobOpportunity,
   deleteJobOpportunity,
   removeJobFeaturedImage,
@@ -15,7 +16,7 @@ import {
   uploadJobFeaturedImage,
   validateImageFile,
 } from "@/server/media/cloudinary";
-import { hasPermission } from "@/lib/authz/scope";
+import { hasPermission, isSystemScoped } from "@/lib/authz/scope";
 import { PERMISSIONS } from "@/server/authz/permissions";
 import { jobOpportunityInputSchema } from "@/lib/validation/jobs";
 
@@ -38,6 +39,9 @@ export async function createJobAction(
     const itemNumber = formData.get("itemNumber")?.toString() || undefined;
     const officeId = formData.get("officeId")?.toString() || undefined;
     const employmentType = formData.get("employmentType")?.toString() || undefined;
+    const employmentClassification =
+      formData.get("employmentClassification")?.toString() || undefined;
+    const employerName = formData.get("employerName")?.toString() || undefined;
     const salaryGrade = formData.get("salaryGrade")?.toString() || undefined;
     const monthlySalary = formData.get("monthlySalary")?.toString() || undefined;
     const description = formData.get("description")?.toString() || undefined;
@@ -87,11 +91,20 @@ export async function createJobAction(
           ? Number(formData.get("featuredImageBytes"))
           : undefined;
 
+    if (!employmentClassification) {
+      return {
+        success: false,
+        error: "Employment classification (Government or Private) is required.",
+      };
+    }
+
     const parsed = jobOpportunityInputSchema.safeParse({
       title,
       itemNumber,
       officeId,
       employmentType,
+      employmentClassification,
+      employerName: employerName ?? null,
       salaryGrade,
       monthlySalary,
       description,
@@ -204,6 +217,14 @@ export async function updateJobAction(
       itemNumber,
       officeId,
       employmentType,
+      employmentClassification:
+        formData.has("employmentClassification")
+          ? (formData.get("employmentClassification")?.toString().trim() || null)
+          : undefined,
+      employerName:
+        formData.has("employerName")
+          ? (formData.get("employerName")?.toString() || null)
+          : undefined,
       salaryGrade,
       monthlySalary,
       description,
@@ -275,6 +296,31 @@ export async function publishJobAction(
 }
 
 /**
+ * Server Action: Unpublishes a PUBLISHED vacancy back to DRAFT.
+ */
+export async function unpublishJobAction(
+  id: string,
+  expectedUpdatedAt?: string
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const user = await requireUser();
+    const unpublished = await unpublishJobOpportunity(user, id, expectedUpdatedAt);
+
+    revalidatePath("/admin/jobs");
+    revalidatePath(`/admin/jobs/${id}/edit`);
+    revalidatePath("/services/job-opportunities");
+
+    return {
+      success: true,
+      data: { id: unpublished.id },
+    };
+  } catch (err: unknown) {
+    const message = err instanceof JobError ? err.message : "Failed to unpublish job opportunity.";
+    return { success: false, error: message };
+  }
+}
+
+/**
  * Server Action: Archives a vacancy.
  */
 export async function archiveJobAction(
@@ -339,6 +385,7 @@ export async function uploadJobImageAction(
   try {
     const user = await requireUser();
     const canUpload =
+      isSystemScoped(user) ||
       hasPermission(user, PERMISSIONS.JOBS_CREATE) ||
       hasPermission(user, PERMISSIONS.JOBS_UPDATE);
 

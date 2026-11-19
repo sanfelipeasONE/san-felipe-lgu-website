@@ -12,6 +12,28 @@ export const ALLOWED_EMPLOYMENT_TYPES = [
 export type AllowedEmploymentType = (typeof ALLOWED_EMPLOYMENT_TYPES)[number];
 
 /**
+ * Canonical structured Employment Classification enum values (Phase 33).
+ */
+export const EMPLOYMENT_CLASSIFICATIONS = ["GOVERNMENT", "PRIVATE"] as const;
+export type EmploymentClassificationValue = (typeof EMPLOYMENT_CLASSIFICATIONS)[number];
+
+export const EMPLOYMENT_CLASSIFICATION_LABELS: Record<
+  EmploymentClassificationValue,
+  string
+> = {
+  GOVERNMENT: "Government",
+  PRIVATE: "Private",
+};
+
+export const EMPLOYER_FIELD_LABELS: Record<
+  EmploymentClassificationValue,
+  string
+> = {
+  GOVERNMENT: "Government Agency / Office",
+  PRIVATE: "Company Name",
+};
+
+/**
  * Historical/legacy employment classifications preserved for backward compatibility
  * when reading existing database records.
  */
@@ -111,6 +133,17 @@ export const jobOpportunityInputSchema = z
         }
       )
       .nullish(),
+    employmentClassification: z
+      .enum(EMPLOYMENT_CLASSIFICATIONS, {
+        errorMap: () => ({
+          message: "Employment classification must be either GOVERNMENT or PRIVATE.",
+        }),
+      })
+      .nullish(),
+    employerName: z
+      .string()
+      .max(200, "Employer name cannot exceed 200 characters.")
+      .nullish(),
     salaryGrade: z
       .string()
       .max(30, "Salary grade cannot exceed 30 characters.")
@@ -160,6 +193,24 @@ export const jobOpportunityInputSchema = z
     expectedUpdatedAt: z.string().nullish(),
   })
   .superRefine((data, ctx) => {
+    if (data.employmentClassification) {
+      const cleanedEmployer = sanitizePlainText(data.employerName);
+      if (!cleanedEmployer || cleanedEmployer.length < 2) {
+        const label = EMPLOYER_FIELD_LABELS[data.employmentClassification];
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${label} is required for ${EMPLOYMENT_CLASSIFICATION_LABELS[data.employmentClassification]} vacancies.`,
+          path: ["employerName"],
+        });
+      }
+    } else if (data.employerName && sanitizePlainText(data.employerName)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Employment classification (Government or Private) is required when specifying an employer name.",
+        path: ["employmentClassification"],
+      });
+    }
+
     if (data.postingDate && data.postingDate.trim()) {
       const pDate = new Date(data.postingDate);
       if (isNaN(pDate.getTime())) {
